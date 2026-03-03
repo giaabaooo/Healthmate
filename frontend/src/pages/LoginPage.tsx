@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google'; // BẮT BUỘC IMPORT CÁI NÀY
 
@@ -8,6 +8,24 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        // Kiểm tra xem đã điền onboarding chưa
+        if (user.profile && user.profile.height_cm && user.profile.weight_kg) {
+          navigate('/homepage', { replace: true });
+        } else {
+          navigate('/onboarding', { replace: true });
+        }
+      } catch (e) {
+        console.error("Lỗi parse thông tin user");
+      }
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +58,11 @@ const LoginPage = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Chuyển đến trang chủ
-      navigate('/homepage');
+      if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
+        navigate('/homepage', { replace: true }); // Thêm replace: true
+      } else {
+        navigate('/onboarding', { replace: true });
+      }
     } catch (err) {
       setError('Có lỗi xảy ra khi kết nối tới server.');
     } finally {
@@ -52,32 +73,46 @@ const LoginPage = () => {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        // 1. Gọi API của Google để lấy thông tin thật (Tên, Ảnh, Email)
+        setLoading(true);
+        // 1. Lấy thông tin từ Google
         const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
         });
         const userInfo = await userInfoRes.json();
 
-        // 2. Tạo User giả lập với thông tin thật
-        const googleUser = {
-          _id: userInfo.sub,
-          email: userInfo.email,
-          role: 'user',
-          profile: {
-            full_name: userInfo.name, // Lấy tên thật của Google
-            picture: userInfo.picture // Lấy Avatar thật của Google
-          }
-        };
+        // 2. Gửi thông tin Google xuống Backend của bạn
+        const beResponse = await fetch('http://localhost:8000/api/users/google-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userInfo.email,
+            full_name: userInfo.name,
+            sub: userInfo.sub
+          })
+        });
 
-        // 3. Lưu vào LocalStorage
-        localStorage.setItem('token', tokenResponse.access_token);
-        localStorage.setItem('isGoogleLogin', 'true'); // <--- Cắm cờ để ProfilePage không đá văng
-        localStorage.setItem('user', JSON.stringify(googleUser));
+        const data = await beResponse.json();
 
-        // 4. Chuyển sang Onboarding
-        navigate('/onboarding'); 
+        if (!beResponse.ok) {
+          setError(data.message || 'Đăng nhập Google qua Server thất bại.');
+          return;
+        }
+
+        // 3. Lưu token thật từ Backend
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // 4. Kiểm tra xem user Google này đã làm Onboarding chưa
+        if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
+          navigate('/homepage', { replace: true });
+        } else {
+          navigate('/onboarding', { replace: true });
+        }
+        
       } catch (err) {
-        setError('Không thể lấy thông tin từ Google.');
+        setError('Lỗi hệ thống khi đăng nhập bằng Google.');
+      } finally {
+        setLoading(false);
       }
     },
     onError: () => {

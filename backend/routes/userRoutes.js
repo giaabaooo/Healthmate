@@ -4,20 +4,16 @@ const {
   registerUser,
   loginUser,
   getMe,
-  updateProfile
+  updateProfile,
+  googleLogin 
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Đăng ký tài khoản mới
 router.post('/register', registerUser);
-
-// Đăng nhập
 router.post('/login', loginUser);
+router.post('/google-login', googleLogin); // Thêm API Google Login
 
-// Lấy thông tin user hiện tại (hồ sơ cá nhân)
 router.get('/me', protect, getMe);
-
-// Cập nhật hồ sơ cá nhân
 router.put('/me', protect, updateProfile);
 
 module.exports = router;
