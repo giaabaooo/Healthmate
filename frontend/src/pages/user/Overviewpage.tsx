@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Layout from '../../components/Layout';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -14,7 +14,6 @@ const Icon = ({ name, className = '' }: { name: string; className?: string }) =>
 
 const OverviewPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
   const parsedUser = storedUser ? JSON.parse(storedUser) : null;
@@ -80,7 +79,9 @@ const OverviewPage = () => {
     if (!todayWeight && typeof baseWeight === 'number') {
       setTodayWeight(String(baseWeight));
     }
-  }, [parsedUser]);
+    // Chỉ chạy một lần khi component mount để tránh loop cập nhật state
+    // Nếu sau này hồ sơ user đổi, có thể bổ sung thêm logic lắng nghe riêng.
+  }, []);
 
   const handleAddEntry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,22 +164,32 @@ const OverviewPage = () => {
             <nav className="flex flex-col gap-2">
               {sidebarItems.map(({ icon, label, path }) => {
                 const isActive = path ? location.pathname === path : false;
-                const isClickable = Boolean(path);
+
+                if (!path) {
+                  return (
+                    <div
+                      key={label}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 cursor-default"
+                    >
+                      <Icon name={icon} className="text-lg" />
+                      <span className="text-sm">{label}</span>
+                    </div>
+                  );
+                }
 
                 return (
-                  <button
+                  <Link
                     key={label}
-                    type="button"
-                    onClick={() => path && navigate(path)}
+                    to={path}
                     className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                       isActive
                         ? 'bg-primary text-slate-900 font-bold shadow-lg shadow-primary/20'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    } ${!isClickable ? 'cursor-default' : ''}`}
+                    }`}
                   >
                     <Icon name={icon} className="text-lg" />
                     <span className="text-sm">{label}</span>
-                  </button>
+                  </Link>
                 );
               })}
             </nav>

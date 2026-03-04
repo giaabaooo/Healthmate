@@ -31,7 +31,7 @@ const Navbar = () => {
         <nav className="flex items-center gap-9">
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/overview">Dashboard</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/workouts">Workouts</Link>
-          <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/meal-plan">Meal Plan</Link>
+          <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/meal-planner">Meal Plan</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/aicoach">AI Coach</Link>
         </nav>
         
