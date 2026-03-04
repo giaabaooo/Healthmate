@@ -15,8 +15,12 @@ const LoginPage = () => {
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        // Kiểm tra xem đã điền onboarding chưa
-        if (user.profile && user.profile.height_cm && user.profile.weight_kg) {
+        
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } 
+        
+        else if (user.profile && user.profile.height_cm && user.profile.weight_kg) {
           navigate('/homepage', { replace: true });
         } else {
           navigate('/onboarding', { replace: true });
@@ -58,8 +62,11 @@ const LoginPage = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
-        navigate('/homepage', { replace: true }); // Thêm replace: true
+      // THÊM KIỂM TRA ADMIN Ở ĐÂY
+      if (data.user.role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
+        navigate('/homepage', { replace: true }); 
       } else {
         navigate('/onboarding', { replace: true });
       }
@@ -102,8 +109,12 @@ const LoginPage = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        // 4. Kiểm tra xem user Google này đã làm Onboarding chưa
-        if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
+        
+        if (data.user.role === 'admin') {
+           navigate('/admin/dashboard', { replace: true });
+        }
+        
+        else if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
           navigate('/homepage', { replace: true });
         } else {
           navigate('/onboarding', { replace: true });
