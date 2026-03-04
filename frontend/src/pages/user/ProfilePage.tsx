@@ -28,17 +28,28 @@ const ProfilePage = () => {
   const [weight, setWeight] = useState<string>('');
   const [goal, setGoal] = useState<Profile['goal'] | ''>('');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-  // Tính BMI động
+  const [latestCheckin, setLatestCheckin] = useState<{
+    height: number;
+    weight: number;
+    bmi: number;
+  } | null>(null);
+
+  const bmiHeight =
+    latestCheckin?.height ?? (height ? Number(height) : undefined);
+  const bmiWeight =
+    latestCheckin?.weight ?? (weight ? Number(weight) : undefined);
+
+  const displayHeight = bmiHeight;
+  const displayWeight = bmiWeight;
+
   const bmi =
-    height && weight
-      ? (Number(weight) / Math.pow(Number(height) / 100, 2)).toFixed(1)
+    bmiHeight && bmiWeight
+      ? (bmiWeight / Math.pow(bmiHeight / 100, 2)).toFixed(1)
       : null;
 
   const getBmiLabel = (bmiVal: number) => {
@@ -67,6 +78,26 @@ const ProfilePage = () => {
         setHeight(parsedUser.profile?.height_cm ? String(parsedUser.profile.height_cm) : '');
         setWeight(parsedUser.profile?.weight_kg ? String(parsedUser.profile.weight_kg) : '');
         setGoal(parsedUser.profile?.goal || '');
+
+        const latest = localStorage.getItem('latestBodyCheckin');
+        if (latest) {
+          try {
+            const parsed = JSON.parse(latest);
+            if (
+              typeof parsed.height === 'number' &&
+              typeof parsed.weight === 'number' &&
+              typeof parsed.bmi === 'number'
+            ) {
+              setLatestCheckin({
+                height: parsed.height,
+                weight: parsed.weight,
+                bmi: parsed.bmi,
+              });
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
       }
       setLoading(false);
       return; 
@@ -105,6 +136,26 @@ const ProfilePage = () => {
             : ''
         );
         setGoal((data.profile?.goal as Profile['goal']) || '');
+
+        const latest = localStorage.getItem('latestBodyCheckin');
+        if (latest) {
+          try {
+            const parsed = JSON.parse(latest);
+            if (
+              typeof parsed.height === 'number' &&
+              typeof parsed.weight === 'number' &&
+              typeof parsed.bmi === 'number'
+            ) {
+              setLatestCheckin({
+                height: parsed.height,
+                weight: parsed.weight,
+                bmi: parsed.bmi,
+              });
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
       } catch {
         setError('Có lỗi xảy ra khi kết nối tới server.');
       } finally {
@@ -115,30 +166,6 @@ const ProfilePage = () => {
     fetchProfile();
   }, [token, navigate]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    const isGoogle = localStorage.getItem('isGoogleLogin');
-    if (isGoogle === 'true') {
-      
-      setSaving(true);
-      setTimeout(() => {
-        setSuccess('Cập nhật hồ sơ thành công (Chế độ giả lập Google)!');
-        const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-        localUser.profile = { ...localUser.profile, full_name: fullName, gender, height_cm: Number(height), weight_kg: Number(weight), goal };
-        localStorage.setItem('user', JSON.stringify(localUser));
-        setSaving(false);
-      }, 500);
-      return;
-    }
-  };
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -240,12 +267,6 @@ const ProfilePage = () => {
                         {error}
                       </div>
                     )}
-                    {success && (
-                      <div className="mb-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
-                        {success}
-                      </div>
-                    )}
-
                     {user && (
                       <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-4 py-3 text-sm mb-6">
                         <p>
@@ -258,123 +279,79 @@ const ProfilePage = () => {
                       </div>
                     )}
 
-                    <form onSubmit={handleSave} className="space-y-6">
+                    <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <label
-                            className="text-sm font-semibold text-slate-600 dark:text-slate-400"
-                            htmlFor="fullName"
-                          >
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             Họ và tên
-                          </label>
-                          <input
-                            id="fullName"
-                            type="text"
-                            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 transition-all"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                          />
+                          </p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {fullName || '—'}
+                          </p>
                         </div>
 
-                        <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-600 dark:text-slate-400">
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             Email
-                          </label>
-                          <input
-                            type="email"
-                            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 text-slate-900 dark:text-white opacity-60 cursor-not-allowed"
-                            value={user?.email || ''}
-                            disabled
-                          />
+                          </p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {user?.email || '—'}
+                          </p>
                         </div>
 
-                        <div className="space-y-2">
-                          <label
-                            className="text-sm font-semibold text-slate-600 dark:text-slate-400"
-                            htmlFor="height"
-                          >
-                            Chiều cao (cm)
-                          </label>
-                          <input
-                            id="height"
-                            type="number"
-                            min={50}
-                            max={250}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 transition-all"
-                            value={height}
-                            onChange={(e) => setHeight(e.target.value)}
-                          />
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            Chiều cao
+                          </p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {typeof displayHeight === 'number'
+                              ? `${displayHeight} cm`
+                              : '—'}
+                          </p>
                         </div>
 
-                        <div className="space-y-2">
-                          <label
-                            className="text-sm font-semibold text-slate-600 dark:text-slate-400"
-                            htmlFor="weight"
-                          >
-                            Cân nặng (kg)
-                          </label>
-                          <input
-                            id="weight"
-                            type="number"
-                            min={10}
-                            max={300}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 transition-all"
-                            value={weight}
-                            onChange={(e) => setWeight(e.target.value)}
-                          />
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            Cân nặng
+                          </p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {typeof displayWeight === 'number'
+                              ? `${displayWeight} kg`
+                              : '—'}
+                          </p>
                         </div>
 
-                        <div className="space-y-2">
-                          <label
-                            className="text-sm font-semibold text-slate-600 dark:text-slate-400"
-                            htmlFor="gender"
-                          >
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             Giới tính
-                          </label>
-                          <select
-                            id="gender"
-                            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 transition-all"
-                            value={gender}
-                            onChange={(e) => setGender(e.target.value as Profile['gender'])}
-                          >
-                            <option value="">Chọn</option>
-                            <option value="male">Nam</option>
-                            <option value="female">Nữ</option>
-                            <option value="other">Khác</option>
-                          </select>
+                          </p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {gender === 'male'
+                              ? 'Nam'
+                              : gender === 'female'
+                              ? 'Nữ'
+                              : gender === 'other'
+                              ? 'Khác'
+                              : '—'}
+                          </p>
                         </div>
 
-                        <div className="space-y-2">
-                          <label
-                            className="text-sm font-semibold text-slate-600 dark:text-slate-400"
-                            htmlFor="goal"
-                          >
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             Mục tiêu
-                          </label>
-                          <select
-                            id="goal"
-                            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 transition-all"
-                            value={goal}
-                            onChange={(e) => setGoal(e.target.value as Profile['goal'])}
-                          >
-                            <option value="">Chọn</option>
-                            <option value="muscle_gain">Tăng cơ</option>
-                            <option value="fat_loss">Giảm mỡ</option>
-                            <option value="maintain">Duy trì</option>
-                          </select>
+                          </p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {goal === 'muscle_gain'
+                              ? 'Tăng cơ'
+                              : goal === 'fat_loss'
+                              ? 'Giảm mỡ'
+                              : goal === 'maintain'
+                              ? 'Duy trì'
+                              : '—'}
+                          </p>
                         </div>
                       </div>
-
-                      <div className="flex justify-end">
-                        <button
-                          type="submit"
-                          disabled={saving}
-                          className="bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3 px-8 rounded-lg transition-all shadow-lg shadow-primary/20 disabled:opacity-60"
-                        >
-                          {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                        </button>
-                      </div>
-                    </form>
+                    </div>
                   </section>
                 </div>
 
@@ -414,9 +391,10 @@ const ProfilePage = () => {
                         </p>
                       </div>
                     </div>
-                    {height && weight && (
+                    {typeof displayHeight === 'number' &&
+                      typeof displayWeight === 'number' && (
                       <div className="mt-6 text-xs text-slate-400 text-center">
-                        {height} cm · {weight} kg
+                        {displayHeight} cm · {displayWeight} kg
                       </div>
                     )}
                   </section>

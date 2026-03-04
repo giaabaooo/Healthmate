@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute'; // Import chú bảo vệ
 
 // --- Import các trang ---
+
 import AiCoachPage from './pages/user/AiCoachPage';
 import FoodCatalogPage from './pages/user/FoodCatalogPage';
 import MealPlannerPage from './pages/user/MealPlannerPage';
@@ -17,6 +18,7 @@ import OnboardingPage from './pages/user/OnboardingPage';
 import FitnessGoal from './pages/user/FitnessGoals';
 import SchedulePage from './pages/user/SchedulePage';
 import OverviewPage from './pages/user/Overviewpage';
+
 
 export default function App() {
   return (
