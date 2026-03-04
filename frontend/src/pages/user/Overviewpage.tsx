@@ -1,6 +1,6 @@
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Layout from '../../components/Layout';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

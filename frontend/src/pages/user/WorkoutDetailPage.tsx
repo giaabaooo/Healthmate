@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import Navbar from "../../components/Navbar";
 import {
   getWorkoutById,
   updateWorkout,
   deleteWorkout,
-} from "../services/workoutService";
+} from "../../services/workoutService";
 
 const WorkoutDetailPage = () => {
   const { id } = useParams();

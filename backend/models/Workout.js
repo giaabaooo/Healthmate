@@ -1,32 +1,35 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const workoutSchema = new mongoose.Schema({
-  name: { 
-    type: String, 
-    required: true 
+const workoutSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    duration: {
+      type: Number,
+      default: 30,
+    },
+    calories: {
+      type: Number,
+      default: 200,
+    },
+    difficulty: {
+      type: String,
+      enum: ["Beginner", "Intermediate", "Advanced"],
+      default: "Beginner",
+    },
   },
-  description: { 
-    type: String 
+  {
+    timestamps: true,
   },
-  category: { 
-    type: String, 
-    required: true 
-  },
-  duration: { 
-    type: Number, 
-    default: 30 
-  },
-  calories: { 
-    type: Number, 
-    default: 200 
-  },
-  difficulty: { 
-    type: String, 
-    enum: ['Beginner', 'Intermediate', 'Advanced'],
-    default: 'Beginner'
-  }
-}, { 
-  timestamps: true 
-});
+);
 
-module.exports = mongoose.model('Workout', workoutSchema);
+module.exports = mongoose.model("Workout", workoutSchema);

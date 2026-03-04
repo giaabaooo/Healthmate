@@ -14,7 +14,6 @@ const OnboardingPage = () => {
     e.preventDefault();
     setError(null);
 
-    // Validate chống nhập bậy
     if (!gender || !height || !weight || !goal) {
       setError('Vui lòng điền đầy đủ thông tin để AI có thể tư vấn tốt nhất.');
       return;
@@ -29,19 +28,41 @@ const OnboardingPage = () => {
     try {
       const token = localStorage.getItem('token');
       
-      // GỌI API CẬP NHẬT PROFILE CHO USER (Bạn cần đảm bảo Backend có API này)
-      // Tạm thời mình giả lập cập nhật thành công và lưu vào LocalStorage
+      // Gọi API cập nhật thông tin về Backend
+      const response = await fetch('http://localhost:8000/api/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Gửi kèm token
+        },
+        body: JSON.stringify({
+          profile: {
+            gender,
+            height_cm: Number(height),
+            weight_kg: Number(weight),
+            goal
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Không thể lưu hồ sơ vào hệ thống.');
+        return;
+      }
+
+      // Cập nhật lại localStorage với data xịn từ DB
       const userStr = localStorage.getItem('user');
       if (userStr) {
           const user = JSON.parse(userStr);
-          user.profile = { ...user.profile, gender, height_cm: Number(height), weight_kg: Number(weight), goal };
+          user.profile = data.profile; // Ghi đè profile mới
           localStorage.setItem('user', JSON.stringify(user));
       }
-
-      // Xong xuôi thì cho vào trang chủ
-      navigate('/homepage');
+      
+      navigate('/homepage', { replace: true });
     } catch (err) {
-      setError('Có lỗi xảy ra, vui lòng thử lại.');
+      setError('Có lỗi xảy ra kết nối với máy chủ, vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
