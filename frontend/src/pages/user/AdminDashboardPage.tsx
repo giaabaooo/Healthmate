@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import AdminLayout from '../components/AdminLayout';
+import AdminLayout from '../../components/AdminLayout';
 
 const stats = [
   { label: 'Món ăn', value: '—', sub: 'trong thư viện' },
@@ -11,7 +11,7 @@ const quickLinks = [
   {
     title: 'Thêm món ăn mới',
     desc: 'Thêm món ăn vào thư viện với đầy đủ thông tin dinh dưỡng',
-    path: '/dashboard/foods/new',
+    path: '/dashboard/foods',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
@@ -30,7 +30,7 @@ const quickLinks = [
     )
   },
   {
-    title: 'Xem thư viện món ăn',
+    title: 'Xem danh sách món ăn',
     desc: 'Duyệt, tìm kiếm và chỉnh sửa các món ăn hiện có',
     path: '/dashboard/foods',
     icon: (

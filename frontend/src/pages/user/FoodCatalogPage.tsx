@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
+import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
-import ConfirmModal from '../components/confirm-modal';
+import ConfirmModal from '../../components/confirm-modal';
 
 interface Food {
   _id: string;

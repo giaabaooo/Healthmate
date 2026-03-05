@@ -5,18 +5,18 @@ import AdminRoute from './components/AdminRoute';
 
 // --- Import các trang ---
 import AiCoachPage from './pages/AiCoachPage';
-import FoodCatalogPage from './pages/FoodCatalogPage';
-import MealPlannerPage from './pages/MealPlannerPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+import FoodCatalogPage from './pages/user/FoodCatalogPage';
+import MealPlannerPage from './pages/user/MealPlannerPage';
+import AdminDashboardPage from './pages/user/AdminDashboardPage';
 import AdminMealPlannerPage from './pages/AdminMealPlannerPage';
 import AdminFoodCatalogPage from './pages/AdminFoodCatalogPage';
-import WorkoutsPage from './pages/WorkoutsPage';
-import WorkoutDetailPage from "./pages/WorkoutDetailPage";
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProfilePage from './pages/ProfilePage';
-import HomePage from './pages/HomePage';
-import OnboardingPage from './pages/OnboardingPage';
+import WorkoutsPage from './pages/user/WorkoutsPage';
+import WorkoutDetailPage from "./pages/user/WorkoutDetailPage";
+import LoginPage from './pages/user/LoginPage';
+import RegisterPage from './pages/user/RegisterPage';
+import ProfilePage from './pages/user/ProfilePage';
+import HomePage from './pages/user/HomePage';
+import OnboardingPage from './pages/user/OnboardingPage';
 
 export default function App() {
   return (
@@ -44,9 +44,9 @@ export default function App() {
         }}
       />
       <Routes>
-        
+
         {/*PUBLIC ROUTES */}
-       
+
         <Route path="/" element={<Navigate to="/homepage" replace />} />
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -54,9 +54,8 @@ export default function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
 
 
-       
         {/*  PROTECTED ROUTES (Bắt buộc đăng nhập)*/}
-        
+
         <Route element={<ProtectedRoute />}>
           {/* user */}
           <Route path="/aicoach" element={<AiCoachPage />} />
@@ -65,7 +64,7 @@ export default function App() {
           <Route path="/meal-planner" element={<MealPlannerPage />} />
           <Route path="/workouts" element={<WorkoutsPage />} />
           <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
-          
+
           {/* Admin - chỉ cho phép role === 'admin' */}
           <Route element={<AdminRoute />}>
             <Route path="/dashboard" element={<AdminDashboardPage />} />

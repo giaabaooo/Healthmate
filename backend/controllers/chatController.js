@@ -6,6 +6,13 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.askAICoach = async (req, res) => {
     try {
+        if (!process.env.GEMINI_API_KEY) {
+            return res.status(500).json({ error: "Server chưa cấu hình API Key cho AI." });
+        }
+        
+        // Khởi tạo AI bên trong hàm
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        
         const { userId, message } = req.body;
 
         if (!message) {
@@ -22,7 +29,7 @@ exports.askAICoach = async (req, res) => {
         session.messages.push({ sender: 'user', message: message });
 
         // 3. Gọi AI
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const systemPrompt = `Bạn là HealthMate, một AI chuyên gia về sức khỏe và thể hình. Hãy trả lời ngắn gọn, chuyên nghiệp, mang tính động viên. Người dùng hỏi: ${message}`;
         
         const result = await model.generateContent(systemPrompt);

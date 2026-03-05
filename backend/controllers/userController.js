@@ -157,6 +157,49 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
+const googleLogin = async (req, res) => {
+  try {
+    const { email, full_name, sub } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Không lấy được email từ Google.' });
+    }
+
+    // Kiểm tra user đã tồn tại chưa
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Mã hóa một mật khẩu ngẫu nhiên cho user Google vì Schema bắt buộc có password_hash
+      const salt = await bcrypt.genSalt(10);
+      const randomPassword = await bcrypt.hash(sub || Math.random().toString(), salt);
+
+      user = await User.create({
+        email,
+        password_hash: randomPassword,
+        profile: {
+          full_name: full_name || 'Người dùng Google'
+        }
+      });
+    } else if (user.status === 'banned') {
+      return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa.' });
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      message: 'Đăng nhập Google thành công!',
+      token,
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        profile: user.profile
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
 
 // [GET] Danh sách customers (admin only)
 const getUsers = async (req, res) => {

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import Layout from "../components/Layout";
-import { getWorkouts, createWorkout } from "../services/workoutService";
-import type { Workout } from "../services/workoutService";
-import { getCategories } from "../services/categoryService";
-import type { Category } from "../services/categoryService";
+import Layout from "../../components/Layout";
+import { getWorkouts, createWorkout } from "../../services/workoutService";
+import type { Workout } from "../../services/workoutService";
+import { getCategories } from "../../services/categoryService";
+import type { Category } from "../../services/categoryService";
 import { useNavigate } from "react-router-dom";
 
 const WorkoutsPage = () => {
