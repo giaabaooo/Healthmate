@@ -7,15 +7,16 @@ const {
   updateFood,
   deleteFood
 } = require('../controllers/food-controller');
-const { protect, requireAdmin } = require('../middleware/authMiddleware');
+const upload = require('../middleware/food-upload');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 // Public routes
 router.get('/', getAllFoods);
 router.get('/:id', getFoodById);
 
-// Admin routes (cần auth + quyền admin)
-router.post('/', protect, requireAdmin, createFood);
-router.put('/:id', protect, requireAdmin, updateFood);
-router.delete('/:id', protect, requireAdmin, deleteFood);
+// Admin routes: yêu cầu đăng nhập và quyền admin
+router.post('/', protect, adminOnly, upload.single('image'), createFood);
+router.put('/:id', protect, adminOnly, upload.single('image'), updateFood);
+router.delete('/:id', protect, adminOnly, deleteFood);
 
 module.exports = router;

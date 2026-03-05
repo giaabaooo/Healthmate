@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../../components/confirm-modal';
 
 interface Food {
   _id: string;
@@ -10,6 +12,7 @@ interface Food {
   protein: number;
   carbs: number;
   fat: number;
+  image?: string | null;
 }
 
 const CATEGORIES = ['Tất cả', 'Tinh bột', 'Đạm', 'Rau củ', 'Trái cây', 'Đồ uống', 'Khác'];
@@ -19,6 +22,11 @@ const FoodCatalogPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    foodId: string;
+    foodName: string;
+  }>({ isOpen: false, foodId: '', foodName: '' });
 
   useEffect(() => {
     fetchFoods();
@@ -41,6 +49,28 @@ const FoodCatalogPage = () => {
       console.error('Lỗi khi tải danh sách món ăn:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (food: Food) => {
+    setDeleteModal({ isOpen: true, foodId: food._id, foodName: food.name });
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/foods/${deleteModal.foodId}`, {
+        method: 'DELETE', credentials: 'include'
+      });
+      if (response.ok) {
+        toast.success(`Đã xóa "${deleteModal.foodName}"`);
+        fetchFoods();
+      } else {
+        toast.error('Lỗi khi xóa món ăn');
+      }
+    } catch {
+      toast.error('Lỗi kết nối server');
+    } finally {
+      setDeleteModal({ isOpen: false, foodId: '', foodName: '' });
     }
   };
 
@@ -99,8 +129,25 @@ const FoodCatalogPage = () => {
             {foods.map((food) => (
               <div
                 key={food._id}
-                className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:shadow-lg transition"
+                className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-lg transition"
               >
+                {/* Thumbnail ảnh món ăn */}
+                <div className="w-full h-36 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                  {food.image ? (
+                    <img
+                      src={`http://localhost:8000${food.image}`}
+                      alt={food.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <svg className="w-10 h-10 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </div>
+
+                <div className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-bold text-lg">{food.name}</h3>
@@ -129,17 +176,31 @@ const FoodCatalogPage = () => {
                   </div>
                 </div>
 
-                <Link
-                  to={`/meal-planner?addFood=${food._id}`}
-                  className="mt-4 w-full block text-center py-2 bg-primary/10 text-primary rounded-lg font-medium hover:bg-primary/20 transition"
-                >
-                  Thêm vào thực đơn
-                </Link>
+                <div className="mt-4 flex gap-2">
+                  <Link to={`/meal-planner?addFood=${food._id}`} className="flex-1 text-center py-2 bg-primary/10 text-primary rounded-lg font-medium hover:bg-primary/20 transition">
+                    Thêm vào thực đơn
+                  </Link>
+                  <Link to={`/dashboard/foods/${food._id}`} className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Sửa">
+                    ✎
+                  </Link>
+                  <button onClick={() => handleDeleteClick(food)} className="px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition" title="Xóa">
+                    ✕
+                  </button>
+                </div>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        title="Xóa món ăn"
+        message={`Bạn có chắc muốn xóa "${deleteModal.foodName}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteModal({ isOpen: false, foodId: '', foodName: '' })}
+      />
     </Layout>
   );
 };

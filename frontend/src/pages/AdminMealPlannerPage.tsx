@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import Layout from '../../components/Layout';
-import ConfirmModal from '../../components/confirm-modal';
+import AdminLayout from '../components/AdminLayout';
+import ConfirmModal from '../components/confirm-modal';
+
+interface User {
+  _id: string;
+  email: string;
+  profile: { full_name: string };
+}
 
 interface MealItem {
   _id: string;
@@ -19,8 +24,9 @@ interface Food {
   calories: number;
 }
 
-const MealPlannerPage = () => {
-  const [searchParams] = useSearchParams();
+const AdminMealPlannerPage = () => {
+  const [targetUserId, setTargetUserId] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
@@ -37,24 +43,39 @@ const MealPlannerPage = () => {
     itemName: string;
   }>({ isOpen: false, itemId: '', itemName: '' });
 
-  useEffect(() => {
-    fetchMealPlan();
-  }, [selectedDate]);
+  const getAuthHeaders = () => ({
+    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    'Content-Type': 'application/json'
+  });
 
   useEffect(() => {
-    const addFoodId = searchParams.get('addFood');
-    if (addFoodId) {
-      handleAddFoodFromUrl(addFoodId);
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    fetchMealPlan();
+  }, [selectedDate, targetUserId]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/users', {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách người dùng:', error);
     }
-  }, [searchParams]);
+  };
 
   const fetchMealPlan = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}`, {
-        credentials: 'include'
+      const query = targetUserId ? `?target_user_id=${targetUserId}` : '';
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}${query}`, {
+        headers: getAuthHeaders()
       });
-      const data = await response.json();
+      const data = await res.json();
       setItems(data.items || []);
       setTotalCalories(data.total_calories || 0);
     } catch (error) {
@@ -66,33 +87,31 @@ const MealPlannerPage = () => {
 
   const fetchFoods = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/foods');
-      const data = await response.json();
+      const res = await fetch('http://localhost:8000/api/foods');
+      const data = await res.json();
       setFoods(data);
     } catch (error) {
       console.error('Lỗi khi tải danh sách món ăn:', error);
     }
   };
 
-  const handleAddFoodFromUrl = async (foodId: string) => {
-    await addFoodToMealPlan(foodId, 100); // Default 100g
-  };
-
   const addFoodToMealPlan = async (foodId: string, quantity: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
+      const body: Record<string, unknown> = { food_id: foodId, quantity };
+      if (targetUserId) body.target_user_id = targetUserId;
+
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ food_id: foodId, quantity })
+        headers: getAuthHeaders(),
+        body: JSON.stringify(body)
       });
 
-      if (response.ok) {
+      if (res.ok) {
         toast.success('Đã thêm món ăn');
         fetchMealPlan();
         setShowFoodModal(false);
       } else {
-        const data = await response.json();
+        const data = await res.json();
         toast.error(data.message || 'Lỗi khi thêm món ăn');
       }
     } catch (error) {
@@ -106,11 +125,15 @@ const MealPlannerPage = () => {
 
   const handleRemoveConfirm = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}`,
-        { method: 'DELETE', credentials: 'include' }
+      const query = targetUserId ? `?target_user_id=${targetUserId}` : '';
+      const res = await fetch(
+        `http://localhost:8000/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}${query}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        }
       );
-      if (response.ok) {
+      if (res.ok) {
         toast.success('Đã xóa món ăn');
         fetchMealPlan();
       }
@@ -128,16 +151,18 @@ const MealPlannerPage = () => {
     }
 
     try {
-      const response = await fetch(
+      const body: Record<string, unknown> = { quantity: editQuantity };
+      if (targetUserId) body.target_user_id = targetUserId;
+
+      const res = await fetch(
         `http://localhost:8000/api/meal-plans/${selectedDate}/items/${itemId}`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ quantity: editQuantity })
+          headers: getAuthHeaders(),
+          body: JSON.stringify(body)
         }
       );
-      if (response.ok) {
+      if (res.ok) {
         toast.success('Đã cập nhật');
         fetchMealPlan();
         setEditingItem(null);
@@ -152,19 +177,36 @@ const MealPlannerPage = () => {
     setShowFoodModal(true);
   };
 
+  const targetName = targetUserId
+    ? users.find(u => u._id === targetUserId)?.profile.full_name || 'Customer'
+    : 'Bản thân';
+
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto">
+    <AdminLayout>
+      <div className="max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">
-            Thực đơn <span className="text-primary">hôm nay</span>
+            Thực đơn của <span className="text-primary">{targetName}</span>
           </h1>
-          <Link
-            to="/foods"
-            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+        </div>
+
+        {/* User selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+            Tạo thực đơn cho
+          </label>
+          <select
+            value={targetUserId || ''}
+            onChange={(e) => setTargetUserId(e.target.value || null)}
+            className="bg-slate-100 dark:bg-slate-800 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            Xem thư viện món ăn
-          </Link>
+            <option value="">Bản thân (Admin)</option>
+            {users.map(u => (
+              <option key={u._id} value={u._id}>
+                {u.profile.full_name} ({u.email})
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Date picker */}
@@ -317,8 +359,8 @@ const MealPlannerPage = () => {
         onConfirm={handleRemoveConfirm}
         onCancel={() => setDeleteModal({ isOpen: false, itemId: '', itemName: '' })}
       />
-    </Layout>
+    </AdminLayout>
   );
 };
 
-export default MealPlannerPage;
+export default AdminMealPlannerPage;
