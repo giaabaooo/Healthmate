@@ -73,7 +73,6 @@ export default function App() {
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path='/overview' element={<OverviewPage />} />
           <Route path='/workout-user' element={<WorkoutUser />} />
-        </Route>
 
           {/* Admin - chỉ cho phép role === 'admin' */}
           <Route element={<AdminRoute />}>
