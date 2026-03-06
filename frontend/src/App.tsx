@@ -17,6 +17,11 @@ import RegisterPage from './pages/user/RegisterPage';
 import ProfilePage from './pages/user/ProfilePage';
 import HomePage from './pages/user/HomePage';
 import OnboardingPage from './pages/user/OnboardingPage';
+import FitnessGoal from './pages/user/FitnessGoals';
+import SchedulePage from './pages/user/SchedulePage';
+import OverviewPage from './pages/user/Overviewpage';
+import WorkoutUser from './pages/user/WorkoutUser';
+
 
 export default function App() {
   return (
@@ -64,6 +69,11 @@ export default function App() {
           <Route path="/meal-planner" element={<MealPlannerPage />} />
           <Route path="/workouts" element={<WorkoutsPage />} />
           <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
+          <Route path="/fitness-goals" element={<FitnessGoal />} />
+          <Route path="/schedule" element={<SchedulePage />} />
+          <Route path='/overview' element={<OverviewPage />} />
+          <Route path='/workout-user' element={<WorkoutUser />} />
+        </Route>
 
           {/* Admin - chỉ cho phép role === 'admin' */}
           <Route element={<AdminRoute />}>
