@@ -1,44 +1,103 @@
-// Simple admin controller for testing
+const User = require('../models/User');
+const Workout = require('../models/Workout');
+const WorkoutLog = require('../models/WorkoutLog');
+
 const getDashboardStats = async (req, res) => {
   try {
-    const stats = {
-      totalUsers: 12450,
-      activeSessions: 843,
-      monthlyGrowth: 12,
-      uptime: '24d 13h',
-      recentActivity: [
-        {
-          id: '1',
-          user: 'Nguyễn Văn A',
-          action: 'Hoàn thành workout Push Day',
-          timestamp: new Date().toISOString(),
-          type: 'workout'
-        },
-        {
-          id: '2',
-          user: 'Trần Thị B',
-          action: 'Tạo workout mới Cardio HIIT',
-          timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-          type: 'workout'
-        },
-        {
-          id: '3',
-          user: 'Lê Văn C',
-          action: 'Cập nhật profile',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          type: 'profile'
-        },
-        {
-          id: '4',
-          user: 'Phạm Thị D',
-          action: 'Đăng nhập hệ thống',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          type: 'login'
+    // Get real statistics from database
+    const [
+      totalUsers,
+      activeUsers,
+      totalWorkouts,
+      recentWorkoutLogs,
+      userGrowth,
+      recentUsers
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ status: 'active' }),
+      Workout.countDocuments(),
+      WorkoutLog.find()
+        .populate('user_id', 'profile.full_name')
+        .populate('workout_id', 'name')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+      // Get user growth for last 30 days
+      User.countDocuments({
+        createdAt: {
+          $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         }
-      ]
+      }),
+      // Get recent user registrations
+      User.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select('email profile.full_name createdAt')
+        .lean()
+    ]);
+
+    // Calculate monthly growth
+    const lastMonthUsers = await User.countDocuments({
+      createdAt: {
+        $gte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+        $lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      }
+    });
+    
+    const monthlyGrowth = lastMonthUsers > 0 
+      ? Math.round(((userGrowth - lastMonthUsers) / lastMonthUsers) * 100)
+      : 0;
+
+    // Combine different types of activities
+    const activities = [];
+
+    // Add workout activities
+    recentWorkoutLogs.forEach(log => {
+      activities.push({
+        id: `workout_${log._id}`,
+        user: log.user_id?.profile?.full_name || 'Unknown User',
+        action: `Hoàn thành workout ${log.workout_id?.name || 'Unknown'}`,
+        timestamp: log.createdAt.toISOString(),
+        type: 'workout'
+      });
+    });
+
+    // Add user registration activities
+    console.log('Recent users found:', recentUsers.length);
+    recentUsers.forEach(user => {
+      console.log('Processing user:', user);
+      activities.push({
+        id: `register_${user._id}`,
+        user: user.profile?.full_name || user.email || 'Unknown User',
+        action: 'Đăng ký tài khoản mới',
+        timestamp: user.createdAt.toISOString(),
+        type: 'registration'
+      });
+    });
+
+    // Sort all activities by timestamp (most recent first)
+    const recentActivity = activities
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 10);
+
+    // Get system uptime (mock for now)
+    const uptime = '24d 13h';
+
+    const stats = {
+      totalUsers,
+      activeSessions: activeUsers,
+      monthlyGrowth: monthlyGrowth || 0,
+      uptime,
+      recentActivity
     };
     
-    console.log('Dashboard stats sent:', stats);
+    console.log('Dashboard stats from database:', {
+      totalUsers,
+      activeUsers,
+      monthlyGrowth,
+      activitiesCount: recentActivity.length
+    });
+    
     res.json(stats);
   } catch (error) {
     console.error('Dashboard stats error:', error);
@@ -55,72 +114,52 @@ const getUsers = async (req, res) => {
     const status = req.query.status || 'all';
     const skip = (page - 1) * limit;
 
-    // Mock data for testing
-    const mockUsers = [
-      {
-        id: '1',
-        email: 'admin@healthmate.com',
-        role: 'admin',
-        status: 'active',
-        profile: {
-          full_name: 'System Administrator',
-          phone_number: '+849012345678',
-          address: 'Hanoi, Vietnam'
-        },
-        createdAt: new Date('2024-01-01'),
-        lastLogin: new Date()
-      },
-      {
-        id: '2',
-        email: 'user@example.com',
-        role: 'user',
-        status: 'active',
-        profile: {
-          full_name: 'Regular User',
-          phone_number: '+849012345679',
-          address: 'Ho Chi Minh City, Vietnam'
-        },
-        createdAt: new Date('2024-01-15'),
-        lastLogin: new Date(Date.now() - 24 * 60 * 60 * 1000)
-      },
-      {
-        id: '3',
-        email: 'john.doe@example.com',
-        role: 'user',
-        status: 'inactive',
-        profile: {
-          full_name: 'John Doe',
-          phone_number: '+849012345680',
-          address: 'Da Nang, Vietnam'
-        },
-        createdAt: new Date('2024-02-01'),
-        lastLogin: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      }
-    ];
-
-    // Apply filters
-    let filteredUsers = mockUsers;
+    // Build query
+    const query = {};
     
     if (search) {
-      filteredUsers = filteredUsers.filter(user => 
-        user.profile.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase())
-      );
+      query.$or = [
+        { 'profile.full_name': { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
     }
     
     if (role !== 'all') {
-      filteredUsers = filteredUsers.filter(user => user.role === role);
+      query.role = role;
     }
     
     if (status !== 'all') {
-      filteredUsers = filteredUsers.filter(user => user.status === status);
+      query.status = status;
     }
 
-    const total = filteredUsers.length;
-    const users = filteredUsers.slice(skip, skip + limit);
+    // Get users with pagination
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select('-password_hash')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(query)
+    ]);
+
+    // Format users for frontend
+    const formattedUsers = users.map(user => ({
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      profile: {
+        full_name: user.profile?.full_name || '',
+        phone_number: user.profile?.phone_number || '',
+        address: user.profile?.address || ''
+      },
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin || null
+    }));
 
     res.json({
-      users,
+      users: formattedUsers,
       pagination: {
         page,
         limit,
@@ -129,6 +168,7 @@ const getUsers = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Get users error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
@@ -137,28 +177,44 @@ const createUser = async (req, res) => {
   try {
     const { email, password, role, status, profile } = req.body;
     
-    // Mock user creation
-    const newUser = {
-      id: Date.now().toString(),
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+
+    // Hash password
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = new User({
       email,
+      password_hash,
       role: role || 'user',
       status: status || 'active',
       profile: {
         full_name: profile.full_name,
         phone_number: profile.phone_number || '',
         address: profile.address || ''
-      },
-      createdAt: new Date(),
-      lastLogin: null
-    };
+      }
+    });
 
-    console.log('User created:', newUser);
+    await newUser.save();
+
+    // Return user without password
+    const userResponse = newUser.toObject();
+    delete userResponse.password_hash;
+
+    console.log('User created successfully:', userResponse.email);
     
     res.status(201).json({
       message: 'User created successfully',
-      user: newUser
+      user: userResponse
     });
   } catch (error) {
+    console.error('Create user error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
@@ -166,15 +222,45 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { role, status, profile } = req.body;
+    const { role, status, profile, password } = req.body;
     
-    console.log('User updated:', { id, role, status, profile });
+    // Find user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update fields
+    if (role) user.role = role;
+    if (status) user.status = status;
+    if (profile) {
+      user.profile = {
+        ...user.profile,
+        ...profile
+      };
+    }
+
+    // Update password if provided
+    if (password) {
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      user.password_hash = await bcrypt.hash(password, salt);
+    }
+
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password_hash;
+
+    console.log('User updated successfully:', userResponse.email);
     
     res.json({
       message: 'User updated successfully',
-      user: { id, role, status, profile }
+      user: userResponse
     });
   } catch (error) {
+    console.error('Update user error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
@@ -183,12 +269,117 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     
-    console.log('User deleted:', id);
+    // Check if user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Delete user's workout logs
+    await WorkoutLog.deleteMany({ user_id: id });
+
+    // Delete user
+    await User.findByIdAndDelete(id);
+    
+    console.log('User deleted successfully:', user.email);
     
     res.json({
       message: 'User deleted successfully'
     });
   } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+const getChartData = async (req, res) => {
+  try {
+    const { period = 'month' } = req.query;
+    
+    let dateFormat, groupBy, monthsBack;
+    switch (period) {
+      case 'day':
+        dateFormat = '%Y-%m-%d';
+        groupBy = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
+        monthsBack = 1; // 30 days
+        break;
+      case 'week':
+        dateFormat = '%Y-%U';
+        groupBy = { $dateToString: { format: '%Y-%U', date: '$createdAt' } };
+        monthsBack = 3; // 12 weeks
+        break;
+      case 'month':
+      default:
+        dateFormat = '%Y-%m';
+        groupBy = { $dateToString: { format: '%Y-%m', date: '$createdAt' } };
+        monthsBack = 12; // 12 months
+        break;
+    }
+
+    // Get user registration data grouped by period
+    const userGrowthData = await User.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(Date.now() - monthsBack * 30 * 24 * 60 * 60 * 1000)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: groupBy,
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Fill missing periods with 0
+    const filledData = [];
+    const now = new Date();
+    
+    if (period === 'month') {
+      for (let i = monthsBack - 1; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const periodKey = date.toISOString().slice(0, 7); // YYYY-MM
+        const found = userGrowthData.find(d => d._id === periodKey);
+        filledData.push({
+          _id: periodKey,
+          count: found ? found.count : 0
+        });
+      }
+    } else if (period === 'day') {
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const periodKey = date.toISOString().slice(0, 10); // YYYY-MM-DD
+        const found = userGrowthData.find(d => d._id === periodKey);
+        filledData.push({
+          _id: periodKey,
+          count: found ? found.count : 0
+        });
+      }
+    } else if (period === 'week') {
+      // Generate week numbers for the last 12 weeks
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - (i * 7));
+        const weekNumber = Math.ceil((date.getDate() + new Date(date.getFullYear(), date.getMonth(), 1).getDay()) / 7);
+        const periodKey = `${date.getFullYear()}-${weekNumber.toString().padStart(2, '0')}`;
+        const found = userGrowthData.find(d => d._id === periodKey);
+        filledData.push({
+          _id: periodKey,
+          count: found ? found.count : 0
+        });
+      }
+    }
+
+    res.json({
+      userGrowth: filledData,
+      period
+    });
+  } catch (error) {
+    console.error('Chart data error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
@@ -278,6 +469,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  getChartData,
   getSystemLogs,
   createBackup,
   systemRecovery,

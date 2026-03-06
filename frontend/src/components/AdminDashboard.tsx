@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/admin-dashboard.css';
 
@@ -18,75 +18,285 @@ interface DashboardStats {
     user: string;
     action: string;
     timestamp: string;
-    type: 'login' | 'workout' | 'profile' | 'system';
+    type: 'login' | 'workout' | 'profile' | 'system' | 'registration';
   }>;
   uptime: string;
 }
 
+interface ChartData {
+  userGrowth: Array<{ _id: string; count: number }>;
+  period: string;
+}
+
+// Simple chart component with line overlay
+const SimpleBarChart: React.FC<{ data: Array<{ _id: string; count: number }>, period: string }> = ({ data, period }) => {
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  
+  const formatLabel = (label: string) => {
+    switch (period) {
+      case 'month':
+        return new Date(label + '-01').toLocaleDateString('vi-VN', { month: 'short', year: '2-digit' });
+      case 'day':
+        return new Date(label).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' });
+      case 'week':
+        return `Tuần ${label.split('-')[1]}`;
+      default:
+        return label;
+    }
+  };
+
+  const getBarColor = (count: number) => {
+    if (count === 0) return 'bg-gray-600';
+    if (count === maxCount) return 'bg-green-500';
+    return 'bg-primary';
+  };
+
+  // Create smooth curve points using quadratic bezier curves
+  const smoothPoints = [];
+  for (let i = 0; i < data.length; i++) {
+    const x = (i / (data.length - 1)) * 100;
+    const y = 100 - (maxCount > 0 ? Math.max((data[i].count / maxCount) * 100, 2) : 2);
+    
+    if (i === 0) {
+      smoothPoints.push(`M ${x} ${y}`);
+    } else {
+      const prevX = ((i - 1) / (data.length - 1)) * 100;
+      const prevY = 100 - (maxCount > 0 ? Math.max((data[i - 1].count / maxCount) * 100, 2) : 2);
+      const cpX = (prevX + x) / 2;
+      smoothPoints.push(`Q ${cpX} ${prevY} ${x} ${y}`);
+    }
+  }
+  const smoothPath = smoothPoints.join(' ');
+
+  // Create area fill points (add bottom corners to close the shape)
+  const areaPoints = `${smoothPath} L 100,100 L 0,100 Z`;
+
+  return (
+    <div className="h-full flex flex-col relative">
+      {/* SVG Line Chart Overlay */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 10 }}>
+        {/* Gradient definitions */}
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.1" />
+          </linearGradient>
+          <linearGradient id="lineStrokeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        
+        {/* Area fill under the line */}
+        <path
+          d={areaPoints}
+          fill="url(#lineGradient)"
+        />
+        
+        {/* Main line with glow effect */}
+        <path
+          d={smoothPath}
+          fill="none"
+          stroke="url(#lineStrokeGradient)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          filter="url(#glow)"
+        />
+        
+        {/* Add dots at data points with animation */}
+        {data.map((item, index) => {
+          const x = (index / (data.length - 1)) * 100;
+          const y = 100 - (maxCount > 0 ? Math.max((item.count / maxCount) * 100, 2) : 2);
+          const hasData = item.count > 0;
+          
+          return (
+            <g key={`dot-group-${index}`}>
+              {/* Outer glow circle */}
+              {hasData && (
+                <circle
+                  cx={`${x}%`}
+                  cy={`${y}%`}
+                  r="6"
+                  fill="#10b981"
+                  opacity="0.2"
+                  className="animate-pulse"
+                />
+              )}
+              {/* Main dot */}
+              <circle
+                cx={`${x}%`}
+                cy={`${y}%`}
+                r={hasData ? "4" : "2"}
+                fill={hasData ? "#10b981" : "#6b7280"}
+                stroke="#1f2937"
+                strokeWidth="1"
+                className={hasData ? "drop-shadow-lg" : ""}
+              />
+              {/* Value label for significant points */}
+              {hasData && item.count === maxCount && (
+                <text
+                  x={`${x}%`}
+                  y={`${y - 8}%`}
+                  fill="#10b981"
+                  fontSize="10"
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  className="drop-shadow-md"
+                >
+                  {item.count}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      <div className="flex-1 flex items-end justify-between gap-1 min-h-[120px] relative" style={{ zIndex: 5 }}>
+        {data.map((item) => {
+          const height = maxCount > 0 ? Math.max((item.count / maxCount) * 100, 2) : 2;
+          return (
+            <div key={item._id} className="flex-1 flex flex-col items-center group">
+              <div 
+                className={`w-full ${getBarColor(item.count)} rounded-t transition-all duration-300 hover:opacity-80 relative`}
+                style={{ height: `${height}%` }}
+                title={`${formatLabel(item._id)}: ${item.count} users`}
+              >
+                {item.count > 0 && (
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    {item.count}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* X-axis labels */}
+      <div className="flex justify-between gap-1 mt-2">
+        {data.map((item, index) => {
+          const showLabel = index === 0 || index === Math.floor(data.length / 2) || index === data.length - 1;
+          return (
+            <div key={item._id} className="flex-1 text-center">
+              {showLabel && (
+                <p className="text-xs text-text-dim whitespace-nowrap">
+                  {formatLabel(item._id)}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Statistics */}
+      <div className="mt-3 pt-2 border-t border-[#28392e] flex justify-between text-xs">
+        <span className="text-text-dim">
+          Tổng: {data.reduce((sum, d) => sum + d.count, 0)} users
+        </span>
+        <span className="text-text-dim">
+          Đỉnh: {maxCount} users
+        </span>
+        <span className="text-text-dim">
+          TB: {Math.round(data.reduce((sum, d) => sum + d.count, 0) / data.length)} users/{period === 'month' ? 'tháng' : period === 'day' ? 'ngày' : 'tuần'}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 12450,
-    activeSessions: 843,
-    monthlyGrowth: 12,
+    totalUsers: 0,
+    activeSessions: 0,
+    monthlyGrowth: 0,
     systemHealth: 'good',
-    uptime: '24d 13h',
-    recentActivity: [
-      {
-        id: '1',
-        user: 'Nguyễn Văn A',
-        action: 'Hoàn thành workout Push Day',
-        timestamp: '2024-03-15T10:30:00Z',
-        type: 'workout'
-      },
-      {
-        id: '2',
-        user: 'Trần Thị B',
-        action: 'Tạo workout mới Cardio HIIT',
-        timestamp: '2024-03-15T09:45:00Z',
-        type: 'workout'
-      },
-      {
-        id: '3',
-        user: 'Lê Văn C',
-        action: 'Cập nhật profile',
-        timestamp: '2024-03-15T09:15:00Z',
-        type: 'profile'
-      },
-      {
-        id: '4',
-        user: 'Phạm Thị D',
-        action: 'Đăng nhập hệ thống',
-        timestamp: '2024-03-15T08:30:00Z',
-        type: 'login'
-      }
-    ]
+    uptime: '0d 0h',
+    recentActivity: []
   });
   const [loading, setLoading] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
-  const [activeNav, setActiveNav] = useState('dashboard');
+  const [chartData, setChartData] = useState<ChartData>({
+    userGrowth: [],
+    period: 'month'
+  });
 
-  useEffect(() => {
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, [selectedPeriod]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      // Simulate API calls
-      const response = await fetch('http://localhost:8000/api/admin/dashboard');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      
+      const response = await fetch('http://localhost:8000/api/admin/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setStats(data);
+      } else if (response.status === 401) {
+        navigate('/login');
+      } else {
+        console.error('Failed to fetch dashboard data');
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  const fetchChartData = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:8000/api/admin/chart-data?period=${selectedPeriod}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setChartData(data);
+      } else if (response.status === 401) {
+        navigate('/login');
+      } else {
+        console.error('Failed to fetch chart data');
+      }
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    }
+  }, [navigate, selectedPeriod]);
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchChartData();
+    const interval = setInterval(() => {
+      fetchDashboardData();
+      fetchChartData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [selectedPeriod, fetchDashboardData, fetchChartData]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -150,11 +360,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => navigate(item.route)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                  activeNav === item.id
-                    ? 'bg-primary/20 border border-primary/10 text-primary'
-                    : 'text-text-dim hover:bg-[#28392e] hover:text-white'
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-text-dim hover:bg-[#28392e] hover:text-white`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
                 <p className="text-sm font-medium leading-normal">{item.label}</p>
@@ -269,14 +475,20 @@ const AdminDashboard: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                <div className="h-64 bg-[#112218] rounded-lg flex items-center justify-center">
+                <div className="h-64 bg-[#112218] rounded-lg p-4">
                   {loading ? (
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <div className="h-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : chartData.userGrowth.length > 0 ? (
+                    <SimpleBarChart data={chartData.userGrowth} period={chartData.period} />
                   ) : (
-                    <div className="text-center">
-                      <span className="material-symbols-outlined text-4xl text-primary mb-2">trending_up</span>
-                      <p className="text-text-dim">User Growth Chart</p>
-                      <p className="text-xs text-text-dim mt-1">+{stats.monthlyGrowth}% average growth</p>
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <span className="material-symbols-outlined text-4xl text-primary mb-2">bar_chart</span>
+                        <p className="text-text-dim">No data available</p>
+                        <p className="text-xs text-text-dim mt-1">Try a different time period</p>
+                      </div>
                     </div>
                   )}
                 </div>

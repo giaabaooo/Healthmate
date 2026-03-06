@@ -19,8 +19,11 @@ const userSchema = new mongoose.Schema({
   },
   status: { 
     type: String, 
-    enum: ['active', 'banned'], 
+    enum: ['active', 'inactive', 'banned'], 
     default: 'active' 
+  },
+  lastLogin: {
+    type: Date
   },
   // Nhúng trực tiếp Profile vào User để tối ưu truy vấn
   profile: {
@@ -29,7 +32,10 @@ const userSchema = new mongoose.Schema({
     birth_date: { type: Date },
     height_cm: { type: Number },
     weight_kg: { type: Number },
-    goal: { type: String, enum: ['muscle_gain', 'fat_loss', 'maintain'] }
+    goal: { type: String, enum: ['muscle_gain', 'fat_loss', 'maintain'] },
+    phone_number: { type: String },
+    address: { type: String },
+    picture: { type: String }
   }
 }, { 
   timestamps: true // Tự động tạo created_at và updated_at

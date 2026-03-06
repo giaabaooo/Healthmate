@@ -6,6 +6,7 @@ const {
   createUser,
   updateUser,
   deleteUser,
+  getChartData,
   getSystemLogs,
   createBackup,
   systemRecovery,
@@ -19,6 +20,9 @@ router.use(requireAdmin);
 
 // Dashboard statistics
 router.get('/dashboard', getDashboardStats);
+
+// Chart data
+router.get('/chart-data', getChartData);
 
 // User management CRUD
 router.get('/users', getUsers);

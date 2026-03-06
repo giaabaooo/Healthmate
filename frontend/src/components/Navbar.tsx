@@ -29,11 +29,15 @@ const Navbar = () => {
       <div className="flex flex-1 justify-end gap-8 items-center">
         {/* Navigation Links */}
         <nav className="flex items-center gap-9">
-          <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/overview">Dashboard</Link>
+          <Link className="text-slate-600 hover:text-primary text-sm font-medium" to={user?.role === 'admin' ? '/admin/dashboard' : '/overview'}>
+            Dashboard
+          </Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/workouts">Workouts</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/meal-planner">Meal Plan</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/aicoach">AI Coach</Link>
-          <Link className="text-slate-600 hover:text-primary text-sm font-medium bg-red-100 px-3 py-1 rounded" to="/admin/dashboard">Admin</Link>
+          {user?.role === 'admin' && (
+            <Link className="text-slate-600 hover:text-primary text-sm font-medium bg-red-100 px-3 py-1 rounded" to="/admin/dashboard">Admin</Link>
+          )}
         </nav>
         
         {/* Actions & Profile (Thay đổi theo trạng thái Login) */}
