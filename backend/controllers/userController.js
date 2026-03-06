@@ -201,10 +201,22 @@ const googleLogin = async (req, res) => {
   }
 };
 
+// [GET] Danh sách customers (admin only)
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find({ role: 'user' })
+      .select('_id email profile.full_name')
+      .sort({ 'profile.full_name': 1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
   updateProfile,
-  googleLogin 
+  getUsers
 };

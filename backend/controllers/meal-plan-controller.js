@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const MealPlan = require('../models/MealPlan');
 const Food = require('../models/Food');
 
@@ -11,14 +12,24 @@ const parseDate = (dateStr) => {
   return date;
 };
 
+// Admin có thể override user_id bằng target_user_id trong body hoặc query
+const resolveUserId = (req) => {
+  const targetId = req.body?.target_user_id || req.query?.target_user_id;
+  if (req.user.role === 'admin' && targetId) {
+    if (!mongoose.Types.ObjectId.isValid(targetId)) {
+      const err = new Error('target_user_id không hợp lệ');
+      err.status = 400;
+      throw err;
+    }
+    return new mongoose.Types.ObjectId(targetId);
+  }
+  return new mongoose.Types.ObjectId(req.user.id);
+};
+
 const getMealPlanByDate = async (req, res) => {
   try {
     const { date } = req.params;
-    const userId = req.user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ message: 'Vui lòng đăng nhập' });
-    }
+    const userId = resolveUserId(req);
 
     const targetDate = parseDate(date);
     const mealPlan = await MealPlan.findOne({ user_id: userId, date: targetDate });
@@ -29,7 +40,7 @@ const getMealPlanByDate = async (req, res) => {
 
     res.json(mealPlan);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(error.status || 500).json({ message: error.message || 'Lỗi server' });
   }
 };
 
@@ -37,11 +48,7 @@ const addFoodToMealPlan = async (req, res) => {
   try {
     const { date } = req.params;
     const { food_id, quantity } = req.body;
-    const userId = req.user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ message: 'Vui lòng đăng nhập' });
-    }
+    const userId = resolveUserId(req);
 
     if (!food_id || !quantity || quantity <= 0) {
       return res.status(400).json({ message: 'Vui lòng cung cấp food_id và quantity hợp lệ' });
@@ -67,18 +74,14 @@ const addFoodToMealPlan = async (req, res) => {
     await mealPlan.save();
     res.status(201).json({ message: 'Thêm món ăn thành công', mealPlan });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(error.status || 500).json({ message: error.message || 'Lỗi server' });
   }
 };
 
 const removeFoodFromMealPlan = async (req, res) => {
   try {
     const { date, itemId } = req.params;
-    const userId = req.user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ message: 'Vui lòng đăng nhập' });
-    }
+    const userId = resolveUserId(req);
 
     const targetDate = parseDate(date);
     const mealPlan = await MealPlan.findOne({ user_id: userId, date: targetDate });
@@ -98,7 +101,7 @@ const removeFoodFromMealPlan = async (req, res) => {
     await mealPlan.save();
     res.json({ message: 'Xóa món ăn thành công', mealPlan });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(error.status || 500).json({ message: error.message || 'Lỗi server' });
   }
 };
 
@@ -106,11 +109,7 @@ const updateFoodQuantity = async (req, res) => {
   try {
     const { date, itemId } = req.params;
     const { quantity } = req.body;
-    const userId = req.user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ message: 'Vui lòng đăng nhập' });
-    }
+    const userId = resolveUserId(req);
 
     if (!quantity || quantity <= 0) {
       return res.status(400).json({ message: 'Số lượng phải lớn hơn 0' });
@@ -140,7 +139,7 @@ const updateFoodQuantity = async (req, res) => {
     await mealPlan.save();
     res.json({ message: 'Cập nhật số lượng thành công', mealPlan });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(error.status || 500).json({ message: error.message || 'Lỗi server' });
   }
 };
 
