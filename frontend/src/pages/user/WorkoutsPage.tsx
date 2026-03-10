@@ -14,7 +14,6 @@ const WorkoutsPage = () => {
   const [categoryId, setCategoryId] = useState("");
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
    const [newWorkout, setNewWorkout] = useState({
   title: "",
   cover_image: "",
@@ -207,7 +206,7 @@ const handleCreateWorkout = async () => {
       {/* COVER IMAGE */}
       <div className="relative">
         <img
-          src={w.cover_image || "https://via.placeholder.com/400x250"}
+          src={ "https://via.placeholder.com/400x250"}
           alt={w.title}
           className="w-full h-52 object-cover"
         />
@@ -341,6 +340,16 @@ const handleCreateWorkout = async () => {
 
           {newWorkout.exercises.map((ex, index) => (
             <div key={index} className="border p-4 rounded-lg mb-3">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <p className="text-sm font-semibold text-slate-700">Exercise #{index + 1}</p>
+                <button
+                  type="button"
+                  onClick={() => removeExercise(index)}
+                  className="text-xs font-bold text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
               <input
                 placeholder="Exercise Title"
                 className="border p-2 rounded w-full mb-2"

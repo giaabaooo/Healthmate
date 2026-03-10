@@ -22,7 +22,6 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<UserResponse | null>(null);
-  const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<Profile['gender'] | ''>('');
   const [height, setHeight] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
@@ -46,6 +45,7 @@ const ProfilePage = () => {
 
   const displayHeight = bmiHeight;
   const displayWeight = bmiWeight;
+  const displayName = user?.profile?.full_name || 'User';
 
   const bmi =
     bmiHeight && bmiWeight
@@ -73,7 +73,6 @@ const ProfilePage = () => {
       if (localUser) {
         const parsedUser = JSON.parse(localUser);
         setUser(parsedUser);
-        setFullName(parsedUser.profile?.full_name || '');
         setGender(parsedUser.profile?.gender || '');
         setHeight(parsedUser.profile?.height_cm ? String(parsedUser.profile.height_cm) : '');
         setWeight(parsedUser.profile?.weight_kg ? String(parsedUser.profile.weight_kg) : '');
@@ -123,7 +122,6 @@ const ProfilePage = () => {
         }
 
         setUser(data);
-        setFullName(data.profile?.full_name || '');
         setGender((data.profile?.gender as Profile['gender']) || '');
         setHeight(
           typeof data.profile?.height_cm === 'number'
@@ -182,7 +180,7 @@ const ProfilePage = () => {
           <aside className="w-64 border-r border-primary/5 bg-white dark:bg-slate-900 p-6 flex-col gap-6 hidden xl:flex">
             <div className="flex flex-col gap-1">
               <h3 className="text-slate-900 dark:text-white font-bold">
-                {fullName || 'User'}
+                {displayName}
               </h3>
               <p className="text-primary text-xs font-semibold uppercase tracking-wider">
                 Premium Member
@@ -296,7 +294,7 @@ const ProfilePage = () => {
                             Họ và tên
                           </p>
                           <p className="text-sm font-medium text-slate-900 dark:text-white">
-                            {fullName || '—'}
+                            {displayName || '—'}
                           </p>
                         </div>
 

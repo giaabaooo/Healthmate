@@ -5,15 +5,17 @@ const {
   loginUser,
   getMe,
   updateProfile,
-  googleLogin 
+  getUsers
 } = require('../controllers/userController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-router.post('/google-login', googleLogin); // Thêm API Google Login
 
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfile);
+
+// Lấy danh sách customers (admin only)
+router.get('/', protect, adminOnly, getUsers);
 
 module.exports = router;
