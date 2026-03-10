@@ -12,11 +12,11 @@ const {
   systemRecovery,
   getSystemPerformance
 } = require('../controllers/adminController');
-const { protect, requireAdmin } = require('../middleware/authMiddleware');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 // Apply admin protection to all routes
 router.use(protect);
-router.use(requireAdmin);
+router.use(adminOnly);
 
 // Dashboard statistics
 router.get('/dashboard', getDashboardStats);

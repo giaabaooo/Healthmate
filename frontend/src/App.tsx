@@ -7,7 +7,8 @@ import AdminRoute from './components/AdminRoute';
 import AiCoachPage from './pages/AiCoachPage';
 import FoodCatalogPage from './pages/user/FoodCatalogPage';
 import MealPlannerPage from './pages/user/MealPlannerPage';
-import AdminDashboardPage from './pages/user/AdminDashboardPage';
+import AdminDashboard from './components/AdminDashboard';
+import UserManagement from './components/UserManagement';
 import AdminMealPlannerPage from './pages/AdminMealPlannerPage';
 import AdminFoodCatalogPage from './pages/AdminFoodCatalogPage';
 import WorkoutsPage from './pages/user/WorkoutsPage';
@@ -76,9 +77,15 @@ export default function App() {
           <Route path='/workout-user' element={<WorkoutUser />} />
           <Route path='/community-feed' element={<CommunityFeed />} />
           
+          {/* Admin routes */}
+          <Route element={<ProtectedRoute requiredRole="admin" />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+          </Route>
+
           {/* Admin - chỉ cho phép role === 'admin' */}
           <Route element={<AdminRoute />}>
-            <Route path="/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/dashboard" element={<AdminDashboard />} />
             <Route path="/dashboard/foods" element={<AdminFoodCatalogPage />} />
             <Route path="/dashboard/meal-planner" element={<AdminMealPlannerPage />} />
           </Route>
