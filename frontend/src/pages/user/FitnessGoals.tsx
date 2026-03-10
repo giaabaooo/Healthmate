@@ -1,13 +1,21 @@
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import Layout from '../../components/Layout';
-
+import Layout from '../components/Layout';
+import { useEffect, useState } from "react";
+import { getTodayProgress } from "../services/progressService";
+import {
+  getUserGoal,
+  getMicroGoals,
+  toggleMicroGoal,
+  createMicroGoal,
+  deleteMicroGoal,
+  updateMotivation
+} from "../services/goalService";
 // ─── Types ───────────────────────────────────────────────────────────────────
-
 interface MicroGoal {
-  id: number;
+  _id: string;
+  goal_id?: string;
   label: string;
   done: boolean;
+  week?: number;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -17,54 +25,144 @@ const Icon = ({ name, className = '' }: { name: string; className?: string }) =>
 );
 
 const MicroGoalItem = ({
-  goal,
-  onToggle,
+ goal,
+ onToggle,
+ onDelete,
 }: {
-  goal: MicroGoal;
-  onToggle: (id: number) => void;
+ goal: MicroGoal;
+ onToggle: (id: string) => void;
+ onDelete: (id: string) => void;
 }) => (
-  <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors group">
-    <input
-      type="checkbox"
-      checked={goal.done}
-      onChange={() => onToggle(goal.id)}
-      className="form-checkbox rounded text-primary border-slate-300 dark:border-slate-600 focus:ring-primary/50 h-5 w-5 bg-transparent"
-    />
-    <span
-      className={`text-sm font-medium transition-colors ${
-        goal.done
-          ? 'line-through text-slate-400'
-          : 'text-slate-900 dark:text-white group-hover:text-primary'
-      }`}
-    >
-      {goal.label}
-    </span>
-  </label>
+<div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 group">
+
+<label className="flex items-center gap-3 cursor-pointer">
+<input
+type="checkbox"
+checked={goal.done}
+onChange={() => onDelete(goal._id)}
+className="form-checkbox rounded text-primary h-5 w-5"
+/>
+
+<span
+className={`text-sm font-medium ${
+goal.done
+? "line-through text-slate-400"
+: "text-slate-900 dark:text-white"
+}`}
+>
+{goal.label}
+</span>
+</label>
+
+
+
+</div>
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const FitnessGoal = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-  const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-  const displayName = parsedUser?.profile?.full_name || 'User';
-  const [motivation, setMotivation] = useState(
-    "I want to feel stronger and improve my posture for my wedding in December. It's about confidence and long-term health."
-  );
+const [newGoal, setNewGoal] = useState("");
+ const [progress, setProgress] = useState<any>(null);
+const [goal, setGoal] = useState<any>(null);
+const [microGoals, setMicroGoals] = useState<MicroGoal[]>([]);
+const [motivation, setMotivation] = useState("");
+const completed = microGoals.filter(g => g.done).length;
+const total = microGoals.length;
 
-  const [microGoals, setMicroGoals] = useState<MicroGoal[]>([
-    { id: 1, label: 'Hit protein target (180g)', done: true },
-    { id: 2, label: 'Complete 4 gym sessions', done: false },
-    { id: 3, label: 'Sleep 8 hours avg', done: false },
-    { id: 4, label: 'No sugar for 3 days', done: false },
-  ]);
+const progressPercent = total === 0 ? 0 : (completed / total) * 100;
+// load progress
+useEffect(() => {
+  const loadProgress = async () => {
+    try {
+      const data = await getTodayProgress();
+      setProgress(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-  const toggleGoal = (id: number) =>
-    setMicroGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, done: !g.done } : g))
-    );
+  loadProgress();
+}, []);
+
+
+// load goals
+useEffect(() => {
+  const loadGoals = async () => {
+    try {
+
+      const goalData = await getUserGoal();
+      console.log("goalData:", goalData);
+
+      setGoal(goalData);
+
+      if (goalData?.motivation) {
+        setMotivation(goalData.motivation);
+      }
+
+      if (goalData?._id) {
+
+        const micro = await getMicroGoals(goalData._id);
+
+        console.log("micro goals:", micro);
+
+        setMicroGoals(micro);
+      }
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  loadGoals();
+}, []);
+//add Goal
+const addGoal = async () => {
+
+  if (!newGoal.trim()) return;
+
+  try {
+
+    const created = await createMicroGoal(goal._id, newGoal);
+
+    setMicroGoals([...microGoals, created]);
+
+    setNewGoal("");
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+//Xoa micro goal
+const removeGoal = async (id: string) => {
+
+  try {
+
+    await deleteMicroGoal(id);
+
+    setMicroGoals(microGoals.filter(g => g._id !== id));
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+  // toggle micro goal
+  const toggleGoal = async (id: string) => {
+    try {
+
+      await toggleMicroGoal(id);
+
+      setMicroGoals((prev) =>
+        prev.map((g) =>
+          g._id === id ? { ...g, done: !g.done } : g
+        )
+      );
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <Layout>
@@ -74,7 +172,7 @@ const FitnessGoal = () => {
           {/* ── Sidebar ── */}
           <aside className="w-64 border-r border-primary/5 bg-white dark:bg-slate-900 p-6 flex-col gap-6 hidden xl:flex">
             <div className="flex flex-col gap-1">
-              <h3 className="text-slate-900 dark:text-white font-bold">{displayName}</h3>
+              <h3 className="text-slate-900 dark:text-white font-bold">Alex Johnson</h3>
               <p className="text-primary text-xs font-semibold uppercase tracking-wider">
                 Premium Member
               </p>
@@ -82,43 +180,49 @@ const FitnessGoal = () => {
 
             <nav className="flex flex-col gap-2">
               {[
-                { icon: 'grid_view', label: 'Overview', path: '/overview' },
-                { icon: 'person_edit', label: 'Profile Settings', path: '/profile' },
-                { icon: 'ads_click', label: 'Fitness Goals', path: '/fitness-goals' },
-                { icon: 'analytics', label: 'Assessments', path: '/overview' },
-                { icon: 'calendar_month', label: 'Schedules', path: '/schedule' },
-              ].map(({ icon, label, path }) => {
-                const isActive = path ? location.pathname === path : false;
-                const isClickable = Boolean(path);
-
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => path && navigate(path)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-primary text-slate-900 font-bold shadow-lg shadow-primary/20'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    } ${!isClickable ? 'cursor-default' : ''}`}
-                  >
-                    <Icon name={icon} className="text-lg" />
-                    <span className="text-sm">{label}</span>
-                  </button>
-                );
-              })}
+                { icon: 'grid_view', label: 'Overview' },
+                { icon: 'person', label: 'Profile Settings' },
+                { icon: 'ads_click', label: 'Fitness Goals', active: true },
+                { icon: 'analytics', label: 'Assessments' },
+                { icon: 'calendar_month', label: 'Schedules' },
+              ].map(({ icon, label, active }) => (
+                <button
+                  key={label}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
+                    active
+                      ? 'bg-primary text-slate-900 font-bold shadow-lg shadow-primary/20'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon name={icon} className="text-lg" />
+                  <span className="text-sm">{label}</span>
+                </button>
+              ))}
             </nav>
 
             <div className="mt-auto p-4 rounded-xl bg-primary/10 border border-primary/20">
               <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
                 Daily Progress
               </p>
-              <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className="bg-primary h-full w-[65%] rounded-full" />
+              <div className="h-1.5 w -full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <p className="text-xs text-slate-500 mt-2">
+ {completed} / {total} micro goals completed
+</p>
+                <div
+  className="bg-primary h-full rounded-full"
+  style={{ width: `${progressPercent}%` }}
+/>
               </div>
-              <p className="text-[10px] mt-2 text-slate-500">
-                65% of your daily goal achieved
-              </p>
+              {progress && (
+  <p className="text-[10px] mt-2 text-slate-500">
+    {progress.totalWorkouts} workouts today
+  </p>
+)}
+{progress && (
+  <div className="text-sm text-slate-500">
+    🔥 Calories burned: {progress.totalCalories}
+  </div>
+)}
             </div>
           </aside>
 
@@ -333,19 +437,45 @@ const FitnessGoal = () => {
 
                 {/* Micro Goals */}
                 <section className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                      This Week's Micro-Goals
-                    </h2>
-                    <button className="text-slate-400 hover:text-primary transition-colors">
-                      <Icon name="more_horiz" className="text-sm" />
-                    </button>
-                  </div>
+                  <div className="flex flex-col gap-3 mb-4">
+
+<h2 className="text-lg font-bold text-slate-900 dark:text-white">
+This Week's Micro-Goals
+</h2>
+
+<div className="flex items-center gap-2 w-full">
+
+<input
+value={newGoal}
+onChange={(e) => setNewGoal(e.target.value)}
+onKeyDown={(e) => {
+  if (e.key === "Enter") addGoal();
+}}
+placeholder="Add new micro goal..."
+className="flex-1 min-w-0 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800"
+/>
+
+<button
+onClick={addGoal}
+className="shrink-0 bg-primary text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/80"
+>
+Add
+</button>
+
+</div>
+
+</div>
                   <div className="space-y-1">
-                    {microGoals.map((goal) => (
-                      <MicroGoalItem key={goal.id} goal={goal} onToggle={toggleGoal} />
-                    ))}
+                  {microGoals.map(goal => (
+  <MicroGoalItem
+    key={goal._id}
+    goal={goal}
+    onToggle={toggleGoal}
+    onDelete={removeGoal}
+  />
+))}
                   </div>
+                  
                 </section>
 
               </div>

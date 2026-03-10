@@ -17,6 +17,10 @@ const workoutSchema = new mongoose.Schema(
       type: Number,
       default: 30,
     },
+    met: {
+      type: Number,
+      default: 5,
+    },
     calories: {
       type: Number,
       default: 200,
