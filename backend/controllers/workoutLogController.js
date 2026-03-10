@@ -17,7 +17,7 @@ const createWorkoutLog = async (req, res) => {
       return res.status(404).json({
         message: "Workout not found",
       });
-    }
+    } 
 
     const log = await WorkoutLog.create({
       user_id: req.user.id,

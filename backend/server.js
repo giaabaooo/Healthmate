@@ -10,11 +10,12 @@ const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const foodRoutes = require("./routes/food-routes");
 const mealPlanRoutes = require("./routes/meal-plan-routes");
-const trackerRoutes = require("./routes/trackerRoutes");
 const progressRoutes = require("./routes/progressRoutes");
 const workoutLogRoutes = require("./routes/workoutLogRoutes");
 const userWorkoutRoutes = require("./routes/userWorkouts");
 const UserWorkout = require("./models/UserWorkout");
+const goalRoutes = require("./routes/goalRoutes");
+const microGoalRoutes = require("./routes/microGoalRoutes");
 // Kết nối database
 connectDB();
 
@@ -42,10 +43,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/foods", foodRoutes);
 app.use("/api/meal-plans", mealPlanRoutes);
-app.use("/api/tracker", trackerRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/workout-logs", workoutLogRoutes);
 app.use("/api/user/workouts", userWorkoutRoutes); // user
+app.use("/api/goals", goalRoutes);
+app.use("/api/micro-goals", microGoalRoutes);
 
 // API test thử
 app.get("/", (req, res) => {
