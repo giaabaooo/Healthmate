@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HealthMate | AI Health Coach &amp; Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<!-- Navigation Sidebar -->
+<nav class="fixed left-0 top-0 h-full w-20 flex flex-col items-center py-8 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50">
+<div class="mb-10 text-primary">
+<span class="material-icons text-4xl">analytics</span>
+</div>
+<div class="flex flex-col gap-8">
+<button class="p-3 rounded-xl bg-primary/10 text-primary">
+<span class="material-icons">dashboard</span>
+</button>
+<button class="p-3 rounded-xl text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons">fitness_center</span>
+</button>
+<button class="p-3 rounded-xl text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons">restaurant_menu</span>
+</button>
+<button class="p-3 rounded-xl text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons">psychology</span>
+</button>
+<button class="p-3 rounded-xl text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons">settings</span>
+</button>
+</div>
+<div class="mt-auto">
+<img class="w-10 h-10 rounded-full border-2 border-primary" data-alt="User profile avatar portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuATe1d7JgwiTljzVnZ1B5E--OhsVHDQDO0PzzcDwA-axYN5IisezGNZZK55kUSOFiftkXA9J6TpXC11A5kyjBEyk1PlgFVE4IVnh96UxYMSAEQ1EAZux4CLo3bQCZVpx7Ed2AzNtKx4jGRZJGTtVvX0i2_qfBjrm1WBLDfUo7iC884_gQTEFGfoGMZA-1cREq_etbiEN9aOnbWkaUmVxwzl45AXI3h-iRstJ5GF6D7GqV1zK31txqCF2uYZvG5hgh-2PkBajuxSsMM"/>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-20 p-8 grid grid-cols-12 gap-6">
+<!-- Header Section -->
+<header class="col-span-12 flex justify-between items-center mb-4">
+<div>
+<h1 class="text-3xl font-bold tracking-tight">Health Analytics <span class="text-primary">&amp; AI Coach</span></h1>
+<p class="text-slate-500 dark:text-slate-400">Deep biological insights powered by HealthMate AI</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+<span class="w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+<span class="text-sm font-medium">Live Biometrics Syncing</span>
+</div>
+<button class="px-6 py-2 bg-primary text-slate-900 font-bold rounded-lg hover:opacity-90 transition-opacity">
+                    Export Report
+                </button>
+</div>
+</header>
+<!-- Left Column: Health Metrics & Body Impact -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<!-- Key Metrics Grid -->
+<div class="grid grid-cols-3 gap-6">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<span class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Metabolic Rate</span>
+<span class="material-icons text-primary">speed</span>
+</div>
+<div class="text-3xl font-bold">2,140 <span class="text-sm font-normal text-slate-400">kcal</span></div>
+<div class="mt-2 text-xs text-primary flex items-center">
+<span class="material-icons text-xs mr-1">trending_up</span> 12% vs last week
+                    </div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<span class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Recovery Score</span>
+<span class="material-icons text-primary">battery_charging_full</span>
+</div>
+<div class="text-3xl font-bold">88<span class="text-sm font-normal text-slate-400">%</span></div>
+<div class="mt-2 text-xs text-primary flex items-center">
+                        Optimal State
+                    </div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<span class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Sleep Quality</span>
+<span class="material-icons text-primary">nights_stay</span>
+</div>
+<div class="text-3xl font-bold">7h 42m</div>
+<div class="mt-2 text-xs text-amber-500 flex items-center">
+<span class="material-icons text-xs mr-1">warning</span> Light REM deficit
+                    </div>
+</div>
+</div>
+<!-- Body Impact Visualization -->
+<div class="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-xl font-bold">Workout Impact Analysis</h2>
+<div class="flex gap-2">
+<button class="px-3 py-1 text-xs font-semibold rounded bg-primary/20 text-primary border border-primary/30">7D</button>
+<button class="px-3 py-1 text-xs font-semibold rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">30D</button>
+</div>
+</div>
+<div class="h-64 relative flex items-end justify-between gap-2 px-4">
+<!-- Fake Chart Bars -->
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style="height: 60%">
+<div class="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all" style="height: 100%"></div>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style="height: 45%">
+<div class="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all" style="height: 100%"></div>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style="height: 85%">
+<div class="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all" style="height: 100%"></div>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style="height: 30%">
+<div class="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all" style="height: 100%"></div>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style="height: 95%">
+<div class="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all" style="height: 100%"></div>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style="height: 70%">
+<div class="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all" style="height: 100%"></div>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style="height: 55%">
+<div class="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all" style="height: 100%"></div>
+</div>
+</div>
+<div class="flex justify-between mt-4 text-xs text-slate-400 font-medium">
+<span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+</div>
+</div>
+<!-- Injury Risk & Performance Insights -->
+<div class="grid grid-cols-2 gap-6">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<h3 class="font-bold mb-4">Injury Risk Assessment</h3>
+<div class="relative flex flex-col items-center">
+<div class="w-48 h-24 overflow-hidden relative">
+<!-- Gauge UI -->
+<div class="absolute top-0 w-48 h-48 rounded-full border-[12px] border-slate-100 dark:border-slate-800"></div>
+<div class="absolute top-0 w-48 h-48 rounded-full border-[12px] border-transparent border-l-primary border-t-primary rotate-[15deg]"></div>
+</div>
+<div class="absolute top-16 text-center">
+<span class="text-2xl font-bold">Low</span>
+<p class="text-[10px] text-slate-400 uppercase">Current Risk Level</p>
+</div>
+</div>
+<p class="text-sm text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
+                        Your joints and muscles show minimal fatigue. It is safe to proceed with high-intensity compound movements today.
+                    </p>
+</div>
+<div class="bg-primary/5 dark:bg-primary/10 p-6 rounded-xl border border-primary/20 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-icons text-primary">auto_awesome</span>
+<h3 class="font-bold text-primary">AI Performance Insight</h3>
+</div>
+<p class="text-sm font-medium mb-3">Optimize Strength Gains:</p>
+<ul class="space-y-3 text-sm text-slate-600 dark:text-slate-300">
+<li class="flex gap-2">
+<span class="material-icons text-xs text-primary">check_circle</span>
+                            Increase protein intake by 20g today based on yesterday's eccentric load.
+                        </li>
+<li class="flex gap-2">
+<span class="material-icons text-xs text-primary">check_circle</span>
+                            Leg day is recommended. Your lower-body nervous system recovery is at 94%.
+                        </li>
+<li class="flex gap-2">
+<span class="material-icons text-xs text-primary">check_circle</span>
+                            Shift HIIT session to tomorrow for peak cardiovascular efficiency.
+                        </li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Right Column: AI Coach Chatbot -->
+<div class="col-span-12 lg:col-span-4 h-full">
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col h-[calc(100vh-160px)] sticky top-8 overflow-hidden">
+<!-- Chat Header -->
+<div class="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-4">
+<div class="relative">
+<div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+<span class="material-icons text-slate-900">smart_toy</span>
+</div>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-primary border-2 border-white dark:border-slate-900 rounded-full"></span>
+</div>
+<div>
+<h3 class="font-bold leading-tight">Coach HealthMate</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400">AI Personal Health Strategist</p>
+</div>
+</div>
+<!-- Messages -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+<span class="material-icons text-sm text-primary">smart_toy</span>
+</div>
+<div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl rounded-tl-none max-w-[85%]">
+<p class="text-sm leading-relaxed">Hello! I've analyzed your sleep data and morning heart rate variability. You're primed for a heavy training session today. Shall we focus on your deadlift progression or a new metabolic circuit?</p>
+</div>
+</div>
+<div class="flex items-start gap-3 flex-row-reverse">
+<div class="w-8 h-8 rounded-full overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="User profile mini avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUOiaGTL5ncvzigM2lpcLIXgQ3_5uDEI9ZhPaT659sY5npVYWRjDjBIBoTxg5Qjo0U1c2l-Gy7_a_C9xRcR6z5QWPIyvMHzfMxTX40e8s0GAp6nbwTwB7l9C2IYPImwSUdvsIZjAbDk9lr4Gf2DTKQSwfjTHMBiwuQHOY68JVCZeKrPJFA4SPkTgeD6Ua9set5abx2ND6PFO7Zyi7VVWhM0okeMNxiyzgpUWmyXQ9WdTe3GLfEtFyP17bHqdxzXrrVybRkKkr4_JE"/>
+</div>
+<div class="bg-primary text-slate-900 p-4 rounded-xl rounded-tr-none max-w-[85%]">
+<p class="text-sm font-medium">Let's do the deadlift progression. My lower back feels a bit tight though, is that a concern?</p>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+<span class="material-icons text-sm text-primary">smart_toy</span>
+</div>
+<div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl rounded-tl-none max-w-[85%]">
+<p class="text-sm leading-relaxed">I noticed that in your mobility scan. Your risk assessment is still 'Low', but I've updated your routine to include 10 minutes of active lumbar decompression before we start the heavy sets.</p>
+<div class="mt-4 p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
+<span class="material-icons text-primary">play_circle</span>
+</div>
+<div>
+<p class="text-xs font-bold">Decompression Routine</p>
+<p class="text-[10px] text-slate-400">Video Guide • 10:00</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+<div class="flex items-center gap-2 mb-3">
+<button class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold rounded-full text-slate-500 hover:text-primary transition-colors">Adjust macros</button>
+<button class="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold rounded-full text-slate-500 hover:text-primary transition-colors">Show my progress</button>
+</div>
+<div class="relative">
+<input class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-3 pl-4 pr-12 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none" placeholder="Ask anything about your health..." type="text"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-primary text-slate-900 rounded-lg flex items-center justify-center hover:scale-105 transition-transform">
+<span class="material-icons text-sm">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Global Background Elements (Futuristic Aesthetic) -->
+<div class="fixed top-0 right-0 w-1/3 h-1/3 bg-primary/5 blur-[120px] -z-10 pointer-events-none"></div>
+<div class="fixed bottom-0 left-0 w-1/4 h-1/4 bg-primary/10 blur-[100px] -z-10 pointer-events-none"></div>
+</body></html>

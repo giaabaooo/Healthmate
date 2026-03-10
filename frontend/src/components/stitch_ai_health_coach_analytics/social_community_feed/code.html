@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 lg:px-10">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-primary">
+<div class="size-8 flex items-center justify-center rounded-lg bg-primary/10">
+<span class="material-symbols-outlined text-primary">exercise</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight font-display">HealthMate</h2>
+</div>
+<div class="hidden md:flex flex-col min-w-64">
+<div class="flex w-full items-stretch rounded-lg h-10 bg-slate-100 dark:bg-slate-800">
+<div class="flex items-center justify-center pl-4 text-slate-500">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full border-none bg-transparent focus:ring-0 text-sm font-normal placeholder:text-slate-500" placeholder="Search friends, groups, or workouts" value=""/>
+</div>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<nav class="hidden lg:flex items-center gap-8">
+<a class="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Workouts</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Nutrition</a>
+<a class="text-primary text-sm font-bold border-b-2 border-primary pb-1" href="#">Community</a>
+</nav>
+<div class="flex gap-3">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+<span class="material-symbols-outlined">chat_bubble</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary" data-alt="User profile picture showing a smiling man" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDrvyl0s02YP5w7GKfnv_D_Sz4ljhXweU1NQE8FEvOOaKDlgqpVEDSmMDXCQBcWYS46m_K78M2oIy2C3kxeHJ3ZGTpTkayVJCf8_n95IS6ne6UZcAy1E_6f3wMxrvpQK-zAe4eFVgfibwoLylwRjR5UgyC1QsCxfp6GLYzE0LeHDjU-_U9sEJXl8uDeSkFyVOnICsGbU7PrRZIREfqfhgR7zhuPm77ga_uw8F1FmF7FLQo5RXediCB9atSfIH10H8cMgob1wyB3n-g");'></div>
+</div>
+</div>
+</header>
+<main class="flex-1 flex justify-center py-8">
+<div class="max-w-[1280px] w-full px-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Sidebar: Profile & Navigation -->
+<div class="hidden lg:flex lg:col-span-3 flex-col gap-6">
+<div class="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-4 mb-6">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12" data-alt="Alex Johnson profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAiwrto0zPn7sxGi_5GTBvHUyxPncgEENH_CggUU4OQhhzbL1t1pfp7lRQ_ExOM0KHX8wKD0sHU2KByo7AWLZKuAToZN_nco4LuUt_TTVgsspuRJMKhF3AjqzP1yxOAAR2n1skKrCTphEnB4U2MBkZvINlBXzSmKrFAHd4iipYw0tfbOhFLVr6ZheGAuTeZ5PEyWWjec0nFC3dO_pXGgYdjgkcpi1whPC2MI99h0pvVYfp2yWKxiKwAcDoKHGC_OVcfmTrs0M1JCnE");'></div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-white text-base font-bold">Alex Johnson</h1>
+<p class="text-primary text-xs font-semibold uppercase tracking-wider">Pro Member</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined text-[20px]">dynamic_feed</span>
+<p class="text-sm font-semibold">Feed</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">leaderboard</span>
+<p class="text-sm font-medium">Leaderboards</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+<p class="text-sm font-medium">Discover Groups</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">stars</span>
+<p class="text-sm font-medium">My Challenges</p>
+</a>
+</nav>
+</div>
+<!-- Groups Preview -->
+<div class="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+<h3 class="text-slate-900 dark:text-white font-bold text-sm mb-4">Community Groups</h3>
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">self_improvement</span>
+</div>
+<div class="flex flex-col flex-1">
+<p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">Yoga Lovers</p>
+<p class="text-[10px] text-slate-500">12.4k members</p>
+</div>
+<button class="text-primary text-[10px] font-bold uppercase tracking-tight">Join</button>
+</div>
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-500">
+<span class="material-symbols-outlined">fitness_center</span>
+</div>
+<div class="flex flex-col flex-1">
+<p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">Powerlifters</p>
+<p class="text-[10px] text-slate-500">8.2k members</p>
+</div>
+<button class="text-primary text-[10px] font-bold uppercase tracking-tight">Join</button>
+</div>
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-500">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<div class="flex flex-col flex-1">
+<p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">Meal Prep Squad</p>
+<p class="text-[10px] text-slate-500">15k members</p>
+</div>
+<button class="text-primary text-[10px] font-bold uppercase tracking-tight">Join</button>
+</div>
+</div>
+<button class="w-full mt-4 py-2 text-slate-500 dark:text-slate-400 text-xs font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">See all groups</button>
+</div>
+</div>
+<!-- Feed Column -->
+<div class="lg:col-span-6 flex flex-col gap-6">
+<!-- Share Update Card -->
+<div class="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-800">
+<div class="flex gap-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0" data-alt="User avatar for sharing update" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB7RO0RfVtyV53RbN0xoI6F9q8j28iyQk4aGZt7yPn3YsOZZTQ_C5jtzsnin4uHA1SjROrBF8uwFMIgc3aRlEMNdZ-ZDPzqmsD-HRhGRD7oKgxihGUzFPAtfEeUZuBx3IWBI6Mbv09jPm4MMp4B1jQpKkkGmpEbmZaDBaeVcJdLxA5RKvY_3PCYXVmvyJfOpFrVtKO74rPsyf184YnipJ1A4i6mLMzjiuTrbvKaTsAHxeytL8Kq6gkfvPr7TTn9-mMPUasCxmUag6A");'></div>
+<div class="flex-1 flex flex-col">
+<textarea class="w-full min-h-[100px] border-none focus:ring-0 bg-transparent text-slate-800 dark:text-slate-200 placeholder:text-slate-400 resize-none" placeholder="Share your workout or progress..."></textarea>
+<div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+<div class="flex gap-2">
+<button class="p-2 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">image</span>
+</button>
+<button class="p-2 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">video_library</span>
+</button>
+<button class="p-2 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">location_on</span>
+</button>
+<button class="p-2 rounded-lg text-slate-500 hover:bg-primary/10 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">bar_chart</span>
+</button>
+</div>
+<button class="bg-primary text-slate-900 px-6 py-2 rounded-lg text-sm font-bold shadow-sm shadow-primary/20 hover:brightness-105">Post</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Feed Filter -->
+<div class="flex border-b border-slate-200 dark:border-slate-800 gap-8">
+<button class="border-b-2 border-primary text-slate-900 dark:text-white pb-3 text-sm font-bold">All Posts</button>
+<button class="text-slate-500 dark:text-slate-400 pb-3 text-sm font-medium hover:text-slate-800">Following</button>
+<button class="text-slate-500 dark:text-slate-400 pb-3 text-sm font-medium hover:text-slate-800">Trending</button>
+</div>
+<!-- Post Card 1 -->
+<div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
+<div class="p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Sarah Miller profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB4xlgajQcu6Q8HvFhcaU2OVj_VmQB4tNJvd_qT2P60NhtnGCB4E3TZCOztIypp6F79zin69uNtT1-bs-h_ckZLmwnquslGhAxcZDjx-aAtkhs5Gw47iFIsCMCZxU8qc6e-ZWk_w_wiw29-5CtpxPqjfxCpKuw-0_i8CbF3_F4H0VJMNZtfAae9tTxqSyi80aql60nJzX08XlCaY-28PEFRB_RD76fCqLcDwCme_pWkjDjIFLSWdsAVQlLQPUucMwHIUlWhPZ7SKtE");'></div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white leading-none">Sarah Miller</h4>
+<p class="text-[10px] text-slate-500 mt-1">2 hours ago • <span class="text-primary font-medium">Cardio Session</span></p>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<div class="px-4 pb-3">
+<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">Finally hit my goal of running 10km under 50 minutes! The training plan from AI HealthMate really paid off today. Feel invincible! 🏃‍♀️✨</p>
+</div>
+<div class="aspect-video bg-center bg-cover" data-alt="A woman in fitness gear running on a outdoor trail" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB_mUzECakkvQlckzWYCDuU-73-FUPZFEq_8J5DNFtNpIbUb0g5rPoeLOGO8r5IJ93AEtfwZjR0kgBCmOqKNdvVkt0erqlSB9n8_BakFSb2OWCnkBpXws11F2B-K61LuGgXkNdXimHSNmJkunvMcoS6Tewid4gSSJTeNR36nd0HARCS4qY2N9VKES5BJtGIJTIepLoUFfjw7QKOJFSk-DusUY3F_Bgv85OviQVLombGGKbjJaf8lqrGHuw_2AOJ8BATq0qLiTEtSuU");'></div>
+<div class="p-4">
+<div class="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4 mb-4">
+<div class="flex gap-4">
+<div class="flex flex-col items-center px-4 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+<p class="text-[10px] text-slate-500 font-medium">Distance</p>
+<p class="text-sm font-bold text-slate-900 dark:text-white">10.2 km</p>
+</div>
+<div class="flex flex-col items-center px-4 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+<p class="text-[10px] text-slate-500 font-medium">Time</p>
+<p class="text-sm font-bold text-slate-900 dark:text-white">48:12</p>
+</div>
+<div class="flex flex-col items-center px-4 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+<p class="text-[10px] text-slate-500 font-medium">Avg Pace</p>
+<p class="text-sm font-bold text-slate-900 dark:text-white">4'43" /km</p>
+</div>
+</div>
+<button class="bg-primary/20 text-slate-900 dark:text-slate-100 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-primary transition-colors">Details</button>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px] fill-current text-primary">favorite</span>
+<span class="text-xs font-bold text-slate-700 dark:text-slate-300">124</span>
+</button>
+<button class="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat_bubble_outline</span>
+<span class="text-xs font-medium">18 Comments</span>
+</button>
+</div>
+<button class="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span class="text-xs font-medium">Share</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Post Card 2 -->
+<div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
+<div class="p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Marcus Reed profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBs1qAlnCtUcQ4QT6cH_B-GWWcpde5QsHAhw6EZgCAPSDGRMAqU7VklBArO2ab1VdSIqRzBGyeXJuk5kFYOzppx3rpRn2wOi0uYZzq0fNGWNg-xWmQTa54sPSd5nLqymmzdIbCU32BWk2rmReaFgtx1keXJsvM3rB7e6H4XxY5Ogr4dyM-MLUey2ws5Xjv-XM2BR0NVU0SX-loJ_KNt6thCXthfYMqlRETXxNPS5HLDERRnU7tZaHuCOXFcixfocoi9MeUvz8ksXgc");'></div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white leading-none">Marcus Reed</h4>
+<p class="text-[10px] text-slate-500 mt-1">4 hours ago • <span class="text-primary font-medium">Nutrition Update</span></p>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<div class="px-4 pb-4">
+<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">Meal prep for the week is done! Focusing on high-protein, clean ingredients to support the new heavy lifting block. 🥦🥩</p>
+</div>
+<div class="grid grid-cols-2 gap-0.5 aspect-video overflow-hidden">
+<div class="bg-center bg-cover" data-alt="Healthy meal prep containers with vegetables and protein" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD3VjEz3hh5Jfc1gap3CQuILGlcYDRAqle2iqNHUAPaySLZC9au8SZ7p_EV8i57vfCLMsvK0es5P0cL_2u2NRsGb0k0Wo177xVwl7H9OmWbRO1BeXUw47uaT-vjA7ynngqY_yIdm2YfR81Y4pUj8SWgPFTyPRxZ_Mq0CdlAKSpq9t9opgeTvLtXVA2QR9KVdUsRdsknfVgrM_7gYPGE8hq4MPHhBBMbvZgJn0WycpW8js3YoD3VBpRc7nrakOZVMaRYRj7KwZkIVVU");'></div>
+<div class="bg-center bg-cover" data-alt="Large bowl of fresh salad with various toppings" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCYcFzhnESZaOj9gdSrBpu-dUO_EFjxWOrhltP-wiKr5_laKuINgKXfSmiMwAwu7S2tI6UYMr3OaMfQ_gqNjcqP6EXaGl4CtcIIQtus-r10OhjizvSr2nwfXx4OCy2Ox0lL0TydRcuHIkCJRSm0Qh3SO0DNFJhjwZkK5KtJQK9xyZo_ulKFRg-748UzvsQc3x1wup-lR3R-CVOeCX35cMHKIHZaNOZBvD76KfS1nsBxWrMl8r7D5pu4u6P3-ISeffSNZiM3tLT35QE");'></div>
+</div>
+<div class="p-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">favorite_border</span>
+<span class="text-xs font-bold text-slate-700 dark:text-slate-300">56</span>
+</button>
+<button class="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat_bubble_outline</span>
+<span class="text-xs font-medium">4 Comments</span>
+</button>
+</div>
+<button class="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span class="text-xs font-medium">Share</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Leaderboard & Suggested Groups -->
+<div class="hidden lg:flex lg:col-span-3 flex-col gap-6">
+<!-- Leaderboard -->
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+<div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+<h3 class="text-slate-900 dark:text-white font-bold text-sm">Leaderboard</h3>
+<div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+<button class="text-[10px] font-bold px-2 py-1 rounded bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white">Friends</button>
+<button class="text-[10px] font-bold px-2 py-1 text-slate-500">Global</button>
+</div>
+</div>
+<div class="p-2">
+<div class="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20 mb-1">
+<span class="text-xs font-bold text-primary w-4">1</span>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" data-alt="Top user profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDcjkQBnOaumIKeDXUPTT4EieaZjv_NksbCbOmpDGowGcHXzeLf7MTU2mRwQ9NdS8Mx-pFMSpTbMR0ddqc6EQT1KBfQpfSM2LsIIW9iq012--1XVRDSjPW3ymAhi19NEIc9QUzbxroNMDt1BagMud_i0tdYeYbO8NYDVzZdD5BLtLAtCChmQbZTrO-8CyXt56mHTqQY9uZUI7-tIgodO04W69Pwi4OULbOJdbsdeKpAutbmdRlZPWoVW-8_sU80YIHanXjaOFdE5JE");'></div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-900 dark:text-white">David Chen</p>
+<p class="text-[10px] text-slate-500">4,280 points</p>
+</div>
+<span class="material-symbols-outlined text-amber-400 text-[18px]">workspace_premium</span>
+</div>
+<div class="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors mb-1">
+<span class="text-xs font-bold text-slate-400 w-4">2</span>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" data-alt="Rank 2 user profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-95zwzE9QfZmah-Xgyar4NKC3L009P03oIOCR5kLsPkOKgaion9ZNnfxjl6nn0Uo3Y36lZq1jedvYz-Tn5qOWXyiSyEalmhMncYVrQ_ULYt8LAmaciL70Wwj0alZLAH0kxOr4skGNe_eEX1PUijx2H-hUiuODBMvEFfpoOY5CdISEgDf3NCwfj9XT4Dk3XfXKmLVOOE5ROLvzYEKeRQ0Cb0MLR7DqdioUuCGaIuEJbMJWwzT8ySg2kA5uid54b41IMc2JYEDs3B4");'></div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-900 dark:text-white">Sarah Miller</p>
+<p class="text-[10px] text-slate-500">3,950 points</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors mb-1">
+<span class="text-xs font-bold text-slate-400 w-4">3</span>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" data-alt="Current user profile picture in leaderboard" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDzm5PlConFg9yirdiPHws45MqXQI6QIQu0-T36O1UyIHE1gapu4Now5DBZMqY4RabdjOF1Ai6ZsXgyX2-9GextxFtuktq7ton_WB97ruybQTZUha43xAgQFvJYJ6MXj-isZnQJHjf3xX8IgC3uF_oUnp1glNeXKdPFbantASKPSlxVZxO0qOSwGsbJIDsjIs6nG6xFk0G64jsN8ZWdPcMwu8hW0z2CDAf2v5D8pFmSPNFK7kjrAMbXjREPyfBZL7B_Q4uM7rmKuw4");'></div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-900 dark:text-white">You (Alex)</p>
+<p class="text-[10px] text-slate-500">3,720 points</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
+<span class="text-xs font-bold text-slate-400 w-4">4</span>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" data-alt="Rank 4 user profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDX4McWguKa0VYHuGptbZMGU92IbrVmVq_NCqyGEaIwElQVXF6-ZP3-Q82EaELo7xcUQ3I-983NRpBSyGZaUq1YMd7oBOtvPIYQGXeAelJexgRMZwIBXQQh3QDlaWqgaLiDGwXqLvfxzcRXsGtYzTa7dEPAvUFYHbgp1A9N1kc0_5G1TRFDGo-YVno5DQ2ofkVFnt6hXWeViGiP_O-ZUPYpkY2LLV42YqBEq0v0AMii4-L1qtnc8qu1yHw-1l9k3Sb2HTgDwDJkuhk");'></div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-900 dark:text-white">Chris Evans</p>
+<p class="text-[10px] text-slate-500">3,200 points</p>
+</div>
+</div>
+</div>
+<button class="w-full py-4 text-primary text-xs font-bold border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded-b-xl">View full ranking</button>
+</div>
+<!-- Suggested Friends -->
+<div class="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+<h3 class="text-slate-900 dark:text-white font-bold text-sm mb-4">Suggested for you</h3>
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Suggested friend Emma avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAPIEVK8uqQD6HSir3SLg0ajUE-xHxMD-MZeilxEv3Sq1YhPh7zm9oIzaVqHHAfBJT0XxS6aG7-GpeIkvq0y9sD-U3rbRFVrKFXz49q524cy6TouJuNTq-60MnF2vvKBuXJRNMX7GSwt7UiCbRqXjvBmGbetURSgaAn1yQEeb_FAIjv2A5aEY8TFQqxnwWQpOiHlq1sR92jI8oxjNa_cM8QFKR2jBQWZ6pkLfFeB-OmR0g8nF_Iv8bYhESj-iJqf8jf9ol3lYrQnv4");'></div>
+<div>
+<p class="text-xs font-bold text-slate-900 dark:text-white">Emma Watson</p>
+<p class="text-[10px] text-slate-500">Both love Pilates</p>
+</div>
+</div>
+<button class="text-primary"><span class="material-symbols-outlined text-[20px]">person_add</span></button>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Suggested friend Mike avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBm0j_lcCkHPgscDPNGRKUR7H5w0JOvaFSzSumPK69DGcErYIMZ5QhBjeNc3riTddgsa0aYQYd2gL8Nn99b9EVMsG7JdBZOPuj-QOx5vjHqWehKAvtuEzotAuNTIcgxK5oOYlLYHr9_HYKAaae6e8KiHuzQhGS3dec-sUzTYMIfbUtj7-nqxQR3FbCfJ1iQzWzZNQrzdUGqhP3JK5S_-kxIQ_9qClJB7t-MbHCnpDA7PFw0dS-QcrahIkRypxuUt2jf5Vp7OAjn6AM");'></div>
+<div>
+<p class="text-xs font-bold text-slate-900 dark:text-white">Mike Ross</p>
+<p class="text-[10px] text-slate-500">4 mutual friends</p>
+</div>
+</div>
+<button class="text-primary"><span class="material-symbols-outlined text-[20px]">person_add</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

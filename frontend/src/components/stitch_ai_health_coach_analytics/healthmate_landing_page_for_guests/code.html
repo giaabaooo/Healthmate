@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HealthMate | Your AI-Powered Health Journey</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Header/Navbar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 px-6 md:px-20 py-4 bg-white dark:bg-slate-900 sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center p-2 bg-primary rounded-lg">
+<span class="material-symbols-outlined text-slate-900">exercise</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-xl font-black leading-tight tracking-tight">HealthMate</h2>
+</div>
+<div class="hidden md:flex flex-1 justify-end gap-10 items-center">
+<nav class="flex items-center gap-8">
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors" href="#">Features</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors" href="#">Success Stories</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors" href="#">Pricing</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-semibold hover:text-primary transition-colors" href="#">About</a>
+</nav>
+<div class="flex gap-3">
+<button class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-11 px-5 bg-primary text-slate-900 text-sm font-bold transition-transform hover:scale-105">
+                            Get Started
+                        </button>
+<button class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-11 px-5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700">
+                            Log In
+                        </button>
+</div>
+</div>
+<!-- Mobile Menu Icon (Visual Only) -->
+<div class="md:hidden">
+<span class="material-symbols-outlined">menu</span>
+</div>
+</header>
+<main class="flex-1">
+<!-- Hero Section -->
+<section class="@container">
+<div class="p-0 md:p-10">
+<div class="flex min-h-[600px] flex-col gap-8 bg-cover bg-center bg-no-repeat rounded-none md:rounded-xl items-center justify-center p-8 relative overflow-hidden" data-alt="People exercising together in a bright modern gym setting" style='background-image: linear-gradient(rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.7) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBYot3hAiwKRtjMeMMa4Ym8nw9ICFWq_LIwg-wQl3OjwQQxN-bPiVwYZ8uOVCaXw817ahjDPR4RiFuQydq8L7BgHgueOANl-IBg_-T2qosAywnUPNogYLtERgErp8hq5fUlSsW2LBcd5-kl05bhCMODp1PJwbrMcTcsn5tabMLFXoShURYA8A5pXApi8QgKpyTj63MtJo3lJ5UKDhd3UUk6TPDDOTb85y5Hd2vjQ9tnf3T2bIglrnl0MntHTEPM9EdmzhuL7HGpbkU");'>
+<div class="flex flex-col gap-4 text-center max-w-[800px] relative z-10">
+<span class="bg-primary/20 border border-primary/30 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest self-center">Next-Gen Fitness</span>
+<h1 class="text-white text-5xl md:text-7xl font-black leading-[1.1] tracking-tight">
+                                    Your AI-Powered Journey to a <span class="text-primary">Healthier You</span>
+</h1>
+<p class="text-slate-200 text-lg md:text-xl font-normal leading-relaxed max-w-[600px] mx-auto">
+                                    Personalized fitness and nutrition plans powered by advanced AI to help you reach your goals faster with 24/7 expert guidance.
+                                </p>
+</div>
+<div class="flex flex-col sm:flex-row gap-4 relative z-10">
+<button class="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-primary text-slate-900 text-lg font-bold shadow-lg shadow-primary/20 transition-transform hover:scale-105">
+                                    Start Your Free Trial
+                                </button>
+<button class="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-white/10 backdrop-blur-md border border-white/20 text-white text-lg font-bold hover:bg-white/20">
+                                    Watch How It Works
+                                </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Section -->
+<section class="max-w-7xl mx-auto px-6 md:px-10 py-24">
+<div class="flex flex-col items-center text-center gap-4 mb-16">
+<h2 class="text-slate-900 dark:text-slate-100 text-4xl md:text-5xl font-black leading-tight tracking-tight">
+                            Smart Fitness for Everyone
+                        </h2>
+<p class="text-slate-600 dark:text-slate-400 text-lg max-w-[700px]">
+                            We combine advanced machine learning with sports science to give you a truly personalized experience.
+                        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Feature 1 -->
+<div class="flex flex-col gap-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm hover:shadow-xl transition-shadow group">
+<div class="bg-primary/10 w-16 h-16 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-slate-900 transition-colors">
+<span class="material-symbols-outlined text-3xl">smart_toy</span>
+</div>
+<div class="flex flex-col gap-2">
+<h3 class="text-slate-900 dark:text-slate-100 text-xl font-bold">AI Coaching</h3>
+<p class="text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    24/7 access to your personal AI trainer for form correction, workout adjustments, and real-time motivation.
+                                </p>
+</div>
+</div>
+<!-- Feature 2 -->
+<div class="flex flex-col gap-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm hover:shadow-xl transition-shadow group">
+<div class="bg-primary/10 w-16 h-16 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-slate-900 transition-colors">
+<span class="material-symbols-outlined text-3xl">restaurant</span>
+</div>
+<div class="flex flex-col gap-2">
+<h3 class="text-slate-900 dark:text-slate-100 text-xl font-bold">Personalized Nutrition</h3>
+<p class="text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    Tailored meal plans and macro tracking based on your unique metabolism, preferences, and daily activity.
+                                </p>
+</div>
+</div>
+<!-- Feature 3 -->
+<div class="flex flex-col gap-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm hover:shadow-xl transition-shadow group">
+<div class="bg-primary/10 w-16 h-16 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-slate-900 transition-colors">
+<span class="material-symbols-outlined text-3xl">groups</span>
+</div>
+<div class="flex flex-col gap-2">
+<h3 class="text-slate-900 dark:text-slate-100 text-xl font-bold">Community Support</h3>
+<p class="text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    Join thousands of members sharing their journey, competing in challenges, and celebrating every win together.
+                                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonials Section -->
+<section class="bg-white dark:bg-slate-900 py-24">
+<div class="max-w-7xl mx-auto px-6 md:px-10">
+<div class="flex justify-between items-end mb-12">
+<div>
+<h2 class="text-slate-900 dark:text-slate-100 text-3xl font-black mb-2">Success Stories</h2>
+<p class="text-slate-600 dark:text-slate-400">Join 50,000+ people who transformed their lives.</p>
+</div>
+<button class="hidden md:flex items-center gap-2 text-primary font-bold">
+                                View All Stories <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Story 1 -->
+<div class="flex flex-col gap-5 p-8 rounded-2xl bg-background-light dark:bg-slate-800/50">
+<div class="flex items-center gap-4">
+<div class="rounded-full size-12 overflow-hidden ring-2 ring-primary/20">
+<img class="w-full h-full object-cover" data-alt="Portrait of Sarah J. smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCc9ayHOBK7LVfZYXOV2DG3LsDZMIeF5pu07uPd5kYCC-p-gRES4ts3WE1zAOWEJpTQK4eGl-e1Dxk98XuS2rlvkgS2Mia6aSHDaAmrAJKTKzVJis77LEVPOHSx8JmTf6T9uYoWpJHMIx28Uqk10CnB43zfmDad_ZSYrLjAghsN2whesdhaXmRDqNBvCWtICopVbQYtpROWYFy-w7dz9AKKo7G_pEYj0Y2Ch0lE7lPSioC3Bsv6jiLkcph6VV5zGUS6oXEBZtbmoLo"/>
+</div>
+<div>
+<p class="text-slate-900 dark:text-slate-100 font-bold">Sarah Jenkins</p>
+<p class="text-slate-500 text-sm">Member since 2023</p>
+</div>
+</div>
+<div class="flex gap-1 text-primary">
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+</div>
+<p class="text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                                    "HealthMate completely changed how I look at fitness. The AI coach is like having a world-class pro in my pocket. I've never felt stronger."
+                                </p>
+</div>
+<!-- Story 2 -->
+<div class="flex flex-col gap-5 p-8 rounded-2xl bg-background-light dark:bg-slate-800/50">
+<div class="flex items-center gap-4">
+<div class="rounded-full size-12 overflow-hidden ring-2 ring-primary/20">
+<img class="w-full h-full object-cover" data-alt="Portrait of Mark T. looking confident" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKGv91DB4RS19JZh2Bh-UfKrN6zJkWKNLykGZPfVWyaeAojiA6pl5iigPvAaE6mXPxQHkSbT0gnpSsLSBHJ6MdQhc-mO0kz9YQ123iR5nFUCrHL3MB9mR0eEsrA88_DyXgGHGsSVc3uUI9sWfo7yS5WKhNMq8QD7krGegQCzZ0_dOyZS0dszKasnKk04yEATpqjw78Q0RB2YPDqwv0hgUH8gcHw66DwMAhQJ0BAn0hS6NlPxurPnsAE9MTNltu8CtrSgtJ0UOr98M"/>
+</div>
+<div>
+<p class="text-slate-900 dark:text-slate-100 font-bold">Mark Thompson</p>
+<p class="text-slate-500 text-sm">Member since 2024</p>
+</div>
+</div>
+<div class="flex gap-1 text-primary">
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+</div>
+<p class="text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                                    "I lost 20lbs in just 4 months thanks to the personalized meal plans. It takes the guesswork out of nutrition entirely. Highly recommended!"
+                                </p>
+</div>
+<!-- Story 3 -->
+<div class="flex flex-col gap-5 p-8 rounded-2xl bg-background-light dark:bg-slate-800/50">
+<div class="flex items-center gap-4">
+<div class="rounded-full size-12 overflow-hidden ring-2 ring-primary/20">
+<img class="w-full h-full object-cover" data-alt="Portrait of Elena R. in active wear" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOhxo80d7t2-d5fjk61CmF3XGI3m5LxU-_r3Jv7ktrVPn6ivnqFSzalxvAvPKnNJAR4eII0nvjmJyRJIu3HE_-jyECRcDX8q8IovoaDgF6wdqPZ0mUYM6wdJyfne5BGFXN1AqGZj_DxFJ7JO_veBvhjsmQDK8Jj9t4k0-FkutafIGROPVooWOnOntL1q9CuiVLgTlVzEGIzUPp4QnxJCe_RSxq77bl6oXlmkaHPZl-Rl8-nnh75F5Du57AA3AONn6CN5bI2apB4L4"/>
+</div>
+<div>
+<p class="text-slate-900 dark:text-slate-100 font-bold">Elena Rodriguez</p>
+<p class="text-slate-500 text-sm">Member since 2023</p>
+</div>
+</div>
+<div class="flex gap-1 text-primary">
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+<span class="material-symbols-outlined text-[20px] fill-current">star</span>
+</div>
+<p class="text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                                    "The community keeps me accountable. It's the first time I've stuck to a routine for over a year. The support is just incredible."
+                                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="py-24 px-6 md:px-10">
+<div class="max-w-5xl mx-auto rounded-3xl bg-slate-900 dark:bg-primary/10 border border-slate-800 dark:border-primary/20 p-12 text-center relative overflow-hidden">
+<div class="absolute -top-24 -left-24 w-64 h-64 bg-primary/20 rounded-full blur-[100px]"></div>
+<div class="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-[100px]"></div>
+<div class="relative z-10">
+<h2 class="text-white dark:text-slate-100 text-4xl md:text-5xl font-black mb-6">Ready to Start Your Transformation?</h2>
+<p class="text-slate-400 dark:text-slate-300 text-lg mb-10 max-w-[600px] mx-auto">
+                                Get your personalized fitness and nutrition plan today. Start your 7-day free trial. No credit card required.
+                            </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="bg-primary text-slate-900 px-10 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform shadow-xl shadow-primary/20">
+                                    Get Started for Free
+                                </button>
+<button class="bg-transparent text-white border border-slate-700 px-10 py-4 rounded-xl font-bold text-lg hover:bg-white/5">
+                                    Compare Plans
+                                </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-16 px-6 md:px-20">
+<div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-12">
+<div class="col-span-2 flex flex-col gap-6">
+<div class="flex items-center gap-2">
+<div class="p-1.5 bg-primary rounded-md">
+<span class="material-symbols-outlined text-slate-900 text-sm">exercise</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-black tracking-tight">HealthMate</h2>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm max-w-[280px] leading-relaxed">
+                            Revolutionizing personal health management with advanced AI. Your goals, our technology.
+                        </p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">brand_awareness</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">share</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">person_add</span>
+</a>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="text-slate-900 dark:text-slate-100 font-bold">Product</h4>
+<ul class="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary" href="#">Features</a></li>
+<li><a class="hover:text-primary" href="#">AI Coach</a></li>
+<li><a class="hover:text-primary" href="#">Nutrition</a></li>
+<li><a class="hover:text-primary" href="#">Pricing</a></li>
+</ul>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="text-slate-900 dark:text-slate-100 font-bold">Company</h4>
+<ul class="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary" href="#">About Us</a></li>
+<li><a class="hover:text-primary" href="#">Careers</a></li>
+<li><a class="hover:text-primary" href="#">Blog</a></li>
+<li><a class="hover:text-primary" href="#">Contact</a></li>
+</ul>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="text-slate-900 dark:text-slate-100 font-bold">Legal</h4>
+<ul class="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-primary" href="#">Terms of Service</a></li>
+<li><a class="hover:text-primary" href="#">Cookie Policy</a></li>
+</ul>
+</div>
+</div>
+<div class="max-w-7xl mx-auto border-t border-slate-100 dark:border-slate-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
+<p>© 2024 HealthMate Inc. All rights reserved.</p>
+<div class="flex gap-6">
+<span>Language: English (US)</span>
+<span>Region: United States</span>
+</div>
+</div>
+</footer>
+</div>
+</div>
+</body></html>

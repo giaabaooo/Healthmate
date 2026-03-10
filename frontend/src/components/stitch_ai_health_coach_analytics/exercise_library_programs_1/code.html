@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Exercise Library &amp; Programs | HealthMate</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Header Section -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-slate-900 dark:text-slate-100">
+<div class="size-6 text-primary">
+<span class="material-symbols-outlined text-3xl">exercise</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em]">HealthMate</h2>
+</div>
+<label class="flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-slate-500 flex border-none bg-slate-100 dark:bg-slate-800 items-center justify-center pl-4 rounded-l-lg" data-icon="MagnifyingGlass">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-0 border-none bg-slate-100 dark:bg-slate-800 focus:border-none h-full placeholder:text-slate-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal" placeholder="Search exercises..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<nav class="flex items-center gap-9">
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Dashboard</a>
+<a class="text-primary text-sm font-medium leading-normal" href="#">Workouts</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Nutrition</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Community</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Progress</a>
+</nav>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-slate-900 text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
+<span class="truncate">Upgrade to Pro</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary" data-alt="User profile avatar portrait" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAuDqZ5uDyrASPI6hEP-S1LQatHTCfKWKhc7rgraISZ4VminkXl4rwRb7vpFal3rXDMCaVONmmeVdJaa-GY93IYikdSOHCFwShaw9TubquRp73-LS0_GaWE2Miu1mgylPyEIfqcECGt1cWygakaUWuMvrnR-zlbyoY87hPWM8Hrdc-BJufYHfV1Dyth3NHdYUv4GQ8ISX9nMMh3NDV65-jDsgHjnCNvT_DzJO_b-2zcZr7f2XuNgBEYfXmDf43o64uMJAamin93nPo");'></div>
+</div>
+</header>
+<main class="flex flex-col flex-1 max-w-[1280px] mx-auto w-full px-4 md:px-10 py-8 gap-8">
+<!-- Page Title & CTA -->
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex flex-col gap-1">
+<h1 class="text-slate-900 dark:text-slate-100 text-4xl font-black leading-tight tracking-[-0.033em]">Exercise Library &amp; Programs</h1>
+<p class="text-slate-600 dark:text-slate-400 text-base font-normal leading-normal">Explore over 500+ exercises curated by AI for your fitness goals.</p>
+</div>
+<button class="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-bold leading-normal transition-all hover:scale-[1.02]">
+<span class="material-symbols-outlined text-xl">add_circle</span>
+<span class="truncate">Create Custom Exercise</span>
+</button>
+</div>
+<!-- Filters Section -->
+<div class="flex flex-col gap-4 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex flex-wrap gap-4 items-center">
+<div class="flex items-center gap-2 text-sm font-semibold text-slate-500 uppercase tracking-wider">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+                            Filters:
+                        </div>
+<!-- Muscle Groups -->
+<div class="flex gap-2 flex-wrap">
+<button class="flex h-9 items-center justify-center gap-x-2 rounded-lg bg-primary/10 border border-primary/20 px-4 text-primary text-sm font-semibold">
+                                Chest
+                                <span class="material-symbols-outlined text-base">expand_more</span>
+</button>
+<button class="flex h-9 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-4 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                Back
+                                <span class="material-symbols-outlined text-base">expand_more</span>
+</button>
+<button class="flex h-9 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-4 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                Legs
+                                <span class="material-symbols-outlined text-base">expand_more</span>
+</button>
+<button class="flex h-9 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-4 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                Core
+                                <span class="material-symbols-outlined text-base">expand_more</span>
+</button>
+</div>
+<div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+<!-- Difficulty -->
+<div class="flex gap-2 flex-wrap">
+<button class="flex h-9 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-4 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                Difficulty
+                                <span class="material-symbols-outlined text-base">tune</span>
+</button>
+</div>
+<div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+<!-- Equipment -->
+<div class="flex gap-2 flex-wrap">
+<button class="flex h-9 items-center justify-center gap-x-2 rounded-lg bg-slate-100 dark:bg-slate-800 px-4 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                Equipment
+                                <span class="material-symbols-outlined text-base">fitness_center</span>
+</button>
+</div>
+<button class="ml-auto text-sm text-slate-500 underline hover:text-slate-900 dark:hover:text-white">Clear All</button>
+</div>
+</div>
+<!-- Recommended Section -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary fill-current">auto_awesome</span>
+<h3 class="text-xl font-bold">Recommended for You</h3>
+</div>
+<a class="text-primary text-sm font-bold hover:underline" href="#">View All</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Recommendation Card 1 -->
+<div class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+<div class="aspect-video w-full overflow-hidden bg-slate-200">
+<img class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Muscular person doing bench press in gym" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3RRLj_qU6_rKyx5_tenXc3b2nTpWUjcm7tet2EyXz6B03c4tWuNF0cy-2J8D20vmBYPL7QefEz9uEilmx_wXNfiLdtXoRTbgO1O2oJaxsLdDrhY2JCdUTspeCe-Jwc1z437VNUcIhpDDlAaccizyx2Sj1oyi1D0TrtDsDyTim-1yXveQHtl8nl2g5hUTxbbhYch8-xdZMULrpmrjk2WZimA4YtcS1V5tO4orxZDumYcQTiDN7g5uf0C4ZpVQcmkAliSaxZX19gBI"/>
+<div class="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-xs font-bold rounded">AI PICK</div>
+</div>
+<div class="flex flex-col p-4 gap-2">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-lg">Incline Dumbbell Press</h4>
+<span class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-600 dark:text-slate-400">Intermediate</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">Targets the upper pectoral muscles and anterior deltoids for maximum chest definition.</p>
+<div class="flex gap-2 mt-2">
+<span class="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">Chest</span>
+<span class="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">Dumbbells</span>
+</div>
+</div>
+</div>
+<!-- Recommendation Card 2 -->
+<div class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+<div class="aspect-video w-full overflow-hidden bg-slate-200">
+<img class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Person performing pull ups on a bar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYB1ORYmZnFWnzg3eqTOgaOAgGT29gORgS_5X0A8vzhgDPVX3KZmykO18d-LB4fcL_3KWDvp8ALKLq1iT9zyzZjbwENjY1--62VeDNWxLEztB2L5memr9ZQ8I9CGbtMyrstcNso8M6GnXV42G3u01T7nK4Gx0KfJU7P1Er6kZ99TU8xztstnOhrjEOoa4Fh_Ay_jwSIoVCjS65AE0Y8NbRBBq8C-9TJNByyZCuy9zthbotqEh9u-PKsz-EeoYgatFESMibrstuOSg"/>
+<div class="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-xs font-bold rounded">GOAL ALIGNED</div>
+</div>
+<div class="flex flex-col p-4 gap-2">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-lg">Weighted Pull-ups</h4>
+<span class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-600 dark:text-slate-400">Advanced</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">The ultimate upper body builder for back width and explosive pulling strength.</p>
+<div class="flex gap-2 mt-2">
+<span class="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">Back</span>
+<span class="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">Bodyweight +</span>
+</div>
+</div>
+</div>
+<!-- Recommendation Card 3 -->
+<div class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+<div class="aspect-video w-full overflow-hidden bg-slate-200">
+<img class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Woman doing kettlebell swings outdoors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbexbzLzbTV-pWC9bUHreccAIe0kUDIe8yEad3KDcSOmqskWU_7EgMph7Hxl261Y2xeQU7Crhut10nuXq4mdNwYgCLvANNve3VHWB_bqtuTgwIcJBVYiKp1Mjwu3q0seZlPQbSVKkX4J9flIWLobaRpb-uy1PpPIwhjyMilwgrWIlrmnBLrwZFKVxMcrn3wCgrmISWMdNiKevRPtuRcIgRqOSVSqT4vxgIJfduz0vzIfm-605aUDs4RX_MAOGA5j6c3X9HzgkCAJQ"/>
+<div class="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-xs font-bold rounded">QUICK HIT</div>
+</div>
+<div class="flex flex-col p-4 gap-2">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-lg">Kettlebell Swings</h4>
+<span class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-600 dark:text-slate-400">Beginner</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">High-intensity posterior chain movement for power and cardiovascular endurance.</p>
+<div class="flex gap-2 mt-2">
+<span class="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">Legs</span>
+<span class="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">Kettlebell</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Full Grid Section -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+<h3 class="text-2xl font-black tracking-tight">Browse All Exercises</h3>
+<div class="flex items-center gap-2">
+<span class="text-sm text-slate-500 font-medium">Sort by:</span>
+<select class="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer">
+<option>Most Popular</option>
+<option>Newly Added</option>
+<option>Difficulty: High to Low</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Grid Item 1 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Close up of person's legs during squat" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXsVPx7VdS0p_sZivEdM3UANqd9RX9vrmbrufpAUP3NK_NWUrUx1bmWcg3CQR-zPRBf3_BkztMGBSCOvi2vHGuD7eUfgWySlsLpRj4n1CtrCGxiFM-21gSPJ6Z9ElZdZLgh-eEkZA8d_ZOqtQ7-mKnf9i8ZpSLrJeATfthhcmnKEwHStIq1jX534xSVqDznPk2QlHS4wlASewSoM5wATlBd-UiPgbYp5fQKc87d8-6PHEGHsR8jrmlO6FABIgbG-J_S-nvHMuyj0c"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Legs • Barbell</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Back Squat</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">4.9 (12k)</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 2 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Person performing bicep curls with dumbbells" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoVm3WEr02l_-2EF5eaBQZr4Q5p5DV4Kmrd20k0xepK-78NrlvEFqNp05QmYQNytB6Aovqbd5_oVl4qeA7opliK8e-ljIqsDZxvjep3KTOkX7dP2CMzQjQyAGTFN0Yt-DjeSo4lCJGRnHTYS_Dw-qFh-zjrtoadXYG-NdKB16Pl-KZxBs7UOYrFNXLIjmIWJRcFVvPfjEJsA-Q1JeBqj250yNxOWYpDAT_2aI5lDs2taOZK0jzLDnliI3PRPlU5RC1e7Srn4SWVwA"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Arms • Dumbbells</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Hammer Curls</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">4.7 (8k)</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 3 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Fitness athlete performing deadlift" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgEDulT61hF1vo3mecisI-slpJf2wOgmEepnXbKY3_w4uKphkbFI-afA7jND3xqCVBjSq08iswQi5wqgupiM_6aonOZRt5UZKA8g59m9B1xAWEsIMgfRajPYippE6l4rhbXJfUmxoZ5iwoSKflXArjchnEI2Qg4yLWy9i4Zc1Fe44nAG78jQcVsXS_sRjFLOrKWynaHcKo8ipETZTNoHhPk790RRt0KGj5tk0AZQuvCCwg6KvujzKRguDgfnlkOBp-xBobA1lZp-k"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Back • Barbell</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Deadlift</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">5.0 (25k)</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 4 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Pushup form side view" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl0REsQeqGNwFp52PJVX7Wiy9i8Q2SHmHeGbYzOcxIKrW9PIpZAtRClLz8MP61JiW7TV-gDjMyPqFCi_2u-kqX5Z8a6B71ySr5V1OvMaj9fVcQGRPyIZSAsmBVxOVCRHBEhr7Rr0dLCZK61KM5Kfw2JgJwNWiAaLr4zqE_GxJerBse2ijF4JEI9Aibgx2cB2dE4B6r0BSEZbKX5IL4FZlwO8E8Nq6R3We4Ge2-QOcpj0Qs7KCze3NW0AEOPnVC_sBGAUkYTK1mQOc"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Chest • Bodyweight</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Push-ups</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">4.5 (45k)</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 5 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Plank exercise on gym floor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhr16qai2ID2Hg_LXhPFEVrTSFV5BDrbnKe9qzcF0lLv_YbVx9TPfJ7KIrKPF6NJS5YgJ8xSHpDaKXcUV4A54a4Wqud9melT2e_J574fY7QJG7HCR4cD3qTI3tYnojeUIODW1BoC3CsaopzVhqiq9uPT35J-KctSDEffhZ30YKoKZMcfqLvJ7rGwlbyKUCo_x7ReuKRVo8MTlEwf2GFlTolI5TR5ogLE2In7jPq3ukM1sGoUs73vUaLlXvqYlf8dtKWUKuAPgvGQ8"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Core • Bodyweight</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Forearm Plank</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">4.8 (19k)</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 6 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Shoulder press with dumbbells" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCM2RHFNuOOZCCBdVNz2rXRpicuQJo4QKPnswHmgc1m8_a2dqr_lWjG_5dnQv8bkiir8EojroUal0QQkD5SNEm9kIy2RqEM0IG0_6VN5ZWojrOat-K18MZLoxt1RdLP2KFCU091zlfotxdfju4lyrZVfQizZ0HvFRumKan69ZEH7XSomfuXDITg5RWw-BQUMf3NPL4ZUWSxKRINNIyFTupMtdEReGYgybxHxDtRmdi1ORtYV6nkcoxknHpJl6qTCsjNcHAop74IsEY"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Shoulders • Dumbbells</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Military Press</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">4.6 (11k)</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 7 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Lat pull down machine in gym" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHRvycoztFRhMqRmuXyUBrvWVDYsUpiiv1lGtRqD5LuIC9gVlp_E-PeoXFQbc8PgAqhyynLGE09UmOUp94gTR8rLLvqOg1je6gb5B6lG_TlU7vpZamTxv-vA3SHDdsB3f1fsBts1TLbQCWkmvxYSpiRVPwYizCW-8521PFWW17Gx0ltY1Z06REWzIi93X82ER24RFRf1rzNmYT_64ASMcZ6O5fpWoouL4coUg5wu4d4rMwitgg2wBDU0doAXggjqU1qibyb811hIU"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Back • Machine</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Lat Pulldown</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">4.9 (15k)</span>
+</div>
+</div>
+</div>
+<!-- Grid Item 8 -->
+<div class="flex flex-col bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 gap-3">
+<div class="aspect-square rounded-md overflow-hidden bg-slate-100">
+<img class="h-full w-full object-cover" data-alt="Cable crossover chest fly" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYm4JqQWJNCovBr0KZJbYfKc1ZjUBy5Z50nfbd_j5jtgAay__WZpD7FnU25q1SiEQK8y1xrdFcWKAcTsj8ZKUaJSv3JOoQUZWQJaGyL2A-TApc4goEda4A7Dh5Ko-OEaDEFWO5V2Jph40Y8lXtK15KWgZctlUhVHCD5ZCnqBplHXNhnDpyxKFb1aQ6RSdh1gifuph72mxtmI4H1GSh4WJ_UHgHw1fJKd5nl60lVTehV1A7G-Z70_v2XgG-gS3A4C4D5JI3RKR_Wkk"/>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Chest • Cables</span>
+<h5 class="font-bold text-slate-900 dark:text-slate-100 truncate">Cable Flys</h5>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-xs text-yellow-500 fill-current">star</span>
+<span class="text-xs font-semibold text-slate-500">4.7 (6k)</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex justify-center mt-8">
+<button class="flex items-center gap-2 px-8 py-3 bg-slate-100 dark:bg-slate-800 rounded-full font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            Load More Exercises
+                            <span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Bottom Floating Action Bar for Mobile/Quick Access -->
+<div class="fixed bottom-6 right-6 lg:hidden">
+<button class="size-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-slate-900 transition-transform active:scale-90">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

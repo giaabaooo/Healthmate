@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HealthMate Admin Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "primary-dark": "#0ea341",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                        "surface-dark": "#1a3324",
+                        "surface-darker": "#112218",
+                        "text-light": "#e2e8f0",
+                        "text-dim": "#9db9a6",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "sans": ["Inter", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #112218; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #28392e; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b5443; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-text-light font-display antialiased selection:bg-primary selection:text-background-dark overflow-hidden">
+<div class="flex h-screen w-full overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="flex w-64 flex-col justify-between border-r border-[#28392e] bg-surface-darker p-4 flex-shrink-0 z-20 overflow-y-auto">
+<div class="flex flex-col gap-4">
+<div class="flex gap-3 items-center mb-4">
+<div class="bg-center bg-no-repeat bg-cover rounded-full h-10 w-10 border-2 border-primary/20" data-alt="Admin user profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDi_ORhEtYDtre8G6YrAKTVxAV6-jnyFq6dRJxWxU8jfJRohQlcHzuS7gxoSzox9O2zJOZYV9J7gP3pjjAj3dXYZy7nZULA6ugWSNwdVCRCi80g0t_PLt0zu8TW08ADGQhcuSFJgAtl1j9CRfZabbO0bm50sVSBML8cagvhtInZU3Km_rIL5AswM-pMt1Ial3BqjEbqHPI2TAw6Fc9vy52WoZSbjML6wyLQiMRA_vhszcd-m-hCBXUVONsUNCJGz1o0nSlXJPmWCes");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-bold leading-normal">HealthMate Admin</h1>
+<p class="text-text-dim text-xs font-normal leading-normal">System Manager</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 border border-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-dim hover:bg-[#28392e] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<p class="text-sm font-medium leading-normal">Users</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-dim hover:bg-[#28392e] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">fitness_center</span>
+<p class="text-sm font-medium leading-normal">Workouts</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-dim hover:bg-[#28392e] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<p class="text-sm font-medium leading-normal">System Logs</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-dim hover:bg-[#28392e] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium leading-normal">Settings</p>
+</a>
+</nav>
+</div>
+<div class="mt-auto pt-6 border-t border-[#28392e]">
+<div class="p-4 bg-gradient-to-br from-primary/10 to-transparent rounded-xl border border-primary/10">
+<p class="text-xs text-text-dim font-medium uppercase tracking-wider mb-2">System Status</p>
+<div class="flex items-center gap-2">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+</span>
+<span class="text-sm text-white font-semibold">All Systems Go</span>
+</div>
+<p class="text-xs text-text-dim mt-2">Server uptime: 24d 13h</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full overflow-hidden relative">
+<!-- Header -->
+<header class="flex items-center justify-between px-8 py-5 border-b border-[#28392e] bg-background-dark shrink-0">
+<div>
+<h2 class="text-white text-3xl font-bold tracking-tight">System Overview</h2>
+<p class="text-text-dim text-sm mt-1">Real-time analytics and system health monitoring.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#28392e] hover:bg-[#344b3c] text-white text-sm font-medium transition-colors border border-transparent hover:border-primary/30">
+<span class="material-symbols-outlined text-[18px]">cloud_download</span>
+                        Data Backup
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-dark text-background-dark text-sm font-bold transition-colors shadow-[0_0_15px_rgba(19,236,91,0.3)]">
+<span class="material-symbols-outlined text-[18px]">build_circle</span>
+                        System Recovery
+                    </button>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-8 scroll-smooth">
+<div class="max-w-7xl mx-auto flex flex-col gap-8">
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="flex flex-col justify-between p-5 rounded-xl bg-surface-dark border border-[#28392e] hover:border-primary/30 transition-all group">
+<div class="flex justify-between items-start">
+<p class="text-text-dim text-sm font-medium">Total Users</p>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-lg">group_add</span>
+</div>
+<div class="mt-4">
+<p class="text-white text-3xl font-bold">12,450</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-primary text-sm">trending_up</span>
+<p class="text-primary text-sm font-medium">+12%</p>
+<p class="text-text-dim text-xs ml-1">from last month</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col justify-between p-5 rounded-xl bg-surface-dark border border-[#28392e] hover:border-primary/30 transition-all group">
+<div class="flex justify-between items-start">
+<p class="text-text-dim text-sm font-medium">Active Sessions</p>
+<span class="material-symbols-outlined text-blue-400 bg-blue-400/10 p-1.5 rounded-lg">devices</span>
+</div>
+<div class="mt-4">
+<p class="text-white text-3xl font-bold">843</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-primary text-sm">trending_up</span>
+<p class="text-primary text-sm font-medium">+5%</p>
+<p class="text-text-dim text-xs ml-1">current load</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col justify-between p-5 rounded-xl bg-surface-dark border border-[#28392e] hover:border-primary/30 transition-all group">
+<div class="flex justify-between items-start">
+<p class="text-text-dim text-sm font-medium">Server Latency</p>
+<span class="material-symbols-outlined text-yellow-400 bg-yellow-400/10 p-1.5 rounded-lg">speed</span>
+</div>
+<div class="mt-4">
+<p class="text-white text-3xl font-bold">24ms</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-primary text-sm">trending_down</span>
+<p class="text-primary text-sm font-medium">-2ms</p>
+<p class="text-text-dim text-xs ml-1">optimized</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col justify-between p-5 rounded-xl bg-surface-dark border border-[#28392e] hover:border-red-500/30 transition-all group relative overflow-hidden">
+<div class="absolute right-0 top-0 w-20 h-20 bg-red-500/5 blur-2xl rounded-full pointer-events-none"></div>
+<div class="flex justify-between items-start">
+<p class="text-text-dim text-sm font-medium">Error Rate</p>
+<span class="material-symbols-outlined text-red-500 bg-red-500/10 p-1.5 rounded-lg">warning</span>
+</div>
+<div class="mt-4">
+<p class="text-white text-3xl font-bold">0.02%</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-primary text-sm">trending_down</span>
+<p class="text-primary text-sm font-medium">-0.01%</p>
+<p class="text-text-dim text-xs ml-1">stable</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Main Line Chart -->
+<div class="lg:col-span-2 p-6 rounded-xl bg-surface-dark border border-[#28392e]">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="text-white text-lg font-bold">New Users by Month</h3>
+<p class="text-text-dim text-sm">Growth trajectory over last 6 months</p>
+</div>
+<div class="flex items-center gap-2 bg-[#112218] rounded-lg p-1 border border-[#28392e]">
+<button class="px-3 py-1 rounded text-xs font-medium bg-[#28392e] text-white">Month</button>
+<button class="px-3 py-1 rounded text-xs font-medium text-text-dim hover:text-white">Week</button>
+<button class="px-3 py-1 rounded text-xs font-medium text-text-dim hover:text-white">Day</button>
+</div>
+</div>
+<div class="h-64 w-full relative">
+<!-- Simulated Chart Background Lines -->
+<div class="absolute inset-0 flex flex-col justify-between text-xs text-text-dim/30 pointer-events-none">
+<div class="border-b border-[#28392e] w-full h-0"></div>
+<div class="border-b border-[#28392e] w-full h-0"></div>
+<div class="border-b border-[#28392e] w-full h-0"></div>
+<div class="border-b border-[#28392e] w-full h-0"></div>
+<div class="border-b border-[#28392e] w-full h-0"></div>
+</div>
+<!-- Chart SVG -->
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 800 200">
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#13ec5b" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#13ec5b" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,150 Q100,100 200,120 T400,80 T600,40 T800,20 L800,200 L0,200 Z" fill="url(#chartGradient)"></path>
+<path d="M0,150 Q100,100 200,120 T400,80 T600,40 T800,20" fill="none" stroke="#13ec5b" stroke-linecap="round" stroke-width="3"></path>
+<!-- Tooltip Indicator -->
+<circle class="animate-pulse" cx="600" cy="40" fill="#13ec5b" r="5" stroke="#fff" stroke-width="2"></circle>
+</svg>
+</div>
+<div class="flex justify-between mt-2 px-2 text-xs text-text-dim font-medium uppercase">
+<span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+</div>
+</div>
+<!-- Circular Progress Charts -->
+<div class="flex flex-col gap-4">
+<div class="flex-1 p-6 rounded-xl bg-surface-dark border border-[#28392e] flex flex-col justify-center items-center relative">
+<h3 class="text-white text-lg font-bold absolute top-6 left-6">Workout Completion</h3>
+<div class="relative w-48 h-48 mt-8">
+<svg class="w-full h-full transform -rotate-90">
+<circle cx="96" cy="96" fill="none" r="80" stroke="#28392e" stroke-width="12"></circle>
+<circle cx="96" cy="96" fill="none" r="80" stroke="#13ec5b" stroke-dasharray="502" stroke-dashoffset="75" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-4xl font-bold text-white">85%</span>
+<span class="text-sm text-text-dim">Global Rate</span>
+</div>
+</div>
+<div class="flex gap-8 mt-6 w-full px-4 justify-center">
+<div class="text-center">
+<p class="text-xl font-bold text-white">12.4k</p>
+<p class="text-xs text-text-dim">Completed</p>
+</div>
+<div class="w-px bg-[#28392e]"></div>
+<div class="text-center">
+<p class="text-xl font-bold text-white">1.2k</p>
+<p class="text-xs text-text-dim">Abandoned</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Recent Activity & Alerts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+<!-- Recent Activity Feed -->
+<div class="rounded-xl bg-surface-dark border border-[#28392e] overflow-hidden">
+<div class="p-5 border-b border-[#28392e] flex justify-between items-center bg-[#15281e]">
+<h3 class="text-white text-lg font-bold">Recent Activity</h3>
+<a class="text-primary text-xs font-semibold hover:underline" href="#">View All</a>
+</div>
+<div class="flex flex-col">
+<!-- Item 1 -->
+<div class="flex gap-4 p-4 border-b border-[#28392e] hover:bg-[#1c3326] transition-colors">
+<div class="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+</div>
+<div>
+<p class="text-sm text-white"><span class="font-bold">New User Registration</span> spike detected in region EU-West.</p>
+<p class="text-xs text-text-dim mt-1">12 minutes ago</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex gap-4 p-4 border-b border-[#28392e] hover:bg-[#1c3326] transition-colors">
+<div class="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+</div>
+<div>
+<p class="text-sm text-white"><span class="font-bold">System Backup</span> completed successfully.</p>
+<p class="text-xs text-text-dim mt-1">2 hours ago</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex gap-4 p-4 border-b border-[#28392e] hover:bg-[#1c3326] transition-colors">
+<div class="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<div>
+<p class="text-sm text-white">Database latency warning on <span class="font-mono text-xs bg-[#28392e] px-1 py-0.5 rounded">node-04</span>.</p>
+<p class="text-xs text-text-dim mt-1">4 hours ago</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Critical Alerts / Logs -->
+<div class="rounded-xl bg-surface-dark border border-[#28392e] overflow-hidden flex flex-col">
+<div class="p-5 border-b border-[#28392e] flex justify-between items-center bg-[#15281e]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-red-500">report</span>
+<h3 class="text-white text-lg font-bold">Critical Error Logs</h3>
+</div>
+<span class="bg-red-500/20 text-red-500 text-xs px-2 py-1 rounded font-bold border border-red-500/20">2 New</span>
+</div>
+<div class="p-4 flex flex-col gap-3 h-full">
+<div class="bg-red-500/5 border-l-2 border-red-500 p-3 rounded-r-lg">
+<div class="flex justify-between items-start">
+<p class="text-red-200 text-sm font-semibold">API Rate Limit Exceeded</p>
+<span class="text-xs text-red-400/60 font-mono">ERR_429</span>
+</div>
+<p class="text-red-200/60 text-xs mt-1">Multiple unauthorized attempts from IP 192.168.1.1</p>
+</div>
+<div class="bg-red-500/5 border-l-2 border-red-500 p-3 rounded-r-lg">
+<div class="flex justify-between items-start">
+<p class="text-red-200 text-sm font-semibold">Payment Gateway Timeout</p>
+<span class="text-xs text-red-400/60 font-mono">ERR_504</span>
+</div>
+<p class="text-red-200/60 text-xs mt-1">Transaction ID #99281 failed to respond within 30s.</p>
+</div>
+<div class="mt-auto pt-2">
+<button class="w-full py-2 bg-[#28392e] hover:bg-[#344b3c] text-text-dim hover:text-white text-xs font-medium rounded transition-colors uppercase tracking-wider">
+                                        View Full System Log
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

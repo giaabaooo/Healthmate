@@ -12,6 +12,7 @@ const chatRoutes = require("./routes/chatRoutes");
 const foodRoutes = require('./routes/food-routes');
 const mealPlanRoutes = require('./routes/meal-plan-routes');
 const trackerRoutes = require('./routes/trackerRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Kết nối database
 connectDB();
@@ -33,17 +34,19 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use("/api/workouts", workoutRoutes);
 app.use("/api/workout-categories", workoutCategoryRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/auth", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/meal-plans', mealPlanRoutes);
 app.use('/api/tracker', trackerRoutes);
+app.use('/api/admin', adminRoutes);
 
 // API test thử
 app.get("/", (req, res) => {
   res.send("Healthmate API đang chạy thành công! 🚀");
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8002;
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại http://localhost:${PORT}`);
 });

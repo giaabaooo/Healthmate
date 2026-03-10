@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Reminders &amp; Motivation Hub | HealthMate</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/10 bg-white dark:bg-background-dark px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-slate-900 dark:text-white">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-background-dark">
+<span class="material-symbols-outlined font-bold">exercise</span>
+</div>
+<h2 class="text-xl font-bold leading-tight tracking-tight">HealthMate</h2>
+</div>
+<label class="flex flex-col min-w-40 h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-slate-500 flex border-none bg-slate-100 dark:bg-slate-800 items-center justify-center pl-4 rounded-l-lg" data-icon="search">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 border-none bg-slate-100 dark:bg-slate-800 focus:ring-0 h-full placeholder:text-slate-500 px-4 rounded-r-lg text-base font-normal" placeholder="Search challenges..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<nav class="flex items-center gap-8">
+<a class="text-slate-700 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-slate-700 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Workouts</a>
+<a class="text-slate-700 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Nutrition</a>
+<a class="text-primary text-sm font-bold border-b-2 border-primary py-1" href="#">Community</a>
+</nav>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-primary/20">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-primary/20">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary" data-alt="User profile picture showing a smiling man" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDi7bnd1zWzFiu28D80dqObZNZHod2DUfgXxUGSDGu2wFBSf90Fi0oN_CF5lSCyVNGDImkkUN7eSTDhGrYVdyHmU03oC2mD3e5gY3EBDZ4BozDNv18D90Ygsm07oJz6y_nAQ1PTYv3QAFKSTI4hUMhJZroBLXuzztqWmIvGjyh1eqBw0yQlziDdd6-UcrP13rHmDBhr3zaK00CsCpQDpu6A-DgFd51j8sqzJhwbVs0jvs6m7oUykDyRBVQLR7i_fY4CqrRJlNWjFmk");'></div>
+</div>
+</header>
+<main class="flex flex-1 flex-row px-10 py-8 gap-8">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex flex-col gap-2 shrink-0">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-background-dark font-bold shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined filled-icon">bolt</span>
+<span class="text-sm">Motivation Hub</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-slate-500">emoji_events</span>
+<span class="text-sm font-medium">Challenges</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-slate-500">military_tech</span>
+<span class="text-sm font-medium">Achievements</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-slate-500">alarm</span>
+<span class="text-sm font-medium">Reminders</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-slate-500">trending_up</span>
+<span class="text-sm font-medium">Leaderboard</span>
+</div>
+</div>
+<!-- Daily Motivation Quote -->
+<div class="mt-8 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 relative overflow-hidden">
+<span class="material-symbols-outlined absolute -right-2 -bottom-2 text-primary/10 text-6xl">format_quote</span>
+<h4 class="text-xs font-bold uppercase tracking-widest text-primary mb-3">Daily Inspiration</h4>
+<p class="text-sm italic leading-relaxed text-slate-700 dark:text-slate-300 relative z-10">
+                            "Strength does not come from physical capacity. It comes from an indomitable will."
+                        </p>
+<p class="text-xs mt-3 font-semibold text-slate-500">— Mahatma Gandhi</p>
+</div>
+</aside>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col gap-8">
+<!-- Stats Overview -->
+<section class="grid grid-cols-4 gap-4">
+<div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold uppercase text-slate-500">Current Streak</span>
+<span class="material-symbols-outlined text-orange-500 filled-icon">local_fire_department</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-black">15</span>
+<span class="text-sm font-medium text-slate-500">Days</span>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-orange-500 h-full w-3/4"></div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold uppercase text-slate-500">Total Points</span>
+<span class="material-symbols-outlined text-primary filled-icon">stars</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-black">2,450</span>
+<span class="text-sm font-medium text-primary">+150 Today</span>
+</div>
+<p class="text-[10px] text-slate-400">Keep it up to hit 3k this week!</p>
+</div>
+<div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold uppercase text-slate-500">Current Rank</span>
+<span class="material-symbols-outlined text-yellow-500 filled-icon">workspace_premium</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-black">Gold II</span>
+<span class="text-sm font-medium text-slate-500">Top 5%</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-green-500 text-sm">arrow_upward</span>
+<span class="text-[10px] text-green-500 font-bold">+2 positions</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold uppercase text-slate-500">Badges</span>
+<span class="material-symbols-outlined text-blue-500 filled-icon">verified</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-black">12</span>
+<span class="text-sm font-medium text-slate-500">Unlocked</span>
+</div>
+<button class="text-[10px] text-primary font-bold text-left underline decoration-primary/30">VIEW GALLERY</button>
+</div>
+</section>
+<div class="grid grid-cols-12 gap-8">
+<!-- Left Column: Challenges & Achievements -->
+<div class="col-span-8 flex flex-col gap-8">
+<!-- Active Challenges -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-xl font-bold">Active Challenges</h3>
+<button class="text-primary text-sm font-bold flex items-center gap-1">
+                                        Browse All <span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl hover:border-primary transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600">
+<span class="material-symbols-outlined filled-icon">directions_run</span>
+</div>
+<span class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">4 DAYS LEFT</span>
+</div>
+<h4 class="font-bold mb-1">Morning Cardio Sprint</h4>
+<p class="text-xs text-slate-500 mb-4">Complete 5 morning runs this week. 150XP reward.</p>
+<div class="flex items-center justify-between gap-4">
+<div class="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+<div class="bg-blue-500 h-full w-3/5"></div>
+</div>
+<span class="text-xs font-bold">3/5</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl hover:border-primary transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg text-green-600">
+<span class="material-symbols-outlined filled-icon">nutrition</span>
+</div>
+<span class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">MONTHLY</span>
+</div>
+<h4 class="font-bold mb-1">Sugar-Free September</h4>
+<p class="text-xs text-slate-500 mb-4">No refined sugar for 30 days. 500XP reward.</p>
+<div class="flex items-center justify-between gap-4">
+<div class="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+<div class="bg-green-500 h-full w-[85%]"></div>
+</div>
+<span class="text-xs font-bold">22/30</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Achievements Gallery -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-xl font-bold">Latest Achievements</h3>
+</div>
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl grid grid-cols-4 gap-6">
+<div class="flex flex-col items-center gap-3 text-center opacity-100">
+<div class="size-16 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-yellow-500/20">
+<span class="material-symbols-outlined text-3xl filled-icon">timer</span>
+</div>
+<p class="text-[10px] font-bold uppercase">Early Bird</p>
+</div>
+<div class="flex flex-col items-center gap-3 text-center opacity-100">
+<div class="size-16 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+<span class="material-symbols-outlined text-3xl filled-icon">fitness_center</span>
+</div>
+<p class="text-[10px] font-bold uppercase">Heavy Lifter</p>
+</div>
+<div class="flex flex-col items-center gap-3 text-center opacity-100">
+<div class="size-16 rounded-full bg-gradient-to-tr from-green-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-green-500/20">
+<span class="material-symbols-outlined text-3xl filled-icon">spa</span>
+</div>
+<p class="text-[10px] font-bold uppercase">Zen Master</p>
+</div>
+<div class="flex flex-col items-center gap-3 text-center opacity-40 grayscale">
+<div class="size-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined text-3xl filled-icon">lock</span>
+</div>
+<p class="text-[10px] font-bold uppercase">Century</p>
+</div>
+</div>
+</section>
+<!-- Recommended Workouts -->
+<section>
+<h3 class="text-xl font-bold mb-4">Recommended Quick Starts</h3>
+<div class="flex gap-4">
+<div class="flex-1 h-40 rounded-2xl overflow-hidden relative group cursor-pointer">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="HIIT workout background with weights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvkq7VajuW213OgDCEOdzPdjFKhU0lIgTBeH2dSnFbuIn8I_Uhxzhmo3ao9AeHbZR43Dyy1U06n3yOXnYrE-uZJ-O3Qjm3ObK2cw1Oss7iga5ZAwx3Kr8R9HrPJfFCPjRoK5SRbVI6PTAVm5TKAnSgXki1h3j1ff_bA--bUdAXu1pJyUyMxuz0DVsf1W8-lLSK3ka9sU77kac9eCJPTpVyt5OOM349zzSQoajlAmugQoF4PkJ56DHgJhtRW8Ky8YZnf3jFbqVPYb0"/>
+<div class="absolute bottom-4 left-4 z-20">
+<p class="text-primary text-[10px] font-bold uppercase mb-1">Burn &amp; Sweat</p>
+<h5 class="text-white font-bold">15-Min HIIT Blast</h5>
+</div>
+</div>
+<div class="flex-1 h-40 rounded-2xl overflow-hidden relative group cursor-pointer">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="Yoga morning stretch background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYODt0m7O5OIZ0fz8lJ5DhPIqVsgQMClrVU6uRUBg35dwRg0gvCDDIdE__BTQDVa2Ch45PFKLkMmr7xFTdv6bikUHTGLKjHI6f9FLZUYTbFHFYYK_IG7YGdGqMhofBwiWELnRbN3SsTutu5rYOaUxFnibk9mxPC649XtasSbQta6Qgle6208HvQ_In1G6NSDc6BEBCDKwTfl3c4Lr29Nct4Zb1v0XeFOP_N2stmnkX37SdnPXJ-TsApESAMXy2s0-9YZUubsuQIzk"/>
+<div class="absolute bottom-4 left-4 z-20">
+<p class="text-primary text-[10px] font-bold uppercase mb-1">Flexibility</p>
+<h5 class="text-white font-bold">Morning Flow</h5>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Reminders & Feed -->
+<div class="col-span-4 flex flex-col gap-8">
+<!-- Workout Reminders -->
+<section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+<div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+<h3 class="font-bold">Reminders</h3>
+<button class="material-symbols-outlined text-slate-400 hover:text-primary transition-colors">add_circle</button>
+</div>
+<div class="p-2">
+<div class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50">
+<div class="size-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 flex items-center justify-center">
+<span class="material-symbols-outlined">alarm</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Yoga Session</p>
+<p class="text-[10px] text-slate-500">Today at 6:30 PM</p>
+</div>
+<input checked="" class="rounded border-slate-300 text-primary focus:ring-primary h-5 w-5" type="checkbox"/>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50">
+<div class="size-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
+<span class="material-symbols-outlined">water_drop</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Hydration Check</p>
+<p class="text-[10px] text-slate-500">Every 2 hours</p>
+</div>
+<input class="rounded border-slate-300 text-primary focus:ring-primary h-5 w-5" type="checkbox"/>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 opacity-60">
+<div class="size-10 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 flex items-center justify-center">
+<span class="material-symbols-outlined">pill</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Vitamins</p>
+<p class="text-[10px] text-slate-500">Completed at 8:00 AM</p>
+</div>
+<span class="material-symbols-outlined text-green-500">check_circle</span>
+</div>
+</div>
+<button class="w-full py-3 text-xs font-bold text-slate-500 hover:text-primary uppercase tracking-widest border-t border-slate-100 dark:border-slate-800">
+                                    Manage All
+                                </button>
+</section>
+<!-- Weekly Activity Graph (Simplified) -->
+<section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+<h3 class="font-bold mb-4">Weekly Intensity</h3>
+<div class="flex items-end justify-between h-32 gap-2">
+<div class="flex-1 bg-primary/20 rounded-t-lg h-[40%] relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] px-2 py-1 rounded transition-opacity">M</div>
+</div>
+<div class="flex-1 bg-primary/20 rounded-t-lg h-[65%] relative group"></div>
+<div class="flex-1 bg-primary/20 rounded-t-lg h-[45%] relative group"></div>
+<div class="flex-1 bg-primary/20 rounded-t-lg h-[90%] relative group"></div>
+<div class="flex-1 bg-primary rounded-t-lg h-[75%] relative group">
+<span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-primary">Today</span>
+</div>
+<div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-lg h-[10%] relative group"></div>
+<div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-lg h-[10%] relative group"></div>
+</div>
+<div class="flex justify-between mt-3 text-[10px] font-bold text-slate-400 uppercase">
+<span>Mon</span>
+<span>Tue</span>
+<span>Wed</span>
+<span>Thu</span>
+<span>Fri</span>
+<span>Sat</span>
+<span>Sun</span>
+</div>
+</section>
+<!-- Mini Leaderboard -->
+<section class="bg-background-dark text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3">
+<span class="material-symbols-outlined text-primary/40 text-4xl">trophy</span>
+</div>
+<h3 class="font-bold mb-4 relative z-10">Friends Ranking</h3>
+<div class="flex flex-col gap-4 relative z-10">
+<div class="flex items-center gap-3">
+<span class="text-xs font-bold w-4 text-slate-500">1</span>
+<img class="size-8 rounded-full border border-primary/50" data-alt="Female friend profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGYujMKlwEVejhc45Bc06K4pE2ZuFvPGHvegysFgACkqaHM8fP5wHpXyxYP6pOCQLDNHONEgYEgkFR-57XyS9FQ1XRYvTbI3y1cCi2TF6sp4s5uhOsykmG4Tauuf8tYg4nPYYMoE8_s7OxakBhGkfRyqH7fgKiABbAL5NrrcO7tDcq3uc9jgPEPEm_Yucy2_g_o_4u3_EIjyORtrH_paut6nVc32Dm9Vt_s0Hyg7l85rxd9ndIAB0Behv-bXeLOlb-1FJMs0kKYYg"/>
+<div class="flex-1">
+<p class="text-xs font-bold">Sarah W.</p>
+<p class="text-[10px] text-primary">2,890 XP</p>
+</div>
+</div>
+<div class="flex items-center gap-3 bg-primary/10 -mx-5 px-5 py-2">
+<span class="text-xs font-bold w-4 text-primary italic">2</span>
+<img class="size-8 rounded-full border-2 border-primary" data-alt="Current user profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBugGMaA5KvhKuNtEpOe24ahvVCNxuczmESoNCA4TXYDyoy6EfYqqABZrXcY1KtlW4k55sloIlzR66I9WbllXru_jtrHoOpSBDQnuNy0pumPhJPo63K3zcw8XPHTp68Lzo7yauBkuSQMK-UGczHdjNtHFIoMza7c08d619b2gPSVUNbAJjiv5y2nWVlFev9kVSxW3TS8RTRHLjlpGXQ68JyaE_czqJDZZG9lvVpItK38jUKxT_oKiyPe6t7odvgx9et7B243yEqOnw"/>
+<div class="flex-1">
+<p class="text-xs font-bold">You</p>
+<p class="text-[10px] text-primary">2,450 XP</p>
+</div>
+<span class="text-[10px] bg-primary text-background-dark px-1.5 py-0.5 rounded font-bold">ME</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-xs font-bold w-4 text-slate-500">3</span>
+<img class="size-8 rounded-full border border-slate-700" data-alt="Male friend profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoDX3zSttfXRYM0m1w39Dh6WS5f6kYmpKuXopCzH1nNWPyzS2OErp_uI7uSWTP4aQQweSac6dA9owKxIFPK8JAqNgg7xSrLHFpYnukuvMjCAWTWTMI7LKTcpbmgIVjEDaoiKK0KO0_3IKTiZg7AgKakDzv6gcQcju7TQkpi-m53PcNFsPWQOMjhvAsYyIsN8QSOgNOsky5E-e9FvsrSLevIZNRsAxvWt0qqca8DWXXrhZrKFQbCK4FHN_i_MuYTvVsvfrzZS15IGI"/>
+<div class="flex-1">
+<p class="text-xs font-bold">Mike T.</p>
+<p class="text-[10px] text-slate-400">2,120 XP</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

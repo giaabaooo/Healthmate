@@ -1,45 +1,65 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const User = require('./models/User'); 
+require('dotenv').config();
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/healthmate', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const User = require('./models/User');
 
 const createAdmin = async () => {
   try {
-   
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Đã kết nối MongoDB...');
-
-    
-    const email = 'admin@gmail.com';
-    const password = 'admin123';
-
-    
-    const existingAdmin = await User.findOne({ email });
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: 'admin@healthmate.com' });
     if (existingAdmin) {
-      console.log('Tài khoản Admin này đã tồn tại!');
-      process.exit(0);
+      console.log('Admin user already exists');
+      return;
     }
 
+    // Hash password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const password_hash = await bcrypt.hash('admin123', salt);
 
-    
-    await User.create({
-      email: email,
-      password_hash: hashedPassword,
+    // Create admin user
+    const admin = new User({
+      email: 'admin@healthmate.com',
+      password_hash,
       role: 'admin',
+      status: 'active',
       profile: {
-        full_name: 'Healthmate (Admin)',
-        gender: 'male'
+        full_name: 'System Administrator',
+        phone_number: '+849012345678',
+        address: 'Hanoi, Vietnam',
+        picture: 'https://www.svgrepo.com/show/5125/avatar.svg'
       }
     });
 
-    console.log(`Đã tạo thành công tài khoản Admin: ${email}`);
+    await admin.save();
+    console.log('Admin user created successfully!');
+    console.log('Email: admin@healthmate.com');
+    console.log('Password: admin123');
+
+    // Generate JWT token for testing
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { userId: admin._id, email: admin.email, role: admin.role },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    console.log('🎫 JWT Token:', token);
+    console.log('\n🔗 Use this token to test admin APIs:');
+    console.log('curl -H "Authorization: Bearer ' + token + '" http://localhost:8000/api/admin/dashboard');
+
     process.exit(0);
   } catch (error) {
-    console.error('Lỗi khi tạo admin:', error);
+    console.error(' Error creating admin:', error);
     process.exit(1);
   }
 };
 
+// Chạy hàm tạo admin
 createAdmin();

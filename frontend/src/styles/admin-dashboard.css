@@ -1,0 +1,327 @@
+/* Admin Dashboard Custom Styles - Dark Theme */
+:root {
+  --primary: #13ec5b;
+  --primary-dark: #0ea341;
+  --background-light: #f6f8f6;
+  --background-dark: #102216;
+  --surface-dark: #1a3324;
+  --surface-darker: #112218;
+  --text-light: #e2e8f0;
+  --text-dim: #9db9a6;
+  --border-color: #28392e;
+}
+
+/* Apply dark theme only to AdminDashboard components */
+.admin-dashboard {
+  background-color: var(--background-dark) !important;
+  color: var(--text-light) !important;
+}
+
+/* Dark mode styles */
+.admin-dashboard.dark {
+  color-scheme: dark;
+}
+
+/* Custom Scrollbar */
+.admin-dashboard ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.admin-dashboard ::-webkit-scrollbar-track {
+  background: #112218;
+}
+
+.admin-dashboard ::-webkit-scrollbar-thumb {
+  background: #28392e;
+  border-radius: 4px;
+}
+
+.admin-dashboard ::-webkit-scrollbar-thumb:hover {
+  background: #3b5443;
+}
+
+/* Material Icons fallback */
+.admin-dashboard .material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.admin-dashboard .animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Dark theme overrides - only within admin-dashboard */
+.admin-dashboard .bg-background-light {
+  background-color: var(--background-dark) !important;
+}
+
+.admin-dashboard .bg-background-dark {
+  background-color: var(--background-dark) !important;
+}
+
+.admin-dashboard .bg-surface-dark {
+  background-color: var(--surface-dark) !important;
+}
+
+.admin-dashboard .bg-surface-darker {
+  background-color: var(--surface-darker) !important;
+}
+
+.admin-dashboard .text-text-light {
+  color: var(--text-light) !important;
+}
+
+.admin-dashboard .text-text-dim {
+  color: var(--text-dim) !important;
+}
+
+.admin-dashboard .text-white {
+  color: #ffffff !important;
+}
+
+.admin-dashboard .text-primary {
+  color: var(--primary) !important;
+}
+
+.admin-dashboard .bg-primary {
+  background-color: var(--primary) !important;
+}
+
+.admin-dashboard .bg-primary\/10 {
+  background-color: rgba(19, 236, 91, 0.1) !important;
+}
+
+.admin-dashboard .bg-primary\/20 {
+  background-color: rgba(19, 236, 91, 0.2) !important;
+}
+
+.admin-dashboard .border-primary\/10 {
+  border-color: rgba(19, 236, 91, 0.1) !important;
+}
+
+.admin-dashboard .border-primary\/30 {
+  border-color: rgba(19, 236, 91, 0.3) !important;
+}
+
+.admin-dashboard .hover\:bg-primary-dark:hover {
+  background-color: var(--primary-dark) !important;
+}
+
+/* Dark background colors */
+.admin-dashboard .bg-\[28392e\] {
+  background-color: #28392e !important;
+}
+
+.admin-dashboard .hover\:bg-\[344b3c\]:hover {
+  background-color: #344b3c !important;
+}
+
+.admin-dashboard .bg-\[112218\] {
+  background-color: #112218 !important;
+}
+
+/* Border colors */
+.admin-dashboard .border-\[28392e\] {
+  border-color: #28392e !important;
+}
+
+/* Text colors for different states */
+.admin-dashboard .text-blue-400 {
+  color: #60a5fa !important;
+}
+
+.admin-dashboard .text-yellow-400 {
+  color: #fbbf24 !important;
+}
+
+.admin-dashboard .text-red-400 {
+  color: #f87171 !important;
+}
+
+.admin-dashboard .text-red-500 {
+  color: #ef4444 !important;
+}
+
+.admin-dashboard .text-green-400 {
+  color: #4ade80 !important;
+}
+
+.admin-dashboard .text-green-500 {
+  color: #22c55e !important;
+}
+
+.admin-dashboard .text-purple-400 {
+  color: #c084fc !important;
+}
+
+/* Background colors for icons */
+.admin-dashboard .bg-blue-400\/10 {
+  background-color: rgba(96, 165, 250, 0.1) !important;
+}
+
+.admin-dashboard .bg-yellow-400\/10 {
+  background-color: rgba(251, 191, 36, 0.1) !important;
+}
+
+.admin-dashboard .bg-red-400\/10 {
+  background-color: rgba(248, 113, 113, 0.1) !important;
+}
+
+.admin-dashboard .bg-red-500\/10 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.admin-dashboard .bg-green-400\/10 {
+  background-color: rgba(74, 222, 128, 0.1) !important;
+}
+
+.admin-dashboard .bg-green-500\/10 {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+.admin-dashboard .bg-purple-400\/10 {
+  background-color: rgba(192, 132, 252, 0.1) !important;
+}
+
+/* Progress bars */
+.admin-dashboard .bg-green-500 {
+  background-color: #22c55e !important;
+}
+
+.admin-dashboard .bg-blue-500 {
+  background-color: #3b82f6 !important;
+}
+
+.admin-dashboard .bg-yellow-500 {
+  background-color: #eab308 !important;
+}
+
+/* Hover states */
+.admin-dashboard .hover\:bg-\[28392e\]:hover {
+  background-color: #28392e !important;
+}
+
+.admin-dashboard .hover\:bg-\[344b3c\]:hover {
+  background-color: #344b3c !important;
+}
+
+.admin-dashboard .hover\:border-primary\/30:hover {
+  border-color: rgba(19, 236, 91, 0.3) !important;
+}
+
+/* Shadow effects */
+.admin-dashboard .shadow-\[0_0_15px_rgba\(19\,236\,91\,0\.3\)\] {
+  box-shadow: 0 0 15px rgba(19, 236, 91, 0.3) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-dashboard .admin-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .admin-dashboard .admin-sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* Loading states */
+.admin-dashboard .loading-skeleton {
+  background: linear-gradient(90deg, #112218 25%, #1a3324 50%, #112218 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Ensure all text is readable on dark background - only within admin-dashboard */
+.admin-dashboard h1, 
+.admin-dashboard h2, 
+.admin-dashboard h3, 
+.admin-dashboard h4, 
+.admin-dashboard h5, 
+.admin-dashboard h6 {
+  color: var(--text-light) !important;
+}
+
+.admin-dashboard p, 
+.admin-dashboard span, 
+.admin-dashboard div {
+  color: inherit;
+}
+
+/* Override any light theme colors - only within admin-dashboard */
+.admin-dashboard .bg-white {
+  background-color: var(--surface-dark) !important;
+}
+
+.admin-dashboard .text-gray-900 {
+  color: var(--text-light) !important;
+}
+
+.admin-dashboard .text-gray-600 {
+  color: var(--text-dim) !important;
+}
+
+.admin-dashboard .text-gray-500 {
+  color: var(--text-dim) !important;
+}
+
+.admin-dashboard .text-gray-400 {
+  color: var(--text-dim) !important;
+}
+
+.admin-dashboard .text-gray-300 {
+  color: var(--text-dim) !important;
+}
+
+.admin-dashboard .text-gray-200 {
+  color: var(--text-dim) !important;
+}
+
+/* Border overrides - only within admin-dashboard */
+.admin-dashboard .border-gray-200 {
+  border-color: var(--border-color) !important;
+}
+
+.admin-dashboard .border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+/* Background overrides - only within admin-dashboard */
+.admin-dashboard .bg-gray-50 {
+  background-color: var(--surface-darker) !important;
+}
+
+.admin-dashboard .bg-gray-100 {
+  background-color: var(--surface-darker) !important;
+}

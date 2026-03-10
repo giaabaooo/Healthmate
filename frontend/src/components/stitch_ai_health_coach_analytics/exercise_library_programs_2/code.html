@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<title>My Personal Workout &amp; Schedule | HealthMate</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-slate-900 dark:text-slate-100">
+<div class="size-6 text-primary">
+<span class="material-symbols-outlined text-3xl">exercise</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em]">HealthMate</h2>
+</div>
+<label class="flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-slate-500 flex border-none bg-slate-100 dark:bg-slate-800 items-center justify-center pl-4 rounded-l-lg" data-icon="MagnifyingGlass">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-0 border-none bg-slate-100 dark:bg-slate-800 focus:border-none h-full placeholder:text-slate-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal" placeholder="Search routines..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<nav class="flex items-center gap-9">
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Dashboard</a>
+<a class="text-primary text-sm font-medium leading-normal" href="#">Workouts</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Nutrition</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Community</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Progress</a>
+</nav>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-slate-900 text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
+<span class="truncate text-xs">Upgrade to Pro</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary" data-alt="User profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAuDqZ5uDyrASPI6hEP-S1LQatHTCfKWKhc7rgraISZ4VminkXl4rwRb7vpFal3rXDMCaVONmmeVdJaa-GY93IYikdSOHCFwShaw9TubquRp73-LS0_GaWE2Miu1mgylPyEIfqcECGt1cWygakaUWuMvrnR-zlbyoY87hPWM8Hrdc-BJufYHfV1Dyth3NHdYUv4GQ8ISX9nMMh3NDV65-jDsgHjnCNvT_DzJO_b-2zcZr7f2XuNgBEYfXmDf43o64uMJAamin93nPo");'></div>
+</div>
+</header>
+<main class="flex flex-1 max-w-[1440px] mx-auto w-full px-4 md:px-10 py-8 gap-8">
+<div class="flex flex-col flex-1 gap-8">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex flex-col gap-1">
+<h1 class="text-slate-900 dark:text-slate-100 text-4xl font-black leading-tight tracking-[-0.033em]">My Workout &amp; Schedule</h1>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-2">
+<div class="w-32 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-2/3"></div>
+</div>
+<span class="text-xs font-bold text-slate-500 uppercase">Daily Progress: 65%</span>
+</div>
+<span class="text-slate-400">|</span>
+<span class="text-xs font-bold text-primary flex items-center gap-1"><span class="material-symbols-outlined text-sm">local_fire_department</span> 12 Day Streak</span>
+</div>
+</div>
+<button class="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-slate-900 text-sm font-bold leading-normal transition-all hover:scale-[1.02] shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-xl">play_circle</span>
+<span class="truncate">Start Workout</span>
+</button>
+</div>
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+                                Today's Routine
+                                <span class="text-sm font-normal text-slate-500 ml-2">Monday, Oct 24</span>
+</h3>
+<button class="text-primary text-sm font-bold hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-base">add</span> Add Exercise
+                            </button>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
+<div class="flex flex-col items-center justify-center min-w-[60px] py-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+<span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Set 1</span>
+<span class="text-lg font-black text-slate-900 dark:text-slate-100">08:00</span>
+</div>
+<div class="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+<img alt="exercise" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3RRLj_qU6_rKyx5_tenXc3b2nTpWUjcm7tet2EyXz6B03c4tWuNF0cy-2J8D20vmBYPL7QefEz9uEilmx_wXNfiLdtXoRTbgO1O2oJaxsLdDrhY2JCdUTspeCe-Jwc1z437VNUcIhpDDlAaccizyx2Sj1oyi1D0TrtDsDyTim-1yXveQHtl8nl2g5hUTxbbhYch8-xdZMULrpmrjk2WZimA4YtcS1V5tO4orxZDumYcQTiDN7g5uf0C4ZpVQcmkAliSaxZX19gBI"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-slate-900 dark:text-slate-100">Incline Dumbbell Press</h4>
+<p class="text-sm text-slate-500">Chest • 4 sets x 10 reps</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined">edit</span></button>
+<button class="p-2 text-slate-400 hover:text-red-500 transition-colors"><span class="material-symbols-outlined">delete</span></button>
+</div>
+<span class="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
+</div>
+<div class="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors border-l-4 border-l-primary">
+<div class="flex flex-col items-center justify-center min-w-[60px] py-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+<span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Set 2</span>
+<span class="text-lg font-black text-slate-900 dark:text-slate-100">08:20</span>
+</div>
+<div class="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+<img alt="exercise" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYB1ORYmZnFWnzg3eqTOgaOAgGT29gORgS_5X0A8vzhgDPVX3KZmykO18d-LB4fcL_3KWDvp8ALKLq1iT9zyzZjbwENjY1--62VeDNWxLEztB2L5memr9ZQ8I9CGbtMyrstcNso8M6GnXV42G3u01T7nK4Gx0KfJU7P1Er6kZ99TU8xztstnOhrjEOoa4Fh_Ay_jwSIoVCjS65AE0Y8NbRBBq8C-9TJNByyZCuy9zthbotqEh9u-PKsz-EeoYgatFESMibrstuOSg"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-slate-900 dark:text-slate-100">Weighted Pull-ups</h4>
+<p class="text-sm text-slate-500">Back • 3 sets x 8 reps</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined">edit</span></button>
+<button class="p-2 text-slate-400 hover:text-red-500 transition-colors"><span class="material-symbols-outlined">delete</span></button>
+</div>
+<span class="material-symbols-outlined text-slate-300">radio_button_unchecked</span>
+</div>
+<div class="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
+<div class="flex flex-col items-center justify-center min-w-[60px] py-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+<span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Set 3</span>
+<span class="text-lg font-black text-slate-900 dark:text-slate-100">08:45</span>
+</div>
+<div class="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+<img alt="exercise" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbexbzLzbTV-pWC9bUHreccAIe0kUDIe8yEad3KDcSOmqskWU_7EgMph7Hxl261Y2xeQU7Crhut10nuXq4mdNwYgCLvANNve3VHWB_bqtuTgwIcJBVYiKp1Mjwu3q0seZlPQbSVKkX4J9flIWLobaRpb-uy1PpPIwhjyMilwgrWIlrmnBLrwZFKVxMcrn3wCgrmISWMdNiKevRPtuRcIgRqOSVSqT4vxgIJfduz0vzIfm-605aUDs4RX_MAOGA5j6c3X9HzgkCAJQ"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-slate-900 dark:text-slate-100">Kettlebell Swings</h4>
+<p class="text-sm text-slate-500">Full Body • 5 sets x 20 reps</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined">edit</span></button>
+<button class="p-2 text-slate-400 hover:text-red-500 transition-colors"><span class="material-symbols-outlined">delete</span></button>
+</div>
+<span class="material-symbols-outlined text-slate-300">radio_button_unchecked</span>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary fill-current">auto_awesome</span>
+<h3 class="text-xl font-bold">AI Recommended for You</h3>
+</div>
+<div class="flex gap-2">
+<button class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
+<div class="flex-shrink-0 w-72 group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+<div class="aspect-video w-full overflow-hidden bg-slate-200 relative">
+<img class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXsVPx7VdS0p_sZivEdM3UANqd9RX9vrmbrufpAUP3NK_NWUrUx1bmWcg3CQR-zPRBf3_BkztMGBSCOvi2vHGuD7eUfgWySlsLpRj4n1CtrCGxiFM-21gSPJ6Z9ElZdZLgh-eEkZA8d_ZOqtQ7-mKnf9i8ZpSLrJeATfthhcmnKEwHStIq1jX534xSVqDznPk2QlHS4wlASewSoM5wATlBd-UiPgbYp5fQKc87d8-6PHEGHsR8jrmlO6FABIgbG-J_S-nvHMuyj0c"/>
+<div class="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-[10px] font-bold rounded">LEVEL UP</div>
+</div>
+<div class="flex flex-col p-4 gap-2">
+<h4 class="font-bold text-base">Back Squat</h4>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase">Legs</span>
+<span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase">Barbell</span>
+</div>
+<button class="mt-2 w-full py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-lg hover:opacity-90">Add to Routine</button>
+</div>
+</div>
+<div class="flex-shrink-0 w-72 group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+<div class="aspect-video w-full overflow-hidden bg-slate-200 relative">
+<img class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl0REsQeqGNwFp52PJVX7Wiy9i8Q2SHmHeGbYzOcxIKrW9PIpZAtRClLz8MP61JiW7TV-gDjMyPqFCi_2u-kqX5Z8a6B71ySr5V1OvMaj9fVcQGRPyIZSAsmBVxOVCRHBEhr7Rr0dLCZK61KM5Kfw2JgJwNWiAaLr4zqE_GxJerBse2ijF4JEI9Aibgx2cB2dE4B6r0BSEZbKX5IL4FZlwO8E8Nq6R3We4Ge2-QOcpj0Qs7KCze3NW0AEOPnVC_sBGAUkYTK1mQOc"/>
+<div class="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-[10px] font-bold rounded">RECOVERY</div>
+</div>
+<div class="flex flex-col p-4 gap-2">
+<h4 class="font-bold text-base">Classic Push-ups</h4>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase">Chest</span>
+<span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase">Bodyweight</span>
+</div>
+<button class="mt-2 w-full py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-lg hover:opacity-90">Add to Routine</button>
+</div>
+</div>
+<div class="flex-shrink-0 w-72 group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+<div class="aspect-video w-full overflow-hidden bg-slate-200 relative">
+<img class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoVm3WEr02l_-2EF5eaBQZr4Q5p5DV4Kmrd20k0xepK-78NrlvEFqNp05QmYQNytB6Aovqbd5_oVl4qeA7opliK8e-ljIqsDZxvjep3KTOkX7dP2CMzQjQyAGTFN0Yt-DjeSo4lCJGRnHTYS_Dw-qFh-zjrtoadXYG-NdKB16Pl-KZxBs7UOYrFNXLIjmIWJRcFVvPfjEJsA-Q1JeBqj250yNxOWYpDAT_2aI5lDs2taOZK0jzLDnliI3PRPlU5RC1e7Srn4SWVwA"/>
+<div class="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-[10px] font-bold rounded">SCULPT</div>
+</div>
+<div class="flex flex-col p-4 gap-2">
+<h4 class="font-bold text-base">Hammer Curls</h4>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase">Arms</span>
+<span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase">Dumbbells</span>
+</div>
+<button class="mt-2 w-full py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-lg hover:opacity-90">Add to Routine</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<aside class="w-[380px] hidden xl:flex flex-col gap-8">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-6 sticky top-24">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold">Schedule Planner</h3>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><span class="material-symbols-outlined">settings</span></button>
+</div>
+<div class="grid grid-cols-7 gap-2">
+<div class="flex flex-col items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Mon</span>
+<div class="w-10 h-10 rounded-full flex items-center justify-center bg-primary text-slate-900 font-bold text-sm">24</div>
+<div class="w-1.5 h-1.5 bg-primary rounded-full"></div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Tue</span>
+<div class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium">25</div>
+<div class="w-1.5 h-1.5 bg-primary rounded-full"></div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Wed</span>
+<div class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium">26</div>
+<div class="w-1.5 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Thu</span>
+<div class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium">27</div>
+<div class="w-1.5 h-1.5 bg-primary rounded-full"></div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Fri</span>
+<div class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium">28</div>
+<div class="w-1.5 h-1.5 bg-primary rounded-full"></div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Sat</span>
+<div class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium">29</div>
+<div class="w-1.5 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Sun</span>
+<div class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium">30</div>
+<div class="w-1.5 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+</div>
+</div>
+<div class="flex flex-col gap-4 mt-4">
+<h4 class="text-sm font-bold uppercase tracking-widest text-slate-400">Weekly Overview</h4>
+<div class="flex flex-col gap-3">
+<div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer">
+<div class="bg-blue-500/10 p-2 rounded-lg text-blue-500">
+<span class="material-symbols-outlined">fitness_center</span>
+</div>
+<div class="flex-1">
+<h5 class="text-sm font-bold">Chest &amp; Triceps</h5>
+<p class="text-[10px] text-slate-500">Tomorrow • 07:00 AM</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+</div>
+<div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer">
+<div class="bg-orange-500/10 p-2 rounded-lg text-orange-500">
+<span class="material-symbols-outlined">directions_run</span>
+</div>
+<div class="flex-1">
+<h5 class="text-sm font-bold">HIIT Cardio</h5>
+<p class="text-[10px] text-slate-500">Thu, Oct 27 • 06:30 PM</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+</div>
+<div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer">
+<div class="bg-purple-500/10 p-2 rounded-lg text-purple-500">
+<span class="material-symbols-outlined">self_improvement</span>
+</div>
+<div class="flex-1">
+<h5 class="text-sm font-bold">Active Recovery</h5>
+<p class="text-[10px] text-slate-500">Sat, Oct 29 • 10:00 AM</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+</div>
+</div>
+</div>
+<button class="w-full py-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-slate-400 text-sm font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                            Schedule New Workout
+                        </button>
+</div>
+</aside>
+</main>
+<div class="fixed bottom-6 right-6 xl:hidden flex flex-col gap-3">
+<button class="size-14 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full shadow-xl flex items-center justify-center transition-transform active:scale-90">
+<span class="material-symbols-outlined text-2xl">calendar_month</span>
+</button>
+<button class="size-14 bg-primary rounded-full shadow-xl flex items-center justify-center text-slate-900 transition-transform active:scale-90">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+</div>
+</div>
+<style type="text/tailwindcss">
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+</body></html>
