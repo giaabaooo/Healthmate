@@ -406,6 +406,13 @@ const AdminDashboard: React.FC = () => {
               <span className="material-symbols-outlined text-[18px]">build_circle</span>
               System Recovery
             </button>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors border border-transparent hover:border-red-400"
+            >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+              Logout
+            </button>
           </div>
         </header>
 

@@ -53,13 +53,15 @@ const getDashboardStats = async (req, res) => {
 
     // Add workout activities
     recentWorkoutLogs.forEach(log => {
-      activities.push({
-        id: `workout_${log._id}`,
-        user: log.user_id?.profile?.full_name || 'Unknown User',
-        action: `Hoàn thành workout ${log.workout_id?.name || 'Unknown'}`,
-        timestamp: log.createdAt.toISOString(),
-        type: 'workout'
-      });
+      if (log.createdAt) {
+        activities.push({
+          id: `workout_${log._id}`,
+          user: log.user_id?.profile?.full_name || 'Unknown User',
+          action: `Hoàn thành workout ${log.workout_id?.name || 'Unknown'}`,
+          timestamp: log.createdAt.toISOString(),
+          type: 'workout'
+        });
+      }
     });
 
     // Add user registration activities
