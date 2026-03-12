@@ -13,9 +13,9 @@ const mealPlanRoutes = require("./routes/meal-plan-routes");
 const progressRoutes = require("./routes/progressRoutes");
 const workoutLogRoutes = require("./routes/workoutLogRoutes");
 const userWorkoutRoutes = require("./routes/userWorkouts");
-const UserWorkout = require("./models/UserWorkout");
 const goalRoutes = require("./routes/goalRoutes");
 const microGoalRoutes = require("./routes/microGoalRoutes");
+
 // Kết nối database
 connectDB();
 
@@ -45,7 +45,7 @@ app.use("/api/foods", foodRoutes);
 app.use("/api/meal-plans", mealPlanRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/workout-logs", workoutLogRoutes);
-app.use("/api/user/workouts", userWorkoutRoutes); // user
+app.use("/api/user/user-workouts", userWorkoutRoutes); // user
 app.use("/api/goals", goalRoutes);
 app.use("/api/micro-goals", microGoalRoutes);
 

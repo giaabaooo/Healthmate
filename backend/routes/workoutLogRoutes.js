@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+console.log("workoutLogRouter routes loaded");
 
 const { protect } = require("../middleware/authMiddleware");
 const workoutLogController = require("../controllers/workoutLogController");

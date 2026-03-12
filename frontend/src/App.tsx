@@ -15,7 +15,7 @@ import ProfilePage from './pages/ProfilePage';
 import HomePage from './pages/HomePage';
 import OnboardingPage from './pages/OnboardingPage';
 import FitnessGoal from './pages/FitnessGoals';
-
+import WorkoutsUserPage from './pages/WorkoutsUserPage';
 export default function App() {
   return (
     <BrowserRouter>
@@ -37,14 +37,16 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/foods" element={<FoodCatalogPage />} />
           <Route path="/meal-planner" element={<MealPlannerPage />} />
-          <Route path="/workouts" element={<WorkoutsPage />} />
-          <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
+          <Route path="/workouts" element={<WorkoutsUserPage />} />
         </Route>
 
         {/* Admin routes */}
         <Route element={<ProtectedRoute requiredRole="admin" />}>
           <Route path="/dashboard" element={<AdminDashboardPage />} />
           <Route path="/dashboard/foods/new" element={<AdminFoodFormPage />} />
+          <Route path="/dashboard/workouts" element={<WorkoutsPage />} />
+          <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
+
         </Route>
 
       </Routes>

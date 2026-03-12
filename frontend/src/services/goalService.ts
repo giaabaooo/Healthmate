@@ -5,12 +5,15 @@ const getToken = () => {
 };
 
 export const getUserGoal = async () => {
-
   const res = await fetch(`${API_URL}/goals/my-goal`, {
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },
   });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch goal");
+  }
 
   return res.json();
 };

@@ -1,5 +1,6 @@
 const API_URL = "http://localhost:8000/api/workouts";
-
+const USER_WORKOUT_API = "http://localhost:8000/api/user/user-workouts";
+const WORKOUT_LOG_API = "http://localhost:8000/api/workout-logs";
 export interface Workout {
   _id: string;
   title: string;
@@ -53,8 +54,99 @@ export const updateWorkout = async (id: string, data: any) => {
 };
 
 export const deleteWorkout = async (id: string) => {
-  const res = await fetch(`/api/workouts/${id}`, {
+  const res = await fetch(`http://localhost:8000/api/workouts/${id}`, {
     method: "DELETE",
   });
+  return res.json();
+};
+export const getWorkoutLibrary = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(USER_WORKOUT_API, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  return Array.isArray(data) ? data : [];
+};
+export const addWorkoutPlan = async (
+  workout_id: string,
+  planned_duration: number = 30
+) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(USER_WORKOUT_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      workout_id,
+      planned_duration,
+    }),
+  });
+
+  return res.json();
+};
+export const getMyWorkoutPlan = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${USER_WORKOUT_API}/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.json();
+};
+export const startWorkout = async (id: string) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${USER_WORKOUT_API}/start/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.json();
+};
+export const finishWorkout = async (id: string) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${USER_WORKOUT_API}/finish/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.json();
+};
+export const removeWorkoutPlan = async (id: string) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${USER_WORKOUT_API}/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.json();
+};
+export const getMyWorkoutLogs = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${WORKOUT_LOG_API}/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
   return res.json();
 };

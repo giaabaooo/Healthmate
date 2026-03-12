@@ -13,14 +13,15 @@ const createWorkoutLog = async (req, res) => {
     }
 
     const workoutExists = await Workout.findById(workout_id);
+
     if (!workoutExists) {
       return res.status(404).json({
         message: "Workout not found",
       });
-    } 
+    }
 
     const log = await WorkoutLog.create({
-      user_id: req.user.id,
+      user_id: req.user._id, // FIX
       workout_id,
       duration_minutes,
       calories_burned,
@@ -37,10 +38,10 @@ const createWorkoutLog = async (req, res) => {
 const getMyWorkoutLogs = async (req, res) => {
   try {
     const logs = await WorkoutLog.find({
-      user_id: req.user.id,
+      user_id: req.user._id, // FIX
     })
       .populate("workout_id")
-      .sort({ date: -1 });
+      .sort({ createdAt: -1 }); // FIX
 
     res.status(200).json(logs);
   } catch (error) {

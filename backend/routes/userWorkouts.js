@@ -4,7 +4,7 @@ const UserWorkout = require("../models/UserWorkout");
 const Workout = require("../models/Workout");
 const WorkoutLog = require("../models/WorkoutLog");
 const { protect } = require("../middleware/authMiddleware");
-
+console.log("UserWorkout routes loaded");
 // =============================
 // 1️⃣ Xem tất cả workout + tính calories theo cân nặng
 // =============================
@@ -12,13 +12,7 @@ router.get("/", protect, async (req, res) => {
   try {
     const { duration } = req.query;
 
-    const weight = req.user.profile?.weight_kg;
-
-    if (!weight) {
-      return res.status(400).json({
-        error: "User chưa cập nhật cân nặng.",
-      });
-    }
+    const weight = req.user.profile?.weight_kg || 70;
 
     const workouts = await Workout.find();
 
