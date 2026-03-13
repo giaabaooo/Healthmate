@@ -144,7 +144,11 @@ import {
   finishWorkout,
   removeWorkoutPlan,
   getMyWorkoutLogs,
+  getDailyRoutine,
+  updateDailyRoutine,
 } from "../services/workoutService";
+
+import { createWorkoutLog } from "../services/workoutLogService";
 
 import { getUserGoal  } from "../services/goalService";
 
@@ -156,6 +160,16 @@ interface Workout {
   difficulty: string;
   duration: number;
   estimatedCalories: number;
+}
+
+interface TodaysExercise {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  image: string;
+  duration: number;
+  calories: number;
 }
 
 const WorkoutsUserPage = () => {
@@ -177,6 +191,25 @@ const WorkoutsUserPage = () => {
 
   const [goal, setGoal] = useState<any>(null);
   const [goalProgress, setGoalProgress] = useState(0);
+
+  const [todaysExercises, setTodaysExercises] = useState<TodaysExercise[]>([]);
+
+  // daily progress
+  const [dailyCaloTarget, setDailyCaloTarget] = useState(0);
+  const [dailyCaloBurned, setDailyCaloBurned] = useState(0);
+  const [dailyProgressPercent, setDailyProgressPercent] = useState(0);
+  const [showCongrats, setShowCongrats] = useState(false);
+
+  // add to routine modal
+  const [addStartTime, setAddStartTime] = useState("08:00");
+  const [addEndTime, setAddEndTime] = useState("08:30");
+
+  // workout session state
+  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
+  const [exerciseTimer, setExerciseTimer] = useState(0);
+  const [finishingWorkout, setFinishingWorkout] = useState(false);
 
 
 const calculateGoalProgress = () => {
@@ -208,6 +241,55 @@ const calculateGoalProgress = () => {
   }
 
   setGoalProgress(progress);
+};
+
+const calculateBMR = (weight: number, height: number, age: number, gender: string) => {
+  if (gender === 'male') {
+    return 10 * weight + 6.25 * height - 5 * age + 5;
+  } else {
+    return 10 * weight + 6.25 * height - 5 * age - 161;
+  }
+};
+
+const calculateDailyCaloTarget = () => {
+  if (!goal?.profile) return 0;
+
+  const { weight_kg, height_cm, birth_date, gender } = goal.profile;
+  if (!weight_kg || !height_cm || !birth_date) return 0;
+
+  const age = new Date().getFullYear() - new Date(birth_date).getFullYear();
+  const bmr = calculateBMR(weight_kg, height_cm, age, gender || 'male');
+
+  // TDEE = BMR * activity factor (sedentary = 1.2)
+  const tdee = bmr * 1.2;
+
+  // Target based on goal
+  if (goal.goal_type === 'fat_loss') {
+    return tdee - 500; // deficit
+  } else if (goal.goal_type === 'muscle_gain') {
+    return tdee + 300; // surplus
+  } else {
+    return tdee; // maintenance
+  }
+};
+
+const calculateDailyProgress = () => {
+  const today = new Date().toDateString();
+  const todayLogs = logs.filter(log => new Date(log.date).toDateString() === today);
+  const burned = todayLogs.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
+
+  setDailyCaloBurned(burned);
+  const target = calculateDailyCaloTarget();
+  setDailyCaloTarget(target);
+
+  const percent = target > 0 ? Math.min((burned / target) * 100, 100) : 0;
+  setDailyProgressPercent(percent);
+
+  // Show congrats if completed
+  if (percent >= 100 && !showCongrats) {
+    setShowCongrats(true);
+    setTimeout(() => setShowCongrats(false), 5000); // hide after 5s
+  }
 };
   // ==========================
   // LOAD DATA
@@ -246,25 +328,45 @@ useEffect(() => {
     setLogs(data);
   };
 
+  const loadTodaysExercises = async () => {
+    try {
+      const data = await getDailyRoutine();
+      setTodaysExercises(data);
+    } catch (error) {
+      console.error("Error loading daily routine:", error);
+      setTodaysExercises([]);
+    }
+  };
+
   const loadAll = async () => {
     setLoading(true);
-    await Promise.all([loadLibrary(), loadPlan(), loadLogs()]);
+    await Promise.all([loadLibrary(), loadPlan(), loadLogs(), loadTodaysExercises()]);
     setLoading(false);
   };
 
   useEffect(() => {
   calculateGoalProgress();
+  calculateDailyProgress();
 }, [logs, goal]);
+
+  // workout session timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isWorkoutActive) {
+      interval = setInterval(() => {
+        setExerciseTimer(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isWorkoutActive]);
 
   // search / filter for workouts
   const filteredDbWorkouts = useMemo(() => {
-    const q = workoutSearch.trim().toLowerCase();
+    const q = workoutSearch.trim();
     if (!q) return library;
     return library.filter((w) => {
-      const title = (w.name || "").toLowerCase();
-      const level = (w.difficulty || "").toLowerCase();
-      // category field not in Workout interface but could exist
-      return title.includes(q) || level.includes(q);
+      const title = w.title || w.name || "";
+      return title.includes(q);
     });
   }, [library, workoutSearch]);
 
@@ -336,6 +438,159 @@ useEffect(() => {
     loadLogs();
   };
 
+  const isTimeOverlapping = (start1: string, end1: string, start2: string, end2: string) => {
+    const s1 = new Date(`1970-01-01T${start1}:00`);
+    const e1 = new Date(`1970-01-01T${end1}:00`);
+    const s2 = new Date(`1970-01-01T${start2}:00`);
+    const e2 = new Date(`1970-01-01T${end2}:00`);
+    return s1 < e2 && e1 > s2;
+  };
+
+  const addToRoutine = async (workout: Workout) => {
+    // Validate time
+    if (addStartTime >= addEndTime) {
+      alert("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
+      return;
+    }
+
+    // Check for time overlap
+    const hasOverlap = todaysExercises.some(ex =>
+      isTimeOverlapping(addStartTime, addEndTime, ex.startTime, ex.endTime)
+    );
+
+    if (hasOverlap) {
+      alert("Thời gian tập trùng với bài tập khác. Vui lòng chọn thời gian khác.");
+      return;
+    }
+
+    const newExercise: TodaysExercise = {
+      id: workout._id,
+      name: workout.name,
+      startTime: addStartTime,
+      endTime: addEndTime,
+      image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
+      duration: workout.duration,
+      calories: workout.estimatedCalories,
+    };
+    const newExercises = [...todaysExercises, newExercise];
+    setTodaysExercises(newExercises);
+    try {
+      await updateDailyRoutine(newExercises);
+    } catch (error) {
+      console.error("Error saving daily routine:", error);
+    }
+    setPreviewWorkoutId(null); // close modal
+  };
+
+  const startWorkoutSession = () => {
+    if (todaysExercises.length === 0) {
+      alert("Không có bài tập nào trong Today's Routine.");
+      return;
+    }
+    setIsWorkoutActive(true);
+    setCurrentExerciseIndex(0);
+    setWorkoutStartTime(new Date());
+    setExerciseTimer(0);
+  };
+
+  const nextExercise = () => {
+    if (currentExerciseIndex < todaysExercises.length - 1) {
+      setCurrentExerciseIndex(prev => prev + 1);
+      setExerciseTimer(0);
+    } else {
+      // Show completion state briefly before finishing
+      setTimeout(() => {
+        finishWorkoutSession();
+      }, 1500); // 1.5 seconds to show 100% progress
+    }
+  };
+
+  const finishWorkoutSession = async () => {
+    setFinishingWorkout(true);
+    try {
+      // Create logs for all completed exercises
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+      const logPromises = todaysExercises.map(exercise =>
+        createWorkoutLog({
+          workout_id: exercise.id,
+          duration_minutes: exercise.duration || 30,
+          calories_burned: exercise.calories || 0,
+          date: today,
+          start_time: exercise.startTime,
+        }).catch(error => {
+          console.error("Error creating workout log for", exercise.name, error);
+          // Continue with other logs even if one fails
+        })
+      );
+
+      await Promise.all(logPromises);
+
+      // Clear today's exercises
+      setTodaysExercises([]);
+      await updateDailyRoutine([]);
+
+      // Reset session state
+      setIsWorkoutActive(false);
+      setCurrentExerciseIndex(0);
+      setWorkoutStartTime(null);
+      setExerciseTimer(0);
+
+      // Reload logs to show new entries
+      await loadLogs();
+      // Recalculate progress
+      calculateDailyProgress();
+
+    } catch (error) {
+      console.error("Error finishing workout session:", error);
+      setDbError("Failed to save workout logs. Please try again.");
+    } finally {
+      setFinishingWorkout(false);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const removeFromRoutine = async (index: number) => {
+    const newExercises = todaysExercises.filter((_, i) => i !== index);
+    setTodaysExercises(newExercises);
+    try {
+      await updateDailyRoutine(newExercises);
+    } catch (error) {
+      console.error("Error saving daily routine:", error);
+    }
+  };
+
+  const moveUp = async (index: number) => {
+    if (index > 0) {
+      const newExercises = [...todaysExercises];
+      [newExercises[index - 1], newExercises[index]] = [newExercises[index], newExercises[index - 1]];
+      setTodaysExercises(newExercises);
+      try {
+        await updateDailyRoutine(newExercises);
+      } catch (error) {
+        console.error("Error saving daily routine:", error);
+      }
+    }
+  };
+
+  const moveDown = async (index: number) => {
+    if (index < todaysExercises.length - 1) {
+      const newExercises = [...todaysExercises];
+      [newExercises[index], newExercises[index + 1]] = [newExercises[index + 1], newExercises[index]];
+      setTodaysExercises(newExercises);
+      try {
+        await updateDailyRoutine(newExercises);
+      } catch (error) {
+        console.error("Error saving daily routine:", error);
+      }
+    }
+  };
+
   const handleRemove = async (id: string) => {
     await removeWorkoutPlan(id);
     loadPlan();
@@ -359,23 +614,6 @@ useEffect(() => {
   };
 
   // sample UI data used by the new layout
-  const exercises: ExerciseRowProps[] = [
-    {
-      set: 'Set 1', time: '08:00',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB3RRLj_qU6_rKyx5_tenXc3b2nTpWUjcm7tet2EyXz6B03c4tWuNF0cy-2J8D20vmBYPL7QefEz9uEilmx_wXNfiLdtXoRTbgO1O2oJaxsLdDrhY2JCdUTspeCe-Jwc1z437VNUcIhpDDlAaccizyx2Sj1oyi1D0TrtDsDyTim-1yXveQHtl8nl2g5hUTxbbhYch8-xdZMULrpmrjk2WZimA4YtcS1V5tO4orxZDumYcQTiDN7g5uf0C4ZpVQcmkAliSaxZX19gBI',
-      name: 'Incline Dumbbell Press', muscle: 'Chest', detail: '4 sets x 10 reps', checked: true,
-    },
-    {
-      set: 'Set 2', time: '08:20',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDYB1ORYmZnFWnzg3eqTOgaOAgGT29gORgS_5X0A8vzhgDPVX3KZmykO18d-LB4fcL_3KWDvp8ALKLq1iT9zyzZjbwENjY1--62VeDNWxLEztB2L5memr9ZQ8I9CGbtMyrstcNso8M6GnXV42G3u01T7nK4Gx0KfJU7P1Er6kZ99TU8xztstnOhrjEOoa4Fh_Ay_jwSIoVCjS65AE0Y8NbRBBq8C-9TJNByyZCuy9zthbotqEh9u-PKsz-EeoYgatFESMibrstuOSg',
-      name: 'Weighted Pull-ups', muscle: 'Back', detail: '3 sets x 8 reps', isActive: true, checked: false,
-    },
-    {
-      set: 'Set 3', time: '08:45',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAbexbzLzbTV-pWC9bUHreccAIe0kUDIe8yEad3KDcSOmqskWU_7EgMph7Hxl261Y2xeQU7Crhut10nuXq4mdNwYgCLvANNve3VHWB_bqtuTgwIcJBVYiKp1Mjwu3q0seZlPQbSVKkX4J9flIWLobaRpb-uy1PpPIwhjyMilwgrWIlrmnBLrwZFKVxMcrn3wCgrmISWMdNiKevRPtuRcIgRqOSVSqT4vxgIJfduz0vzIfm-605aUDs4RX_MAOGA5j6c3X9HzgkCAJQ',
-      name: 'Kettlebell Swings', muscle: 'Full Body', detail: '5 sets x 20 reps', checked: false,
-    },
-  ];
 
   const recommendations: RecommendCardProps[] = [
     {
@@ -422,10 +660,32 @@ useEffect(() => {
               </h1>
               <div className="flex items-center gap-4 mt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-32 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full w-2/3 bg-primary rounded-full" />
+                  <div className="w-32 h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden relative">
+                    <div
+                      className={`h-full transition-all duration-1000 ease-out rounded-full ${
+                        dailyProgressPercent === 0 ? 'bg-red-400' :
+                        dailyProgressPercent < 25 ? 'bg-orange-400' :
+                        dailyProgressPercent < 50 ? 'bg-yellow-400' :
+                        dailyProgressPercent < 75 ? 'bg-blue-400' :
+                        dailyProgressPercent < 100 ? 'bg-green-400' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${dailyProgressPercent}%` }}
+                    />
+                    {showCongrats && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 animate-pulse rounded-full" />
+                    )}
                   </div>
-                  <span className="text-xs font-bold text-slate-500 uppercase">Daily Progress: 65%</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase">
+                    Daily Progress: {Math.round(dailyProgressPercent)}%
+                  </span>
+                </div>
+                <span className="text-slate-400">|</span>
+                <div className="text-xs text-slate-500">
+                  Target: 🔥 {Math.round(dailyCaloTarget)} kcal
+                </div>
+                <span className="text-slate-400">|</span>
+                <div className="text-xs text-slate-500">
+                  Gợi ý: Tập {Math.ceil(dailyCaloTarget / 300)} bài
                 </div>
                 <span className="text-slate-400">|</span>
                 <span className="text-xs font-bold text-primary flex items-center gap-1">
@@ -434,7 +694,10 @@ useEffect(() => {
                 </span>
               </div>
             </div>
-            <button className="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-slate-900 text-sm font-bold leading-normal transition-all hover:scale-[1.02] shadow-lg shadow-primary/20">
+            <button 
+              onClick={startWorkoutSession}
+              className="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-slate-900 text-sm font-bold leading-normal transition-all hover:scale-[1.02] shadow-lg shadow-primary/20"
+            >
               <span className="material-symbols-outlined text-xl">play_circle</span>
               <span className="truncate">Start Workout</span>
             </button>
@@ -448,19 +711,49 @@ useEffect(() => {
                 Today's Routine
                 <span className="text-sm font-normal text-slate-500 ml-2">Monday, Oct 24</span>
               </h3>
-              <button className="text-primary text-sm font-bold hover:underline flex items-center gap-1">
+              <button 
+                className="text-primary text-sm font-bold hover:underline flex items-center gap-1"
+                onClick={() => document.getElementById('workout-selection')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 <span className="material-symbols-outlined text-base">add</span> Add Exercise
               </button>
             </div>
             <div className="flex flex-col gap-3">
-              {exercises.map((ex) => (
-                <ExerciseRow key={ex.set} {...ex} />
-              ))}
+              {todaysExercises.length === 0 ? (
+                <div className="text-slate-500 text-center py-8">Chưa có bài tập nào trong Today's Routine</div>
+              ) : (
+                todaysExercises.map((ex, index) => (
+                  <div key={ex.id} className="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div className="flex flex-col items-center justify-center min-w-[60px] py-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Ex {index + 1}</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-slate-100">{ex.startTime} - {ex.endTime}</span>
+                    </div>
+                    <div className="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+                      <img alt={ex.name} className="h-full w-full object-cover" src={ex.image} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-slate-900 dark:text-slate-100">{ex.name}</h4>
+                      <p className="text-sm text-slate-500">{ex.duration} min • 🔥 {ex.calories} kcal</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => moveUp(index)} className="p-1 text-slate-400 hover:text-primary">
+                        <span className="material-symbols-outlined">arrow_upward</span>
+                      </button>
+                      <button onClick={() => moveDown(index)} className="p-1 text-slate-400 hover:text-primary">
+                        <span className="material-symbols-outlined">arrow_downward</span>
+                      </button>
+                      <button onClick={() => removeFromRoutine(index)} className="p-1 text-slate-400 hover:text-red-500">
+                        <span className="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 
           {/* Workout list from Database (search/filter) */}
-          <section className="flex flex-col gap-4">
+          <section id="workout-selection" className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">fitness_center</span>
@@ -514,7 +807,7 @@ useEffect(() => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {filteredDbWorkouts.slice(0, 9).map((w) => {
-                    const title = w.name || "Workout";
+                    const title = w.title || w.name || "Workout";
                     const isSelected = selectedWorkoutId === w._id;
                     const img =
                       w.cover_image ||
@@ -525,25 +818,39 @@ useEffect(() => {
                     const category = w.category || "";
 
                     return (
-                      <button
+                      <div
                         key={w._id}
-                        type="button"
                         onClick={() => setPreviewWorkoutId(w._id)}
-                        className={`text-left group rounded-xl border p-3 transition-colors ${isSelected
-                          ? "border-primary bg-primary/5"
+                        className={`cursor-pointer text-left group rounded-xl border p-4 transition-all hover:shadow-md ${isSelected
+                          ? "border-primary bg-primary/5 shadow-md"
                           : "border-slate-200 dark:border-slate-800 hover:border-primary/40"
                           }`}
                       >
-                        <h4 className="font-bold mb-2">{title}</h4>
+                        {img && (
+                          <img
+                            src={img}
+                            alt={title}
+                            className="w-full h-32 object-cover rounded-lg mb-3"
+                          />
+                        )}
+                        <h4 className="font-bold text-lg mb-2">{title}</h4>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                          {w.description || "Mô tả bài tập"}
+                        </p>
                         <div className="flex gap-2 flex-wrap">
-                          <span className="text-xs bg-slate-200 px-3 py-1 rounded-full">
+                          <span className="text-xs bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full font-medium">
                             🔥 {calories || 0} kcal
                           </span>
-                          <span className="text-xs bg-slate-200 px-3 py-1 rounded-full">
-                            ⏱ {duration} min
+                          <span className="text-xs bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full font-medium">
+                            ⏱ {duration || 0} phút
                           </span>
+                          {level && (
+                            <span className={`text-xs px-3 py-1 rounded-full font-medium ${getLevelBadgeStyle(level)}`}>
+                              {level}
+                            </span>
+                          )}
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -559,58 +866,6 @@ useEffect(() => {
 
           {/* insert original plan/history sections */}
           <div>
-            <h2 className="text-2xl font-bold mb-4">My Workout Plan</h2>
-            {myPlan.length === 0 ? (
-              <div className="text-slate-500">
-                You haven't added any workout yet.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {myPlan.map((item) => (
-                  <div
-                    key={item._id}
-                    className="bg-white dark:bg-slate-900 p-5 rounded-xl shadow flex justify-between items-center"
-                  >
-                    <div>
-                      <h3 className="font-bold">{item.workout_id?.name}</h3>
-                      <p className="text-sm text-slate-500">
-                        Duration: {item.planned_duration} min
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        Status: {item.status}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      {item.status === "planned" && (
-                        <button
-                          onClick={() => handleStart(item._id)}
-                          className="bg-green-500 text-white px-3 py-1 rounded"
-                        >
-                          Start
-                        </button>
-                      )}
-                      {item.status === "in_progress" && (
-                        <button
-                          onClick={() => handleFinish(item._id)}
-                          className="bg-blue-500 text-white px-3 py-1 rounded"
-                        >
-                          Finish
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleRemove(item._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
             <h2 className="text-2xl font-bold mb-4">Workout History</h2>
             {logs.length === 0 ? (
               <div className="text-slate-500">No workout logs yet</div>
@@ -622,15 +877,17 @@ useEffect(() => {
                       <th className="p-3 text-left">Workout</th>
                       <th className="p-3 text-left">Duration</th>
                       <th className="p-3 text-left">Calories</th>
+                      <th className="p-3 text-left">Time</th>
                       <th className="p-3 text-left">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {logs.map((log) => (
                       <tr key={log._id} className="border-t">
-                        <td className="p-3">{log.workout_id?.name}</td>
+                        <td className="p-3">{log.workout_id?.title || log.workout_id?.name}</td>
                         <td className="p-3">{log.duration_minutes} min</td>
                         <td className="p-3">🔥 {log.calories_burned}</td>
+                        <td className="p-3">{log.start_time || 'N/A'}</td>
                         <td className="p-3">{new Date(log.date).toLocaleDateString()}</td>
                       </tr>
                     ))}
@@ -746,7 +1003,54 @@ useEffect(() => {
                   )}
 
                   <div className="flex flex-col gap-3">
-                    {/* workout detail content omitted for brevity */}
+                    <h4 className="text-xl font-bold">{previewWorkout.title || previewWorkout.name}</h4>
+                    <p className="text-slate-600 dark:text-slate-400">{previewWorkout.description}</p>
+                    <div className="flex gap-4 flex-wrap">
+                      <span className="text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                        🔥 {previewWorkout.calories_burned || previewWorkout.estimatedCalories || 0} kcal
+                      </span>
+                      <span className="text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                        ⏱ {previewWorkout.duration || 0} phút
+                      </span>
+                      {previewWorkout.level && (
+                        <span className={`text-sm px-3 py-1 rounded-full ${getLevelBadgeStyle(previewWorkout.level)}`}>
+                          {previewWorkout.level}
+                        </span>
+                      )}
+                      {(previewWorkout as any).exercises && (
+                        <span className="text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                          📋 {(previewWorkout as any).exercises.length} bài tập
+                        </span>
+                      )}
+                    </div>
+                    {(previewWorkout as any).exercises && (previewWorkout as any).exercises.length > 0 && (
+                      <div className="mt-4">
+                        <h5 className="font-bold mb-2">Danh sách bài tập:</h5>
+                        <div className="space-y-4">
+                          {(previewWorkout as any).exercises.map((ex: any, index: number) => (
+                            <div key={index} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-sm font-medium">{index + 1}.</span>
+                                <span className="text-sm font-semibold">{ex.title}</span>
+                                {ex.duration_sec && (
+                                  <span className="text-xs text-slate-500 ml-auto">⏱ {Math.round(ex.duration_sec / 60)} phút</span>
+                                )}
+                              </div>
+                              {ex.video_url && (
+                                <video
+                                  src={ex.video_url}
+                                  controls
+                                  className="w-full h-48 rounded-lg"
+                                  preload="metadata"
+                                >
+                                  Trình duyệt của bạn không hỗ trợ video.
+                                </video>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -754,17 +1058,40 @@ useEffect(() => {
               )}
 
               <div className="p-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (previewWorkoutId) navigate(`/workouts/${previewWorkoutId}`);
-                  }}
-                  className="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover.bg-slate-800 transition-colors"
-                >
-                  Xem trang chi tiết
-                </button>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium">Thời gian:</label>
+                  <input
+                    type="time"
+                    value={addStartTime}
+                    onChange={(e) => setAddStartTime(e.target.value)}
+                    className="h-8 px-2 rounded border border-slate-200 dark:border-slate-800 text-sm"
+                  />
+                  <span>-</span>
+                  <input
+                    type="time"
+                    value={addEndTime}
+                    onChange={(e) => setAddEndTime(e.target.value)}
+                    className="h-8 px-2 rounded border border-slate-200 dark:border-slate-800 text-sm"
+                  />
+                  <button
+                    onClick={() => previewWorkout && addToRoutine(previewWorkout)}
+                    className="h-8 px-3 bg-primary text-slate-900 text-sm font-bold rounded hover:opacity-90"
+                  >
+                    Thêm vào Today's Routine
+                  </button>
+                </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Already showing details in modal
+                    }}
+                    className="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    Xem chi tiết bài tập
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setPreviewWorkoutId(null)}
@@ -772,13 +1099,141 @@ useEffect(() => {
                   >
                     Đóng
                   </button>
-                  {/* action buttons omitted for brevity */}
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Workout Session Modal */}
+      {isWorkoutActive && todaysExercises.length > 0 && (
+        <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center">
+          <div className="w-full h-full bg-black flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 bg-black/50 text-white">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={finishWorkoutSession}
+                  disabled={finishingWorkout}
+                  className="p-2 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-full"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+                <div>
+                  <h2 className="text-xl font-bold">
+                    Bài tập {currentExerciseIndex + 1}/{todaysExercises.length}
+                  </h2>
+                  <p className="text-sm opacity-80">
+                    {todaysExercises[currentExerciseIndex].name}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-mono font-bold">
+                  {formatTime(exerciseTimer)}
+                </div>
+                <div className="text-sm opacity-80">
+                  Thời gian tập
+                </div>
+              </div>
+            </div>
+
+            {/* Video/Content */}
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="w-full max-w-4xl">
+                {/* Placeholder for video - in real app, fetch video from workout */}
+                <div className="aspect-video bg-slate-800 rounded-lg flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <span className="material-symbols-outlined text-6xl mb-4">play_circle</span>
+                    <h3 className="text-2xl font-bold mb-2">
+                      {todaysExercises[currentExerciseIndex].name}
+                    </h3>
+                    <p className="text-lg opacity-80">
+                      {todaysExercises[currentExerciseIndex].duration} phút • 🔥 {todaysExercises[currentExerciseIndex].calories} kcal
+                    </p>
+                    <p className="text-sm opacity-60 mt-4">
+                      Video hướng dẫn sẽ xuất hiện ở đây
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="p-4 bg-black/50">
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
+                  disabled={currentExerciseIndex === 0}
+                  className="px-6 py-3 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium"
+                >
+                  <span className="material-symbols-outlined mr-2">skip_previous</span>
+                  Trước
+                </button>
+
+                <button
+                  onClick={nextExercise}
+                  disabled={finishingWorkout}
+                  className="px-8 py-3 bg-primary hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 rounded-lg font-bold"
+                >
+                  {finishingWorkout ? (
+                    <>
+                      <span className="material-symbols-outlined mr-2 animate-spin">refresh</span>
+                      Đang lưu...
+                    </>
+                  ) : currentExerciseIndex < todaysExercises.length - 1 ? (
+                    <>
+                      <span className="material-symbols-outlined mr-2">skip_next</span>
+                      Tiếp theo
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined mr-2">check_circle</span>
+                      Hoàn thành
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mt-4">
+                <div className="w-full bg-white/20 rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${((currentExerciseIndex + 1) / todaysExercises.length) * 100}%` }}
+                  />
+                </div>
+                <div className="text-center text-white text-sm mt-2">
+                  {currentExerciseIndex + 1} / {todaysExercises.length} bài tập
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Congrats Modal */}
+      {showCongrats && (
+        <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-md mx-4 text-center animate-bounce">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+              Chúc mừng!
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              Bạn đã hoàn thành tốt việc tập luyện ngày hôm nay!
+            </p>
+            <div className="text-4xl mb-4">🏆</div>
+            <button
+              onClick={() => setShowCongrats(false)}
+              className="bg-primary text-slate-900 px-6 py-2 rounded-lg font-bold hover:opacity-90"
+            >
+              Tiếp tục
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

@@ -4,7 +4,14 @@ const Workout = require("../models/Workout");
 // CREATE WORKOUT LOG
 const createWorkoutLog = async (req, res) => {
   try {
-    const { workout_id, duration_minutes, calories_burned, notes } = req.body;
+    const {
+      workout_id,
+      duration_minutes,
+      calories_burned,
+      notes,
+      start_time,
+      date,
+    } = req.body;
 
     if (!workout_id || !duration_minutes || !calories_burned) {
       return res.status(400).json({
@@ -21,11 +28,13 @@ const createWorkoutLog = async (req, res) => {
     }
 
     const log = await WorkoutLog.create({
-      user_id: req.user.id, // FIX
+      user_id: req.user.id,
       workout_id,
       duration_minutes,
       calories_burned,
       notes,
+      start_time,
+      date: date ? new Date(date) : new Date(),
     });
 
     res.status(201).json(log);

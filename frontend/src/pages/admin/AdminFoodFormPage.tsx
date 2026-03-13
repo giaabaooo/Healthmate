@@ -37,21 +37,21 @@ const AdminFoodFormPage = () => {
     try {
       const token = localStorage.getItem('token');
 
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name.trim());
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('calories', formData.calories || '0');
+      formDataToSend.append('protein', formData.protein || '0');
+      formDataToSend.append('carbs', formData.carbs || '0');
+      formDataToSend.append('fat', formData.fat || '0');
+
       const response = await fetch('http://localhost:8000/api/foods', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         credentials: 'include',
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          category: formData.category,
-          calories: parseFloat(formData.calories) || 0,
-          protein: parseFloat(formData.protein) || 0,
-          carbs: parseFloat(formData.carbs) || 0,
-          fat: parseFloat(formData.fat) || 0
-        })
+        body: formDataToSend
       });
 
       const data = await response.json();
