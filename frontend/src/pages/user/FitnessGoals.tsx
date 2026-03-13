@@ -1,6 +1,6 @@
-import Layout from '../components/Layout';
+import Layout from '../../components/Layout';
 import { useEffect, useState } from "react";
-import { getTodayProgress } from "../services/progressService";
+import { getTodayProgress } from "../../services/progressService";
 import {
   getUserGoal,
   getMicroGoals,
@@ -8,7 +8,7 @@ import {
   createMicroGoal,
   deleteMicroGoal,
   updateMotivation
-} from "../services/goalService";
+} from "../../services/goalService";
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface MicroGoal {
   _id: string;

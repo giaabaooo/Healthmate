@@ -1,4 +1,6 @@
+@ -1,309 +1,309 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Layout from '../components/Layout';
 import Layout from '../../components/Layout';
 
 const AiCoachPage = () => {

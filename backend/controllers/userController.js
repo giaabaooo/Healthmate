@@ -218,5 +218,6 @@ module.exports = {
   loginUser,
   getMe,
   updateProfile,
-  getUsers
+  getUsers,
+  googleLogin
 };
