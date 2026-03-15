@@ -47,10 +47,10 @@ export default function App() {
 
         {/* Admin routes */}
         <Route element={<ProtectedRoute requiredRole="admin" />}>
-          <Route path="/dashboard" element={<AdminDashboard />} />
-          <Route path="/dashboard/foods/new" element={<AdminFoodFormPage />} />
-          <Route path="/dashboard/workouts" element={<WorkoutsPage />} />
-          <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/foods/new" element={<AdminFoodFormPage />} />
+          <Route path="/admin/workouts" element={<WorkoutsPage />} />
+          <Route path="/admin/workouts/:id" element={<WorkoutDetailPage />} />
 
         </Route>
 
