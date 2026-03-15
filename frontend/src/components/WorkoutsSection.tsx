@@ -97,19 +97,19 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h2 className="text-slate-900 dark:text-slate-100 text-3xl font-bold tracking-tight">Exercise Library & Programs</h2>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Explore workouts curated for your fitness goals</p>
+          <h2 className="text-white text-3xl font-bold tracking-tight">Exercise Library & Programs</h2>
+          <p className="text-text-dim text-sm mt-1">Explore workouts curated for your fitness goals</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => setShowModal(true)}
-            className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-primary text-slate-900 text-lg font-bold shadow-lg shadow-primary/20 transition-transform hover:scale-105"
+            className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-primary text-white text-lg font-bold shadow-lg shadow-primary/20 transition-transform hover:scale-105"
           >
             + Create Custom Workout
           </button>
           <button
             onClick={onBack}
-            className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-white/10 backdrop-blur-md border border-white/20 text-slate-900 text-lg font-bold hover:bg-white/20"
+            className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-surface-dark text-white text-lg font-bold hover:bg-surface-darker transition"
           >
             ← Back to Dashboard
           </button>
@@ -117,17 +117,17 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow flex flex-wrap items-center gap-4 border border-gray-200 dark:border-gray-700">
-        <span className="font-semibold text-slate-900 dark:text-slate-100">FILTERS:</span>
+      <div className="bg-surface-dark p-4 rounded-2xl shadow flex flex-wrap items-center gap-4 border border-[#28392e]">
+        <span className="font-semibold text-text-dim">FILTERS:</span>
         <input
           type="text"
           placeholder="Search workout..."
-          className="px-4 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+          className="px-4 py-2 border rounded-lg text-sm bg-[#112218] border-[#28392e] text-white"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
-          className="px-4 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+          className="px-4 py-2 border rounded-lg text-sm bg-[#112218] border-[#28392e] text-white"
           value={level}
           onChange={(e) => setLevel(e.target.value)}
         >
@@ -137,7 +137,7 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
           <option value="advanced">Advanced</option>
         </select>
         <select
-          className="px-4 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+          className="px-4 py-2 border rounded-lg text-sm bg-[#112218] border-[#28392e] text-white"
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
         >
@@ -150,7 +150,7 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
         </select>
         <button
           onClick={clearFilters}
-          className="ml-auto text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition"
+          className="ml-auto text-sm text-text-dim hover:text-white transition"
         >
           Clear All
         </button>
@@ -158,16 +158,16 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
 
       {/* Workouts Grid */}
       {loading ? (
-        <div className="text-center py-20 text-slate-600 dark:text-slate-400">Loading...</div>
+        <div className="text-center py-20 text-white">Loading...</div>
       ) : workouts.length === 0 ? (
-        <div className="text-center py-20 text-slate-500 dark:text-slate-500">No workouts found</div>
+        <div className="text-center py-20 text-text-dim">No workouts found</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {workouts.map((w) => (
             <div
               key={w._id}
               onClick={() => navigate(`/workouts/${w._id}`)}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-md overflow-hidden cursor-pointer hover:shadow-xl hover:-translate-y-1 transition duration-300 border border-gray-200 dark:border-gray-700"
+              className="bg-surface-dark rounded-2xl shadow-md overflow-hidden cursor-pointer hover:shadow-xl hover:-translate-y-1 transition duration-300 border border-[#28392e]"
             >
               {/* Cover Image */}
               <div className="relative">
@@ -187,25 +187,25 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
               {/* Content */}
               <div className="p-5">
                 <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-lg leading-tight text-slate-900 dark:text-slate-100">
+                  <h3 className="font-bold text-lg leading-tight text-white">
                     {w.title}
                   </h3>
-                  <span className="text-xs bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-md capitalize">
+                  <span className="text-xs bg-[#28392e] text-text-dim px-2 py-1 rounded-md capitalize">
                     {w.level}
                   </span>
                 </div>
 
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 line-clamp-2">
+                <p className="text-sm text-text-dim mt-2 line-clamp-2">
                   {w.description}
                 </p>
 
                 {/* Footer Tags */}
                 <div className="mt-4 flex gap-2 flex-wrap">
-                  <span className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full">
+                  <span className="text-xs bg-[#28392e] text-text-dim px-3 py-1 rounded-full">
                     🔥 {w.calories_burned} kcal
                   </span>
                   {w.category_id && (
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-400 px-3 py-1 rounded-full">
+                    <span className="text-xs bg-[#28392e] text-text-dim px-3 py-1 rounded-full">
                       {typeof w.category_id === "object" ? (w.category_id as any).name : "Category"}
                     </span>
                   )}
@@ -219,23 +219,23 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
       {/* Create Workout Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 w-[800px] max-h-[90vh] overflow-y-auto rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100">Create Workout</h2>
+          <div className="bg-surface-dark w-[800px] max-h-[90vh] overflow-y-auto rounded-2xl p-8 shadow-xl border border-[#28392e]">
+            <h2 className="text-2xl font-bold mb-6 text-white">Create Workout</h2>
             <div className="flex flex-col gap-4">
               <input
                 placeholder="Title"
-                className="border p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 value={newWorkout.title}
                 onChange={(e) => setNewWorkout({ ...newWorkout, title: e.target.value })}
               />
               <input
                 placeholder="Cover Image URL"
-                className="border p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 value={newWorkout.cover_image}
                 onChange={(e) => setNewWorkout({ ...newWorkout, cover_image: e.target.value })}
               />
               <select
-                className="border p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 value={newWorkout.category_id}
                 onChange={(e) => setNewWorkout({ ...newWorkout, category_id: e.target.value })}
               >
@@ -247,7 +247,7 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
                 ))}
               </select>
               <select
-                className="border p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 value={newWorkout.level}
                 onChange={(e) => setNewWorkout({ ...newWorkout, level: e.target.value as any })}
               >
@@ -258,27 +258,27 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
               <input
                 type="number"
                 placeholder="Calories Burned"
-                className="border p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 value={newWorkout.calories_burned}
                 onChange={(e) => setNewWorkout({ ...newWorkout, calories_burned: parseInt(e.target.value) || 0 })}
               />
               <textarea
                 placeholder="Description"
                 rows={4}
-                className="border p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-700 text-slate-900 dark:text-slate-100"
+                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 value={newWorkout.description}
                 onChange={(e) => setNewWorkout({ ...newWorkout, description: e.target.value })}
               />
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="px-6 py-2 border border-[#28392e] rounded-lg text-text-dim hover:bg-[#28392e] transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateWorkout}
-                  className="px-6 py-2 bg-primary text-slate-900 rounded-lg hover:bg-primary-dark transition"
+                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
                 >
                   Create Workout
                 </button>
