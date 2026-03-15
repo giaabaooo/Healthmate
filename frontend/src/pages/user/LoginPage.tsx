@@ -17,7 +17,7 @@ const LoginPage = () => {
         const user = JSON.parse(userStr);
         
         if (user.role === 'admin') {
-          navigate('/admin/dashboard', { replace: true });
+          navigate('/dashboard', { replace: true });
         } 
         
         else if (user.profile && user.profile.height_cm && user.profile.weight_kg) {
@@ -64,7 +64,7 @@ const LoginPage = () => {
 
       // THÊM KIỂM TRA ADMIN Ở ĐÂY
       if (data.user.role === 'admin') {
-        navigate('/admin/dashboard', { replace: true });
+        navigate('/dashboard', { replace: true });
       } else if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
         navigate('/homepage', { replace: true }); 
       } else {
@@ -111,7 +111,7 @@ const LoginPage = () => {
 
         
         if (data.user.role === 'admin') {
-           navigate('/admin/dashboard', { replace: true });
+           navigate('/dashboard', { replace: true });
         }
         
         else if (data.user.profile && data.user.profile.height_cm && data.user.profile.weight_kg) {
