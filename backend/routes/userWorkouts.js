@@ -43,7 +43,7 @@ router.post("/", protect, async (req, res) => {
 
     // 🔥 Kiểm tra đã tồn tại chưa (tránh thêm trùng)
     const existing = await UserWorkout.findOne({
-      user_id: req.user._id,
+      user_id: req.user.id,
       workout_id,
       status: { $ne: "completed" },
     });
@@ -55,7 +55,7 @@ router.post("/", protect, async (req, res) => {
     }
 
     const newItem = await UserWorkout.create({
-      user_id: req.user._id,
+      user_id: req.user.id,
       workout_id,
       planned_duration,
     });
@@ -72,7 +72,7 @@ router.post("/", protect, async (req, res) => {
 router.get("/my", protect, async (req, res) => {
   try {
     const myWorkouts = await UserWorkout.find({
-      user_id: req.user._id,
+      user_id: req.user.id,
     }).populate("workout_id");
 
     res.json(myWorkouts);
@@ -89,7 +89,7 @@ router.put("/start/:id", protect, async (req, res) => {
     const item = await UserWorkout.findOneAndUpdate(
       {
         _id: req.params.id,
-        user_id: req.user._id,
+        user_id: req.user.id,
       },
       {
         status: "in_progress",
@@ -111,7 +111,7 @@ router.put("/finish/:id", protect, async (req, res) => {
   try {
     const userWorkout = await UserWorkout.findOne({
       _id: req.params.id,
-      user_id: req.user._id,
+      user_id: req.user.id,
     })
       .populate("workout_id")
       .populate("user_id");
@@ -127,7 +127,7 @@ router.put("/finish/:id", protect, async (req, res) => {
     const calories = met * weight * (duration / 60);
 
     await WorkoutLog.create({
-      user_id: req.user._id,
+      user_id: req.user.id,
       workout_id: userWorkout.workout_id._id,
       duration_minutes: duration,
       calories_burned: Math.round(calories),
@@ -151,7 +151,7 @@ router.delete("/:id", protect, async (req, res) => {
   try {
     const deleted = await UserWorkout.findOneAndDelete({
       _id: req.params.id,
-      user_id: req.user._id, // 🔥 đảm bảo đúng user
+      user_id: req.user.id, // 🔥 đảm bảo đúng user
     });
 
     if (!deleted) {

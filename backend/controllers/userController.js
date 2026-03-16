@@ -1,15 +1,15 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // Hàm tiện ích để tạo JWT cho user
 const generateToken = (userId) => {
   if (!process.env.JWT_SECRET) {
-    throw new Error('Thiếu cấu hình JWT_SECRET trong .env');
+    throw new Error("Thiếu cấu hình JWT_SECRET trong .env");
   }
 
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '7d'
+    expiresIn: "7d",
   });
 };
 
@@ -20,14 +20,14 @@ const registerUser = async (req, res) => {
 
     if (!email || !password || !profile?.full_name) {
       return res.status(400).json({
-        message: 'Email, mật khẩu và họ tên là bắt buộc.'
+        message: "Email, mật khẩu và họ tên là bắt buộc.",
       });
     }
 
     // 1. Kiểm tra xem email đã tồn tại chưa
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'Email này đã được sử dụng!' });
+      return res.status(400).json({ message: "Email này đã được sử dụng!" });
     }
 
     // 2. Mã hóa mật khẩu (Hashing)
@@ -38,7 +38,7 @@ const registerUser = async (req, res) => {
     const user = await User.create({
       email,
       password_hash: hashedPassword,
-      profile // Chứa full_name, gender, height_cm... từ form gửi lên
+      profile, // Chứa full_name, gender, height_cm... từ form gửi lên
     });
 
     // 4. Tạo token đăng nhập luôn sau khi đăng ký
@@ -46,17 +46,17 @@ const registerUser = async (req, res) => {
 
     // 5. Trả về kết quả (Không trả về password_hash)
     res.status(201).json({
-      message: 'Đăng ký tài khoản thành công!',
+      message: "Đăng ký tài khoản thành công!",
       token,
       user: {
         _id: user._id,
         email: user.email,
         role: user.role,
-        profile: user.profile
-      }
+        profile: user.profile,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
@@ -68,39 +68,43 @@ const loginUser = async (req, res) => {
     if (!email || !password) {
       return res
         .status(400)
-        .json({ message: 'Vui lòng nhập đầy đủ email và mật khẩu.' });
+        .json({ message: "Vui lòng nhập đầy đủ email và mật khẩu." });
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng." });
     }
 
-    if (user.status === 'banned') {
-      return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa.' });
+    if (user.status === "banned") {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa." });
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!isPasswordMatch) {
-      return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng." });
     }
 
     const token = generateToken(user._id);
 
     res.json({
-      message: 'Đăng nhập thành công!',
+      message: "Đăng nhập thành công!",
       token,
       user: {
         _id: user._id,
         email: user.email,
         role: user.role,
-        profile: user.profile
-      }
+        profile: user.profile,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
@@ -111,17 +115,67 @@ const getMe = async (req, res) => {
     const user = await User.findById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
 
     res.json({
       _id: user._id,
       email: user.email,
       role: user.role,
-      profile: user.profile
+      profile: user.profile,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+
+const updateDailyRoutine = async (req, res) => {
+  try {
+    const { date, exercises } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const existing = user.daily_routine.find((d) => d.date === date);
+
+    if (existing) {
+      existing.exercises = exercises;
+    } else {
+      user.daily_routine.push({ date, exercises });
+    }
+
+    await user.save();
+
+    res.json({ message: "Daily routine updated" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+// [PUT] Cập nhật daily routine
+const getDailyRoutine = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const result = {};
+
+    if (user.daily_routine && user.daily_routine.length > 0) {
+      user.daily_routine.forEach((day) => {
+        result[day.date] = day.exercises;
+      });
+    }
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
@@ -132,29 +186,31 @@ const updateProfile = async (req, res) => {
     const { profile } = req.body;
 
     if (!profile) {
-      return res.status(400).json({ message: 'Thiếu dữ liệu profile để cập nhật.' });
+      return res
+        .status(400)
+        .json({ message: "Thiếu dữ liệu profile để cập nhật." });
     }
 
     const user = await User.findById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+      return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }
 
     // Gộp profile cũ và mới (cho phép cập nhật từng phần)
     user.profile = {
       ...user.profile,
-      ...profile
+      ...profile,
     };
 
     const updatedUser = await user.save();
 
     res.json({
-      message: 'Cập nhật hồ sơ thành công!',
-      profile: updatedUser.profile
+      message: "Cập nhật hồ sơ thành công!",
+      profile: updatedUser.profile,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 const googleLogin = async (req, res) => {
@@ -162,7 +218,9 @@ const googleLogin = async (req, res) => {
     const { email, full_name, sub } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: 'Không lấy được email từ Google.' });
+      return res
+        .status(400)
+        .json({ message: "Không lấy được email từ Google." });
     }
 
     // Kiểm tra user đã tồn tại chưa
@@ -171,45 +229,48 @@ const googleLogin = async (req, res) => {
     if (!user) {
       // Mã hóa một mật khẩu ngẫu nhiên cho user Google vì Schema bắt buộc có password_hash
       const salt = await bcrypt.genSalt(10);
-      const randomPassword = await bcrypt.hash(sub || Math.random().toString(), salt);
+      const randomPassword = await bcrypt.hash(
+        sub || Math.random().toString(),
+        salt,
+      );
 
       user = await User.create({
         email,
         password_hash: randomPassword,
         profile: {
-          full_name: full_name || 'Người dùng Google'
-        }
+          full_name: full_name || "Người dùng Google",
+        },
       });
-    } else if (user.status === 'banned') {
-      return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa.' });
+    } else if (user.status === "banned") {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa." });
     }
 
     const token = generateToken(user._id);
 
     res.json({
-      message: 'Đăng nhập Google thành công!',
+      message: "Đăng nhập Google thành công!",
       token,
       user: {
         _id: user._id,
         email: user.email,
         role: user.role,
-        profile: user.profile
-      }
+        profile: user.profile,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
 // [GET] Danh sách customers (admin only)
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: 'user' })
-      .select('_id email profile.full_name')
-      .sort({ 'profile.full_name': 1 });
+    const users = await User.find({ role: "user" })
+      .select("_id email profile.full_name")
+      .sort({ "profile.full_name": 1 });
     res.json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
@@ -219,5 +280,7 @@ module.exports = {
   getMe,
   updateProfile,
   getUsers,
-  googleLogin
+  googleLogin,
+  getDailyRoutine,
+  updateDailyRoutine,
 };

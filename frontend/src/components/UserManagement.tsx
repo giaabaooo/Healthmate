@@ -262,7 +262,7 @@ const UserManagement: React.FC = () => {
           </div>
           <nav className="flex flex-col gap-2">
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/admin/dashboard')}
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-text-dim hover:bg-[#28392e] hover:text-white transition-colors"
             >
               <span className="material-symbols-outlined">dashboard</span>

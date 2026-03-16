@@ -324,7 +324,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
     { id: 'users', label: 'Users', icon: 'group', route: '/admin/users' },
     { id: 'workouts', label: 'Workouts', icon: 'fitness_center', onClick: handleWorkoutClick },
     { id: 'logs', label: 'System Logs', icon: 'description', route: '/admin/logs' },

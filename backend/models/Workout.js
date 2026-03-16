@@ -2,33 +2,61 @@ const mongoose = require("mongoose");
 
 const workoutSchema = new mongoose.Schema(
   {
-    name: {
+    title: {
+      // used in db screenshot
       type: String,
       required: true,
     },
     description: {
       type: String,
+      default: "",
     },
-    category: {
-      type: String,
+    category_id: {
+      // reference to category collection
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WorkoutCategory",
       required: true,
     },
-    duration: {
+    level: {
+      // beginner/intermediate/advanced
+      type: String,
+      enum: ["beginner", "intermediate", "advanced"],
+      default: "beginner",
+    },
+    calories_burned: {
+      // static estimate
       type: Number,
-      default: 30,
+      default: 0,
     },
     met: {
       type: Number,
       default: 5,
     },
-    calories: {
-      type: Number,
-      default: 200,
+    exercises: [
+      // array of embedded exercise objects
+      {
+        title: String,
+        video_url: String,
+        duration_sec: Number,
+        order: Number,
+      },
+    ],
+    created_by: {
+      // who created the workout
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
+    cover_image: {
+      type: String,
+      default: "",
+    },
+    // legacy fields that may still exist, keep them optional
+    name: String,
+    duration: Number,
+    calories: Number,
     difficulty: {
       type: String,
       enum: ["Beginner", "Intermediate", "Advanced"],
-      default: "Beginner",
     },
   },
   {
