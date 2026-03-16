@@ -4,10 +4,8 @@ import { getTodayProgress } from "../../services/progressService";
 import {
   getUserGoal,
   getMicroGoals,
-  toggleMicroGoal,
   createMicroGoal,
   deleteMicroGoal,
-  updateMotivation
 } from "../../services/goalService";
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface MicroGoal {
@@ -26,11 +24,9 @@ const Icon = ({ name, className = '' }: { name: string; className?: string }) =>
 
 const MicroGoalItem = ({
  goal,
- onToggle,
  onDelete,
 }: {
  goal: MicroGoal;
- onToggle: (id: string) => void;
  onDelete: (id: string) => void;
 }) => (
 <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 group">
@@ -147,22 +143,7 @@ const removeGoal = async (id: string) => {
   }
 };
 
-  // toggle micro goal
-  const toggleGoal = async (id: string) => {
-    try {
-
-      await toggleMicroGoal(id);
-
-      setMicroGoals((prev) =>
-        prev.map((g) =>
-          g._id === id ? { ...g, done: !g.done } : g
-        )
-      );
-
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // toggle micro goal - removed (checkbox deletes goal directly)
 
   return (
     <Layout>
@@ -470,7 +451,6 @@ Add
   <MicroGoalItem
     key={goal._id}
     goal={goal}
-    onToggle={toggleGoal}
     onDelete={removeGoal}
   />
 ))}
