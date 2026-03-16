@@ -95,7 +95,7 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-white text-3xl font-bold tracking-tight">Exercise Library & Programs</h2>
           <p className="text-text-dim text-sm mt-1">Explore workouts curated for your fitness goals</p>
@@ -103,13 +103,13 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
         <div className="flex gap-3">
           <button
             onClick={() => setShowModal(true)}
-            className="h-12 px-6 bg-slate-900 text-white rounded-xl font-semibold shadow hover:bg-slate-800 transition"
+            className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-primary text-white text-lg font-bold shadow-lg shadow-primary/20 transition-transform hover:scale-105"
           >
             + Create Custom Workout
           </button>
           <button
             onClick={onBack}
-            className="h-12 px-6 bg-[#28392e] text-white rounded-xl font-semibold shadow hover:bg-[#344b3c] transition"
+            className="flex min-w-[200px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-surface-dark text-white text-lg font-bold hover:bg-surface-darker transition"
           >
             ← Back to Dashboard
           </button>
@@ -150,7 +150,7 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
         </select>
         <button
           onClick={clearFilters}
-          className="ml-auto text-sm text-text-dim hover:text-white"
+          className="ml-auto text-sm text-text-dim hover:text-white transition"
         >
           Clear All
         </button>
@@ -264,21 +264,21 @@ const WorkoutsSection: React.FC<WorkoutsSectionProps> = ({ onBack }) => {
               />
               <textarea
                 placeholder="Description"
-                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 rows={4}
+                className="border p-3 rounded-lg bg-[#112218] border-[#28392e] text-white"
                 value={newWorkout.description}
                 onChange={(e) => setNewWorkout({ ...newWorkout, description: e.target.value })}
               />
-              <div className="flex gap-4 justify-end">
+              <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2 bg-[#28392e] text-white rounded-lg hover:bg-[#344b3c] transition"
+                  className="px-6 py-2 border border-[#28392e] rounded-lg text-text-dim hover:bg-[#28392e] transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateWorkout}
-                  className="px-6 py-2 bg-primary text-background-dark rounded-lg hover:bg-primary-dark transition font-bold"
+                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
                 >
                   Create Workout
                 </button>

@@ -73,7 +73,7 @@
 
 /* Dark theme overrides - only within admin-dashboard */
 .admin-dashboard .bg-background-light {
-  background-color: var(--background-dark) !important;
+  background-color: var(--background-light) !important;
 }
 
 .admin-dashboard .bg-background-dark {
@@ -88,12 +88,20 @@
   background-color: var(--surface-darker) !important;
 }
 
+.admin-dashboard .bg-surface-elevated {
+  background-color: var(--surface-elevated) !important;
+}
+
 .admin-dashboard .text-text-light {
   color: var(--text-light) !important;
 }
 
 .admin-dashboard .text-text-dim {
   color: var(--text-dim) !important;
+}
+
+.admin-dashboard .text-text-muted {
+  color: var(--text-muted) !important;
 }
 
 .admin-dashboard .text-white {
@@ -109,41 +117,41 @@
 }
 
 .admin-dashboard .bg-primary\/10 {
-  background-color: rgba(19, 236, 91, 0.1) !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
 }
 
 .admin-dashboard .bg-primary\/20 {
-  background-color: rgba(19, 236, 91, 0.2) !important;
+  background-color: rgba(59, 130, 246, 0.2) !important;
 }
 
 .admin-dashboard .border-primary\/10 {
-  border-color: rgba(19, 236, 91, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.1) !important;
 }
 
 .admin-dashboard .border-primary\/30 {
-  border-color: rgba(19, 236, 91, 0.3) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
 }
 
 .admin-dashboard .hover\:bg-primary-dark:hover {
   background-color: var(--primary-dark) !important;
 }
 
-/* Dark background colors */
-.admin-dashboard .bg-\[28392e\] {
-  background-color: #28392e !important;
+/* Light background colors */
+.admin-dashboard .bg-\[f8fafc\] {
+  background-color: #f8fafc !important;
 }
 
-.admin-dashboard .hover\:bg-\[344b3c\]:hover {
-  background-color: #344b3c !important;
+.admin-dashboard .hover\:bg-\[f1f5f9\]:hover {
+  background-color: #f1f5f9 !important;
 }
 
-.admin-dashboard .bg-\[112218\] {
-  background-color: #112218 !important;
+.admin-dashboard .bg-\[ffffff\] {
+  background-color: #ffffff !important;
 }
 
 /* Border colors */
-.admin-dashboard .border-\[28392e\] {
-  border-color: #28392e !important;
+.admin-dashboard .border-\[e2e8f0\] {
+  border-color: #e2e8f0 !important;
 }
 
 /* Text colors for different states */
