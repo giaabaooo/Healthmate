@@ -59,7 +59,8 @@ const FoodCatalogPage = () => {
   const handleDeleteConfirm = async () => {
     try {
       const response = await fetch(`http://localhost:8000/api/foods/${deleteModal.foodId}`, {
-        method: 'DELETE', credentials: 'include'
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (response.ok) {
         toast.success(`Đã xóa "${deleteModal.foodName}"`);

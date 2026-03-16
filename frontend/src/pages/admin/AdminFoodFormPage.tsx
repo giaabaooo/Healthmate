@@ -50,7 +50,6 @@ const AdminFoodFormPage = () => {
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        credentials: 'include',
         body: formDataToSend
       });
 
