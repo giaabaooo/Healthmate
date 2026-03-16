@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../../components/Layout';
@@ -19,46 +19,60 @@ interface Food {
   calories: number;
 }
 
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function offsetDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+const CALORIE_GOAL = 2000;
+
 const MealPlannerPage = () => {
   const [searchParams] = useSearchParams();
-  const [selectedDate, setSelectedDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
-  });
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<MealItem[]>([]);
   const [totalCalories, setTotalCalories] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Food modal
   const [showFoodModal, setShowFoodModal] = useState(false);
   const [foods, setFoods] = useState<Food[]>([]);
+  const [foodSearch, setFoodSearch] = useState('');
+  const [foodCategory, setFoodCategory] = useState('');
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  // Inline edit
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editQuantity, setEditQuantity] = useState<number>(0);
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    itemId: string;
-    itemName: string;
-  }>({ isOpen: false, itemId: '', itemName: '' });
 
-  useEffect(() => {
-    fetchMealPlan();
-  }, [selectedDate]);
+  // Delete confirm
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; itemId: string; itemName: string }>({
+    isOpen: false, itemId: '', itemName: '',
+  });
+
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { fetchMealPlan(); }, [selectedDate]);
 
   useEffect(() => {
     const addFoodId = searchParams.get('addFood');
-    if (addFoodId) {
-      handleAddFoodFromUrl(addFoodId);
-    }
+    if (addFoodId) addFoodToMealPlan(addFoodId, 100);
   }, [searchParams]);
 
   const fetchMealPlan = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}`, { credentials: 'include' });
+      const data = await res.json();
       setItems(data.items || []);
       setTotalCalories(data.total_calories || 0);
-    } catch (error) {
-      console.error('Lỗi khi tải thực đơn:', error);
+    } catch (err) {
+      console.error('Lỗi tải thực đơn:', err);
     } finally {
       setLoading(false);
     }
@@ -66,51 +80,74 @@ const MealPlannerPage = () => {
 
   const fetchFoods = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/foods');
-      const data = await response.json();
+      const res = await fetch('http://localhost:8000/api/foods');
+      const data = await res.json();
       setFoods(data);
-    } catch (error) {
-      console.error('Lỗi khi tải danh sách món ăn:', error);
+      const init: Record<string, number> = {};
+      data.forEach((f: Food) => { init[f._id] = 100; });
+      setQuantities(init);
+    } catch (err) {
+      console.error('Lỗi tải foods:', err);
     }
   };
 
-  const handleAddFoodFromUrl = async (foodId: string) => {
-    await addFoodToMealPlan(foodId, 100); // Default 100g
+  const openFoodModal = () => {
+    fetchFoods();
+    setFoodSearch('');
+    setFoodCategory('');
+    setShowFoodModal(true);
   };
 
   const addFoodToMealPlan = async (foodId: string, quantity: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ food_id: foodId, quantity })
+        body: JSON.stringify({ food_id: foodId, quantity }),
       });
-
-      if (response.ok) {
+      if (res.ok) {
         toast.success('Đã thêm món ăn');
         fetchMealPlan();
         setShowFoodModal(false);
       } else {
-        const data = await response.json();
+        const data = await res.json();
         toast.error(data.message || 'Lỗi khi thêm món ăn');
       }
-    } catch (error) {
-      console.error('Lỗi khi thêm món ăn:', error);
+    } catch {
+      console.error('Lỗi khi thêm món ăn');
     }
   };
 
-  const handleRemoveClick = (item: MealItem) => {
-    setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name });
+  const updateQuantity = async (itemId: string) => {
+    if (editQuantity <= 0 || editQuantity > 5000) {
+      toast.error('Số gram phải từ 1–5000');
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ quantity: editQuantity }),
+      });
+      if (res.ok) {
+        toast.success('Đã cập nhật');
+        fetchMealPlan();
+        setEditingItem(null);
+      }
+    } catch {
+      toast.error('Lỗi kết nối');
+    }
   };
 
   const handleRemoveConfirm = async () => {
     try {
-      const response = await fetch(
+      const res = await fetch(
         `http://localhost:8000/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}`,
-        { method: 'DELETE', credentials: 'include' }
+        { method: 'DELETE', credentials: 'include' },
       );
-      if (response.ok) {
+      if (res.ok) {
         toast.success('Đã xóa món ăn');
         fetchMealPlan();
       }
@@ -121,188 +158,355 @@ const MealPlannerPage = () => {
     }
   };
 
-  const updateQuantity = async (itemId: string) => {
-    if (editQuantity <= 0 || editQuantity > 5000) {
-      toast.error('Số gram phải từ 1-5000');
-      return;
-    }
+  const caloriePercent = Math.min(100, Math.round((totalCalories / CALORIE_GOAL) * 100));
+  const calorieBarColor = caloriePercent >= 100 ? 'bg-red-500' : caloriePercent >= 75 ? 'bg-amber-400' : 'bg-primary';
 
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/meal-plans/${selectedDate}/items/${itemId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ quantity: editQuantity })
-        }
-      );
-      if (response.ok) {
-        toast.success('Đã cập nhật');
-        fetchMealPlan();
-        setEditingItem(null);
-      }
-    } catch (error) {
-      console.error('Lỗi khi cập nhật số lượng:', error);
-    }
-  };
-
-  const openFoodModal = () => {
-    fetchFoods();
-    setShowFoodModal(true);
-  };
+  const categories = [...new Set(foods.map(f => f.category))].filter(Boolean);
+  const filteredFoods = foods.filter(f => {
+    const matchSearch = f.name.toLowerCase().includes(foodSearch.toLowerCase());
+    const matchCat = !foodCategory || f.category === foodCategory;
+    return matchSearch && matchCat;
+  });
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">
-            Thực đơn <span className="text-primary">hôm nay</span>
-          </h1>
+      <div className="space-y-5">
+
+        {/* ── Header ──────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Thực đơn của tôi</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Theo dõi dinh dưỡng hàng ngày</p>
+          </div>
           <Link
             to="/foods"
-            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition text-slate-600 dark:text-slate-300"
           >
-            Xem thư viện món ăn
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Thư viện món ăn
           </Link>
         </div>
 
-        {/* Date picker */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-            Chọn ngày
-          </label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-slate-100 dark:bg-slate-800 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+        {/* ── Date nav ────────────────────────────────── */}
+        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3">
+          <button
+            onClick={() => setSelectedDate(d => offsetDate(d, -1))}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => dateInputRef.current?.showPicker?.()}
+            className="flex-1 text-center font-medium text-slate-900 dark:text-white hover:text-primary transition capitalize cursor-pointer relative"
+          >
+            {formatDate(selectedDate)}
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={selectedDate}
+              onChange={e => setSelectedDate(e.target.value)}
+              className="absolute inset-0 opacity-0 w-full cursor-pointer"
+            />
+          </button>
+
+          <button
+            onClick={() => setSelectedDate(d => offsetDate(d, 1))}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+            className="px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+          >
+            Hôm nay
+          </button>
         </div>
 
-        {/* Total calories */}
-        <div className="bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl p-6 mb-6">
-          <div className="text-sm text-slate-600 dark:text-slate-400">Tổng calo</div>
-          <div className="text-4xl font-bold text-primary">{totalCalories} kcal</div>
+        {/* ── Calorie summary ──────────────────────────── */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tổng calo hôm nay</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">
+                {totalCalories.toLocaleString()}
+                <span className="text-base font-medium text-slate-400 ml-1">kcal</span>
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-400">Mục tiêu</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">{CALORIE_GOAL.toLocaleString()} kcal</p>
+            </div>
+          </div>
+          <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${calorieBarColor}`}
+              style={{ width: `${caloriePercent}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-400 mt-1.5">{caloriePercent}% mục tiêu hàng ngày</p>
         </div>
 
-        {/* Meal items */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h2 className="font-bold">Danh sách món ăn</h2>
+        {/* ── Meal table ───────────────────────────────── */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+
+          {/* Toolbar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800">
+            <h2 className="font-semibold text-slate-800 dark:text-white">
+              Danh sách món ăn
+              {items.length > 0 && (
+                <span className="ml-2 text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                  {items.length}
+                </span>
+              )}
+            </h2>
             <button
               onClick={openFoodModal}
-              className="px-4 py-2 bg-primary text-slate-900 rounded-lg font-medium hover:bg-primary/90 transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-slate-900 text-xs font-semibold rounded-lg hover:bg-primary/90 transition cursor-pointer"
             >
-              + Thêm món
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Thêm món
             </button>
           </div>
 
-          {loading ? (
-            <div className="p-8 text-center text-slate-500">Đang tải...</div>
-          ) : items.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">
-              Chưa có món ăn nào. Hãy thêm món ăn vào thực đơn!
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-200 dark:divide-slate-800">
-              {items.map((item) => (
-                <div key={item._id} className="p-4 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    {editingItem === item._id ? (
-                      <div className="flex items-center gap-2 mt-1">
-                        <input
-                          type="number"
-                          value={editQuantity}
-                          onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 text-sm bg-slate-100 dark:bg-slate-800 rounded"
-                        />
-                        <span className="text-sm text-slate-500">gram</span>
-                        <button onClick={() => updateQuantity(item._id)} className="text-sm text-primary hover:underline">Lưu</button>
-                        <button onClick={() => setEditingItem(null)} className="text-sm text-slate-500 hover:underline">Hủy</button>
-                      </div>
-                    ) : (
-                      <div
-                        className="text-sm text-slate-500 cursor-pointer hover:text-primary"
-                        onClick={() => { setEditingItem(item._id); setEditQuantity(item.quantity); }}
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide w-6">#</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tên món</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Khối lượng</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Calories</th>
+                  <th className="px-4 py-2.5 w-12" />
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {loading ? (
+                  [1, 2, 3].map(i => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-5 py-3"><div className="h-3 w-4 bg-slate-200 dark:bg-slate-700 rounded" /></td>
+                      <td className="px-4 py-3"><div className="h-3 w-40 bg-slate-200 dark:bg-slate-700 rounded" /></td>
+                      <td className="px-4 py-3 text-right"><div className="h-3 w-12 bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></td>
+                      <td className="px-4 py-3 text-right"><div className="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></td>
+                      <td className="px-4 py-3" />
+                    </tr>
+                  ))
+                ) : items.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-12 text-center">
+                      <p className="text-slate-400 text-sm">Chưa có món ăn nào trong ngày này</p>
+                      <button
+                        onClick={openFoodModal}
+                        className="mt-3 text-xs text-primary hover:underline cursor-pointer font-medium"
                       >
-                        {item.quantity}g (click để sửa)
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="font-bold text-primary">{item.calories}</div>
-                      <div className="text-xs text-slate-500">kcal</div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveClick(item)}
-                      className="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
-                    >
-                      X
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                        + Thêm món đầu tiên
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((item, idx) => (
+                    <tr key={item._id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      {/* # */}
+                      <td className="px-5 py-3 text-xs text-slate-400 font-medium">{idx + 1}</td>
+
+                      {/* Name */}
+                      <td className="px-4 py-3 font-medium text-slate-800 dark:text-white">{item.name}</td>
+
+                      {/* Quantity - inline editable */}
+                      <td className="px-4 py-3 text-right">
+                        {editingItem === item._id ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <input
+                              type="number"
+                              value={editQuantity}
+                              onChange={e => setEditQuantity(parseInt(e.target.value) || 0)}
+                              className="w-16 px-2 py-1 text-xs text-right bg-white dark:bg-slate-900 border border-primary rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                              autoFocus
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') updateQuantity(item._id);
+                                if (e.key === 'Escape') setEditingItem(null);
+                              }}
+                            />
+                            <span className="text-xs text-slate-400">g</span>
+                            <button onClick={() => updateQuantity(item._id)} className="text-xs text-primary font-medium hover:underline cursor-pointer">Lưu</button>
+                            <button onClick={() => setEditingItem(null)} className="text-xs text-slate-400 hover:underline cursor-pointer">Hủy</button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingItem(item._id); setEditQuantity(item.quantity); }}
+                            className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-primary transition cursor-pointer group/qty"
+                          >
+                            <span className="font-medium">{item.quantity}g</span>
+                            <svg className="w-3 h-3 text-slate-300 group-hover/qty:text-primary transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828A4 4 0 019 17H7v-2a4 4 0 012.172-3.586z" />
+                            </svg>
+                          </button>
+                        )}
+                      </td>
+
+                      {/* Calories */}
+                      <td className="px-4 py-3 text-right">
+                        <span className="font-semibold text-primary">{item.calories}</span>
+                        <span className="text-xs text-slate-400 ml-1">kcal</span>
+                      </td>
+
+                      {/* Delete */}
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name })}
+                          className="w-7 h-7 inline-flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+
+              {/* Footer total */}
+              {!loading && items.length > 0 && (
+                <tfoot>
+                  <tr className="bg-slate-50 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700">
+                    <td colSpan={3} className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Tổng cộng
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="font-bold text-primary text-base">{totalCalories.toLocaleString()}</span>
+                      <span className="text-xs text-slate-400 ml-1">kcal</span>
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
         </div>
       </div>
 
-      {/* Food modal */}
+      {/* ── Food picker modal ──────────────────────────── */}
       {showFoodModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-lg max-h-[80vh] overflow-hidden">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="font-bold">Chọn món ăn</h3>
-              <button onClick={() => setShowFoodModal(false)} className="text-slate-500 hover:text-slate-700">X</button>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-slate-900 dark:text-white">Chọn món ăn</h3>
+              <button
+                onClick={() => setShowFoodModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="p-4 overflow-y-auto max-h-[60vh]">
-              {foods.length === 0 ? (
-                <div className="text-center text-slate-500 py-4">Không có món ăn nào</div>
-              ) : (
-                <div className="space-y-2">
-                  {foods.map((food) => (
-                    <div key={food._id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <div className="font-medium">{food.name}</div>
-                          <div className="text-xs text-slate-500">{food.category}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-primary">{food.calories}</div>
-                          <div className="text-xs text-slate-500">kcal/100g</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          defaultValue="100"
-                          min="1"
-                          max="5000"
-                          className="flex-1 px-2 py-1 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
-                          id={`qty-${food._id}`}
-                        />
-                        <span className="text-xs text-slate-500">g</span>
-                        <button
-                          onClick={() => {
-                            const input = document.getElementById(`qty-${food._id}`) as HTMLInputElement;
-                            const qty = parseInt(input?.value || '100');
-                            if (qty > 0 && qty <= 5000) {
-                              addFoodToMealPlan(food._id, qty);
-                            } else {
-                              toast.error('Số gram phải từ 1-5000');
-                            }
-                          }}
-                          className="px-3 py-1 bg-primary text-slate-900 text-sm rounded font-medium hover:bg-primary/90"
-                        >
-                          Thêm
-                        </button>
-                      </div>
-                    </div>
+
+            {/* Search + filter */}
+            <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 space-y-2">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Tìm món ăn..."
+                  value={foodSearch}
+                  onChange={e => setFoodSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  autoFocus
+                />
+              </div>
+              {categories.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setFoodCategory('')}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+                      !foodCategory ? 'bg-primary text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setFoodCategory(cat === foodCategory ? '' : cat)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+                        cat === foodCategory ? 'bg-primary text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {cat}
+                    </button>
                   ))}
                 </div>
+              )}
+            </div>
+
+            {/* Food table */}
+            <div className="overflow-y-auto flex-1">
+              {filteredFoods.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 text-sm">Không tìm thấy món ăn nào</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0">
+                    <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tên món</th>
+                      <th className="text-left px-3 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Loại</th>
+                      <th className="text-right px-3 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Calo/100g</th>
+                      <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Gram</th>
+                      <th className="px-3 py-2.5 w-16" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredFoods.map(food => (
+                      <tr key={food._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="px-4 py-2.5 font-medium text-slate-800 dark:text-white">{food.name}</td>
+                        <td className="px-3 py-2.5">
+                          {food.category ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                              {food.category}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-semibold text-primary">{food.calories}</td>
+                        <td className="px-3 py-2.5">
+                          <input
+                            type="number"
+                            value={quantities[food._id] ?? 100}
+                            onChange={e => setQuantities(q => ({ ...q, [food._id]: parseInt(e.target.value) || 0 }))}
+                            min="1"
+                            max="5000"
+                            className="w-16 px-2 py-1 text-xs text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-1 focus:ring-primary block mx-auto"
+                          />
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <button
+                            onClick={() => addFoodToMealPlan(food._id, quantities[food._id] ?? 100)}
+                            className="px-3 py-1.5 bg-primary text-slate-900 text-xs font-semibold rounded-lg hover:bg-primary/90 transition cursor-pointer"
+                          >
+                            Thêm
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
@@ -312,7 +516,7 @@ const MealPlannerPage = () => {
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         title="Xóa món ăn"
-        message={`Bạn có chắc muốn xóa "${deleteModal.itemName}" khỏi thực đơn?`}
+        message={`Xóa "${deleteModal.itemName}" khỏi thực đơn?`}
         confirmText="Xóa"
         onConfirm={handleRemoveConfirm}
         onCancel={() => setDeleteModal({ isOpen: false, itemId: '', itemName: '' })}
