@@ -172,7 +172,7 @@ const FoodFormModal = ({ isOpen, foodId, onClose, onSuccess }: FoodFormModalProp
       try {
         const res = await fetch(
           `http://localhost:8000/api/foods?search=${encodeURIComponent(formData.name.trim())}`,
-          { credentials: 'include' }
+          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
         const data = await res.json();
         const duplicate = Array.isArray(data)
