@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './components/ProtectedRoute'; // Import chú bảo vệ
+import ProtectedRoute from './components/ProtectedRoute';
 
 // --- Import các trang ---
 import AiCoachPage from './pages/AiCoachPage';
@@ -34,8 +34,7 @@ export default function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/fitness-goals" element={<FitnessGoal />} />
 
-        {/*  PROTECTED ROUTES (Bắt buộc đăng nhập)*/}
-        {/* User routes */}
+        {/* PROTECTED ROUTES - User */}
         <Route element={<ProtectedRoute />}>
           <Route path="/aicoach" element={<AiCoachPage />} />
           <Route path="/profile" element={<ProfilePage />} />
@@ -46,7 +45,7 @@ export default function App() {
             <Route path="/overview" element={<OverviewPage/>} />
         </Route>
 
-        {/* Admin routes */}
+        {/* PROTECTED ROUTES - Admin */}
         <Route element={<ProtectedRoute requiredRole="admin" />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
