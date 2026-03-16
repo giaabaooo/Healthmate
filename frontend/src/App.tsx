@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // --- Import các trang ---
-import AiCoachPage from './pages/AiCoachPage';
+import AiCoachPage from './pages/user/AiCoachPage';
 import FoodCatalogPage from './pages/user/FoodCatalogPage';
 import MealPlannerPage from './pages/user/MealPlannerPage';
 import AdminFoodFormPage from './pages/admin/AdminFoodFormPage';
