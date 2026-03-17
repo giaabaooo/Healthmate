@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const connectDB = require("./config/db");
 
 // Import Routes
@@ -36,6 +37,9 @@ app.use(
 );
 
 app.use(express.json());
+
+// Serve uploaded static files
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Khai báo sử dụng Routes
 app.use("/api/workouts", workoutRoutes);

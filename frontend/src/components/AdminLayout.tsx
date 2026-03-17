@@ -11,9 +11,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
-  // Auto-expand Menu nếu đang ở trang /dashboard/foods
+  // Auto-expand Menu nếu đang ở trang /admin/foods
   const [menuOpen, setMenuOpen] = useState(
-    location.pathname.startsWith('/dashboard/foods')
+    location.pathname.startsWith('/admin/foods')
   );
 
   const handleLogout = () => {
@@ -81,9 +81,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {menuOpen && (
               <div className="mt-1 ml-4 pl-3 border-l border-slate-200 dark:border-slate-700 space-y-1">
                 <Link
-                  to="/dashboard/foods"
+                  to="/admin/foods"
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === '/dashboard/foods'
+                    location.pathname === '/admin/foods'
                       ? 'bg-primary/10 text-primary'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import '../styles/admin-dashboard.css';
 import WorkoutsSection from './WorkoutsSection';
 import MealPlannerSection from './MealPlannerSection';
+import FoodsSection from './FoodsSection';
 
 // Add Material Icons font
 const link = document.createElement('link');
@@ -218,6 +219,7 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [showWorkouts, setShowWorkouts] = useState(false);
   const [showMealPlanner, setShowMealPlanner] = useState(false);
+  const [showFoods, setShowFoods] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeSessions: 0,
@@ -309,17 +311,26 @@ const AdminDashboard: React.FC = () => {
 
   const handleWorkoutClick = () => {
     setShowMealPlanner(false);
+    setShowFoods(false);
     setShowWorkouts(true);
   };
 
   const handleMealPlannerClick = () => {
     setShowWorkouts(false);
+    setShowFoods(false);
     setShowMealPlanner(true);
+  };
+
+  const handleFoodsClick = () => {
+    setShowWorkouts(false);
+    setShowMealPlanner(false);
+    setShowFoods(true);
   };
 
   const handleBackToDashboard = () => {
     setShowWorkouts(false);
     setShowMealPlanner(false);
+    setShowFoods(false);
   };
 
   const handleDataBackup = () => {
@@ -336,6 +347,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard',    icon: 'dashboard',       onClick: handleBackToDashboard },
     { id: 'users',     label: 'Users',         icon: 'group',           route: '/admin/users' },
     { id: 'workouts',  label: 'Workouts',      icon: 'fitness_center',  onClick: handleWorkoutClick },
+    { id: 'foods',     label: 'Foods',         icon: 'restaurant',      onClick: handleFoodsClick },
     { id: 'meals',     label: 'Meal Planner',  icon: 'restaurant_menu', onClick: handleMealPlannerClick },
     { id: 'logs',      label: 'System Logs',   icon: 'description',     route: '/admin/logs' },
     { id: 'settings',  label: 'Settings',      icon: 'settings',        route: '/admin/settings' },
@@ -378,9 +390,10 @@ const AdminDashboard: React.FC = () => {
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => {
               const isActive =
-                (item.id === 'dashboard' && !showWorkouts && !showMealPlanner) ||
+                (item.id === 'dashboard' && !showWorkouts && !showMealPlanner && !showFoods) ||
                 (item.id === 'workouts' && showWorkouts) ||
-                (item.id === 'meals' && showMealPlanner);
+                (item.id === 'meals' && showMealPlanner) ||
+                (item.id === 'foods' && showFoods);
               return (
                 <button
                   key={item.id}
@@ -454,6 +467,8 @@ const AdminDashboard: React.FC = () => {
             <WorkoutsSection onBack={handleBackToDashboard} />
           ) : showMealPlanner ? (
             <MealPlannerSection onBack={handleBackToDashboard} />
+          ) : showFoods ? (
+            <FoodsSection onBack={handleBackToDashboard} />
           ) : (
             <div className="max-w-7xl mx-auto flex flex-col gap-8">
             {/* KPI Cards */}

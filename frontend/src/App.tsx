@@ -6,6 +6,7 @@ import AiCoachPage from './pages/user/AiCoachPage';
 import FoodCatalogPage from './pages/user/FoodCatalogPage';
 import MealPlannerPage from './pages/user/MealPlannerPage';
 import AdminFoodFormPage from './pages/admin/AdminFoodFormPage';
+import AdminFoodCatalogPage from './pages/AdminFoodCatalogPage';
 import AdminDashboard from './components/AdminDashboard';
 import UserManagement from './components/UserManagement';
 import WorkoutsPage from './pages/user/WorkoutsPage';
@@ -49,6 +50,7 @@ export default function App() {
         <Route element={<ProtectedRoute requiredRole="admin" />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/foods" element={<AdminFoodCatalogPage />} />
           <Route path="/admin/foods/new" element={<AdminFoodFormPage />} />
           <Route path="/admin/workouts" element={<WorkoutsPage />} />
           <Route path="/admin/workouts/:id" element={<WorkoutDetailPage />} />
