@@ -218,10 +218,6 @@ const SimpleBarChart: React.FC<{ data: Array<{ _id: string; count: number }>, pe
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const [showWorkouts, setShowWorkouts] = useState(false);
-  const [showMealPlanner, setShowMealPlanner] = useState(false);
-  const [showFoods, setShowFoods] = useState(false);
-
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeSessions: 0,
@@ -310,31 +306,6 @@ const AdminDashboard: React.FC = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
-  };
-
-
-  const handleWorkoutClick = () => {
-    setShowMealPlanner(false);
-    setShowFoods(false);
-    setShowWorkouts(true);
-  };
-
-  const handleMealPlannerClick = () => {
-    setShowWorkouts(false);
-    setShowFoods(false);
-    setShowMealPlanner(true);
-  };
-
-  const handleFoodsClick = () => {
-    setShowWorkouts(false);
-    setShowMealPlanner(false);
-    setShowFoods(true);
-  };
-
-  const handleBackToDashboard = () => {
-    setShowWorkouts(false);
-    setShowMealPlanner(false);
-    setShowFoods(false);
   };
 
 
