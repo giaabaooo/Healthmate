@@ -25,10 +25,10 @@ interface Food {
 }
 
 const MEAL_SLOTS = [
-  { key: 'breakfast', label: 'Bữa sáng', time: '6:00–9:00',   dot: 'bg-amber-400',  badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-  { key: 'lunch',     label: 'Bữa trưa', time: '11:00–13:00', dot: 'bg-green-400',  badge: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  { key: 'dinner',    label: 'Bữa tối',  time: '17:00–20:00', dot: 'bg-indigo-400', badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
-  { key: 'snack',     label: 'Bữa phụ',  time: 'Khác',         dot: 'bg-rose-400',   badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' },
+  { key: 'breakfast', label: 'Bữa sáng', time: '06:00–09:00', color: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800', dot: 'bg-amber-400', badge: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' },
+  { key: 'lunch',     label: 'Bữa trưa', time: '11:00–13:00', color: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',   dot: 'bg-blue-400',  badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' },
+  { key: 'dinner',    label: 'Bữa tối',  time: '17:00–20:00', color: 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800', dot: 'bg-violet-400', badge: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300' },
+  { key: 'snack',     label: 'Bữa phụ',  time: 'Khác',        color: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',  dot: 'bg-green-400', badge: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' },
 ] as const;
 type MealSlot = typeof MEAL_SLOTS[number]['key'];
 
@@ -43,9 +43,15 @@ function offsetDate(dateStr: string, days: number): string {
   return d.toISOString().split('T')[0];
 }
 
-// Build 7-day window ending on selectedDate
 function buildWeekDates(anchor: string): string[] {
   return Array.from({ length: 7 }, (_, i) => offsetDate(anchor, i - 6));
+}
+
+// Split items round-robin into meal slots (same logic as customer)
+function groupBySlot(items: MealItem[]): Record<MealSlot, MealItem[]> {
+  const g: Record<MealSlot, MealItem[]> = { breakfast: [], lunch: [], dinner: [], snack: [] };
+  items.forEach((item, i) => { g[MEAL_SLOTS[i % 4].key].push(item); });
+  return g;
 }
 
 const CALORIE_GOAL = 2000;
@@ -59,7 +65,7 @@ const AdminMealPlannerPage = () => {
   const [totalCalories, setTotalCalories] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Weekly calorie data for mini chart (keyed by date)
+  // Weekly calorie data for mini chart
   const [weeklyData, setWeeklyData] = useState<Record<string, number>>({});
 
   // Food modal
@@ -109,7 +115,6 @@ const AdminMealPlannerPage = () => {
     finally { setLoading(false); }
   };
 
-  // Fetch 7 days of calorie totals for the mini bar chart
   const fetchWeeklyData = async () => {
     const week = buildWeekDates(selectedDate);
     const results: Record<string, number> = {};
@@ -193,11 +198,9 @@ const AdminMealPlannerPage = () => {
   const targetEmail = selectedUser?.email ?? '';
   const caloriePercent = Math.min(100, Math.round((totalCalories / CALORIE_GOAL) * 100));
   const calorieRemain = Math.max(0, CALORIE_GOAL - totalCalories);
-  const calorieColor = caloriePercent >= 100 ? 'bg-red-500' : caloriePercent >= 75 ? 'bg-amber-400' : 'bg-primary';
+  const calorieBarColor = caloriePercent >= 100 ? 'bg-red-500' : caloriePercent >= 75 ? 'bg-amber-400' : 'bg-primary';
 
-  // Meal slot distribution
-  const slotCals: Record<MealSlot, number> = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
-  items.forEach((item, i) => { slotCals[MEAL_SLOTS[i % 4].key] += item.calories; });
+  const grouped = groupBySlot(items);
 
   // Macro estimate (50% carb, 25% protein, 25% fat)
   const estCarb    = Math.round((totalCalories * 0.50) / 4);
@@ -300,109 +303,73 @@ const AdminMealPlannerPage = () => {
         {/* ── Main 2-col layout ──────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-          {/* ── Left: Meal table (2/3) ── */}
-          <div className="xl:col-span-2 space-y-5">
-
-            {/* Stats row */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tổng calo</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{totalCalories.toLocaleString()}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-500 ${calorieColor}`} style={{ width: `${caloriePercent}%` }} />
+          {/* ── Left: Meal slot cards (2/3) ── */}
+          <div className="xl:col-span-2 space-y-4">
+            {loading ? (
+              // Skeleton loading
+              [1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-pulse">
+                  <div className="px-4 py-3 flex items-center justify-between bg-slate-50 dark:bg-slate-800/60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-slate-700" />
+                      <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
+                    </div>
                   </div>
-                  <span className="text-xs text-slate-400">{caloriePercent}%</span>
+                  <div className="px-4 py-4 bg-white/50 dark:bg-slate-900/50">
+                    <div className="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded" />
+                  </div>
                 </div>
-              </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Số món</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{items.length}</p>
-                <p className="text-xs text-slate-400 mt-2">món trong ngày</p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">TB / món</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                  {items.length ? Math.round(totalCalories / items.length) : 0}
-                </p>
-                <p className="text-xs text-slate-400 mt-2">kcal trung bình</p>
-              </div>
-            </div>
+              ))
+            ) : (
+              MEAL_SLOTS.map(slot => {
+                const slotItems = grouped[slot.key];
+                const slotCals = slotItems.reduce((s, item) => s + item.calories, 0);
+                return (
+                  <div key={slot.key} className={`rounded-xl border overflow-hidden ${slot.color}`}>
+                    {/* Slot header */}
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2.5 h-2.5 rounded-full ${slot.dot}`} />
+                        <div>
+                          <span className="font-semibold text-slate-800 dark:text-white text-sm">{slot.label}</span>
+                          <span className="ml-2 text-xs text-slate-400">{slot.time}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {slotCals > 0 && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${slot.badge}`}>
+                            {slotCals} kcal
+                          </span>
+                        )}
+                        <button
+                          onClick={openFoodModal}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/60 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-700 transition cursor-pointer"
+                        >
+                          <svg className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
 
-            {/* Meal table */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800">
-                <h2 className="font-semibold text-slate-800 dark:text-white">
-                  Danh sách món ăn
-                  {items.length > 0 && (
-                    <span className="ml-2 text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                      {items.length}
-                    </span>
-                  )}
-                </h2>
-                <button
-                  onClick={openFoodModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-slate-900 text-xs font-semibold rounded-lg hover:bg-primary/90 transition cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Thêm món
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
-                      <th className="text-left px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide w-6">#</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tên món</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Bữa</th>
-                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Khối lượng</th>
-                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Calories</th>
-                      <th className="px-4 py-2.5 w-16" />
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {loading ? (
-                      [1, 2, 3, 4].map(i => (
-                        <tr key={i} className="animate-pulse">
-                          <td className="px-5 py-3"><div className="h-3 w-4 bg-slate-200 dark:bg-slate-700 rounded" /></td>
-                          <td className="px-4 py-3"><div className="h-3 w-36 bg-slate-200 dark:bg-slate-700 rounded" /></td>
-                          <td className="px-4 py-3"><div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded-full" /></td>
-                          <td className="px-4 py-3 text-right"><div className="h-3 w-12 bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></td>
-                          <td className="px-4 py-3 text-right"><div className="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded ml-auto" /></td>
-                          <td />
-                        </tr>
-                      ))
-                    ) : items.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-5 py-12 text-center text-slate-400 text-sm">
-                          Chưa có món ăn nào — nhấn "Thêm món" để bắt đầu
-                        </td>
-                      </tr>
+                    {/* Slot items */}
+                    {slotItems.length === 0 ? (
+                      <div className="px-4 py-4 text-center text-xs text-slate-400 bg-white/30 dark:bg-slate-900/30">
+                        Chưa có món — nhấn + để thêm
+                      </div>
                     ) : (
-                      items.map((item, idx) => {
-                        const slot = MEAL_SLOTS[idx % MEAL_SLOTS.length];
-                        return (
-                          <tr key={item._id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="px-5 py-3 text-xs text-slate-400 font-medium">{idx + 1}</td>
-                            <td className="px-4 py-3 font-medium text-slate-800 dark:text-white">{item.name}</td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${slot.badge}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${slot.dot}`} />
-                                {slot.label}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right">
+                      <div className="bg-white/50 dark:bg-slate-900/50 divide-y divide-white/60 dark:divide-slate-700/50">
+                        {slotItems.map(item => (
+                          <div key={item._id} className="flex items-center gap-3 px-4 py-2.5 group">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-slate-800 dark:text-white truncate">{item.name}</p>
                               {editingItem === item._id ? (
-                                <div className="flex items-center justify-end gap-1.5">
+                                <div className="flex items-center gap-1.5 mt-1">
                                   <input
                                     type="number"
                                     value={editQuantity}
                                     onChange={e => setEditQuantity(parseInt(e.target.value) || 0)}
-                                    className="w-16 px-2 py-1 text-xs text-right bg-white dark:bg-slate-900 border border-primary rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                                    className="w-16 px-2 py-0.5 text-xs bg-white dark:bg-slate-800 border border-primary rounded focus:outline-none focus:ring-1 focus:ring-primary"
                                     autoFocus
                                     onKeyDown={e => {
                                       if (e.key === 'Enter') updateQuantity(item._id);
@@ -416,50 +383,35 @@ const AdminMealPlannerPage = () => {
                               ) : (
                                 <button
                                   onClick={() => { setEditingItem(item._id); setEditQuantity(item.quantity); }}
-                                  className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-primary transition cursor-pointer group/qty"
+                                  className="flex items-center gap-1 mt-0.5 text-xs text-slate-400 hover:text-primary transition cursor-pointer group/qty"
                                 >
-                                  <span className="font-medium">{item.quantity}g</span>
-                                  <svg className="w-3 h-3 text-slate-300 group-hover/qty:text-primary transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <span>{item.quantity}g</span>
+                                  <svg className="w-2.5 h-2.5 opacity-0 group-hover/qty:opacity-100 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828A4 4 0 019 17H7v-2a4 4 0 012.172-3.586z" />
                                   </svg>
                                 </button>
                               )}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <span className="font-semibold text-primary">{item.calories}</span>
-                              <span className="text-xs text-slate-400 ml-1">kcal</span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <button
-                                onClick={() => setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name })}
-                                className="w-7 h-7 inline-flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100 cursor-pointer"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <span className="font-semibold text-sm text-primary">{item.calories}</span>
+                              <span className="text-xs text-slate-400 ml-0.5">kcal</span>
+                            </div>
+                            <button
+                              onClick={() => setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name })}
+                              className="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </tbody>
-
-                  {!loading && items.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-slate-50 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700">
-                        <td colSpan={4} className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tổng cộng</td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="font-bold text-primary text-base">{totalCalories.toLocaleString()}</span>
-                          <span className="text-xs text-slate-400 ml-1">kcal</span>
-                        </td>
-                        <td />
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
-              </div>
-            </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* ── Right sidebar (1/3) ── */}
@@ -482,7 +434,7 @@ const AdminMealPlannerPage = () => {
 
             {/* Calorie ring */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Calo hôm nay</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Lượng calo hôm nay</p>
               <div className="flex items-center justify-center mb-4">
                 <div className="relative w-28 h-28">
                   <svg className="w-28 h-28 -rotate-90" viewBox="0 0 112 112">
@@ -502,61 +454,78 @@ const AdminMealPlannerPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-2.5">
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">{totalCalories.toLocaleString()}</p>
-                  <p className="text-xs text-slate-400">Đã nạp</p>
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{totalCalories.toLocaleString()}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Đã nạp</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-2.5">
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">{calorieRemain.toLocaleString()}</p>
-                  <p className="text-xs text-slate-400">Còn lại</p>
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{calorieRemain.toLocaleString()}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Còn lại</p>
                 </div>
               </div>
+              <div className="mt-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${calorieBarColor}`}
+                  style={{ width: `${caloriePercent}%` }}
+                />
+              </div>
+              <p className="text-center text-xs text-slate-400 mt-1.5">Mục tiêu: {CALORIE_GOAL.toLocaleString()} kcal</p>
             </div>
 
-            {/* Meal slot breakdown */}
+            {/* Macro estimate */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Phân bổ bữa ăn</p>
-              <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Ước tính dưỡng chất</p>
+              <div className="space-y-3">
+                {[
+                  { label: 'Carbohydrate', value: estCarb,    goal: 250, color: 'bg-blue-400',   note: '~250g/ngày' },
+                  { label: 'Protein',      value: estProtein, goal: 60,  color: 'bg-primary',     note: '~60g/ngày'  },
+                  { label: 'Chất béo',     value: estFat,     goal: 65,  color: 'bg-amber-400',   note: '~65g/ngày'  },
+                ].map(m => (
+                  <div key={m.label}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{m.label}</span>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{m.value}g</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full">
+                      <div className={`h-full ${m.color} rounded-full`} style={{ width: `${Math.min(100, (m.value / m.goal) * 100)}%`, transition: 'width 0.5s ease' }} />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Mục tiêu {m.note}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+                * Ước tính dựa trên phân bổ 50/25/25 (carb/protein/fat)
+              </p>
+            </div>
+
+            {/* Daily summary */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Tổng kết ngày</p>
+              <div className="space-y-2">
                 {MEAL_SLOTS.map(slot => {
-                  const cal = slotCals[slot.key];
+                  const cal = grouped[slot.key].reduce((s, i) => s + i.calories, 0);
                   const pct = totalCalories > 0 ? Math.round((cal / totalCalories) * 100) : 0;
                   return (
                     <div key={slot.key} className="flex items-center gap-3">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${slot.dot}`} />
-                      <span className="text-xs text-slate-500 w-16">{slot.label}</span>
+                      <span className="text-xs text-slate-600 dark:text-slate-400 w-20">{slot.label}</span>
                       <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${slot.dot}`} style={{ width: `${pct}%`, transition: 'width 0.5s ease' }} />
                       </div>
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300 w-16 text-right">
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300 w-14 text-right">
                         {cal > 0 ? `${cal} kcal` : '—'}
                       </span>
                     </div>
                   );
                 })}
               </div>
-            </div>
-
-            {/* Macro estimate */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Ước tính dưỡng chất</p>
-              <div className="space-y-3">
-                {[
-                  { label: 'Carbohydrate', value: estCarb, goal: 250, color: 'bg-blue-400', unit: 'g' },
-                  { label: 'Protein',      value: estProtein, goal: 60, color: 'bg-primary', unit: 'g' },
-                  { label: 'Chất béo',     value: estFat, goal: 65, color: 'bg-amber-400', unit: 'g' },
-                ].map(m => (
-                  <div key={m.label}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{m.label}</span>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{m.value}{m.unit}</span>
-                    </div>
-                    <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full">
-                      <div className={`h-full ${m.color} rounded-full`} style={{ width: `${Math.min(100, (m.value / m.goal) * 100)}%`, transition: 'width 0.5s ease' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {items.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Tổng cộng</span>
+                  <span className="text-sm font-bold text-primary">{totalCalories.toLocaleString()} kcal</span>
+                </div>
+              )}
             </div>
 
             {/* 7-day mini bar chart */}

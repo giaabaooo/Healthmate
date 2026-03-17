@@ -11,9 +11,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
-  // Auto-expand Menu nếu đang ở trang /dashboard/foods
+  // Auto-expand Menu nếu đang ở trang /admin/foods
   const [menuOpen, setMenuOpen] = useState(
-    location.pathname.startsWith('/dashboard/foods')
+    location.pathname.startsWith('/admin/foods')
   );
 
   const handleLogout = () => {
@@ -47,7 +47,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {/* Tổng quan */}
-          <Link to="/dashboard" className={linkClass('/dashboard')}>
+          <Link to="/admin/dashboard" className={linkClass('/admin/dashboard')}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -81,9 +81,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {menuOpen && (
               <div className="mt-1 ml-4 pl-3 border-l border-slate-200 dark:border-slate-700 space-y-1">
                 <Link
-                  to="/dashboard/foods"
+                  to="/admin/foods"
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === '/dashboard/foods'
+                    location.pathname === '/admin/foods'
                       ? 'bg-primary/10 text-primary'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
