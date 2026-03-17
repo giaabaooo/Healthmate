@@ -515,6 +515,7 @@ const loadTodaysExercises = async () => {
 
 const newExercisesFromWorkout = exercises.map((ex: any, i: number) => ({
   id: `${workout._id}-${i}`,
+  workout_id: workout._id,
   name: ex.title || workout.title,
   startTime: addStartTime,
   endTime: addEndTime,
@@ -587,7 +588,7 @@ setPreviewWorkoutId(null);
       const logPromises = todaysExercises.map(exercise => {
         console.log("Creating log for exercise:", exercise);
         return createWorkoutLog({
-          workout_id: exercise.id,
+          workout_id: exercise.workout_id,
           duration_minutes: exercise.duration || 30,
           calories_burned: exercise.calories || 0,
           date: today,

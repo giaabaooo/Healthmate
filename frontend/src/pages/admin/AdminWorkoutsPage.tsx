@@ -85,7 +85,7 @@ const AdminWorkoutsPage = () => {
         return "bg-red-500 text-white";
       default:
         return "bg-slate-500 text-white";
-    }
+    } 
   };
 
   const addExercise = () => {
@@ -130,7 +130,14 @@ const AdminWorkoutsPage = () => {
         level: "beginner",
         calories_burned: 0,
         description: "",
-        exercises: [],
+         exercises: [
+      {
+        title: "",
+        video_url: "",
+        duration_sec: 0,
+        order: 1,
+      },
+    ],
       });
       fetchData(); // reload list
     } catch (err) {
