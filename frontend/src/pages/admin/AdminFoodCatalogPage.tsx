@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import AdminLayout from '../components/AdminLayout';
+import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
-import ConfirmModal from '../components/confirm-modal';
-import FoodFormModal from '../components/FoodFormModal';
+import ConfirmModal from '../../components/confirm-modal';
+import FoodFormModal from '../../components/FoodFormModal';
 
 interface Food {
   _id: string;

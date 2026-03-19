@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import AdminLayout from '../components/AdminLayout';
-import ConfirmModal from '../components/confirm-modal';
+import AdminLayout from '../../components/AdminLayout';
+import ConfirmModal from '../../components/confirm-modal';
 
 interface User {
   _id: string;

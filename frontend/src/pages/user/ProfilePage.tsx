@@ -187,13 +187,12 @@ const ProfilePage = () => {
               </p>
             </div>
             <nav className="flex flex-col gap-2">
-              {[
-                { icon: 'grid_view', label: 'Overview', path: '/overview' },
-                { icon: 'person_edit', label: 'Profile Settings', path: '/profile' },
-                { icon: 'ads_click', label: 'Fitness Goals', path: '/fitness-goals' },
-                { icon: 'analytics', label: 'Assessments' },
-                { icon: 'calendar_month', label: 'Schedules', path: '/schedule' },
-              ].map(({ icon, label, path }) => {
+                {[
+                  { icon: 'grid_view', label: 'Overview', path: '/overview' },
+                  { icon: 'person_edit', label: 'Profile Settings', path: '/profile' },
+                  { icon: 'ads_click', label: 'Fitness Goals', path: '/fitness-goals' },
+                  { icon: 'calendar_month', label: 'Schedules', path: '/schedule' },
+                ].map(({ icon, label, path }) => {
                 const isActive = path ? location.pathname === path : false;
 
                 if (!path) {
