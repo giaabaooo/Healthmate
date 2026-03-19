@@ -27,7 +27,7 @@ interface ExerciseRowProps {
     muscle: string;
     detail: string;
     isActive?: boolean;
-    checked?: boolean;
+    checked?: boolean; 
 }
 
 const ExerciseRow = ({ set, time, image, name, muscle, detail, isActive, checked }: ExerciseRowProps) => (
