@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const WorkoutLog = require('../models/WorkoutLog');
 
 // Hàm tiện ích để tạo JWT cho user
 const generateToken = (userId) => {
@@ -273,6 +274,82 @@ const getUsers = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+const getHealthMetrics = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const p = user.profile || {};
+    const weight = p.weight_kg || 70;
+    const height = p.height_cm || 170;
+    const gender = p.gender || 'male';
+    const age = 25; // Tạm giả định 25 tuổi nếu không có ngày sinh
+
+    // 1. Tính BMR (Basal Metabolic Rate) bằng công thức Mifflin-St Jeor
+    let bmr = 10 * weight + 6.25 * height - 5 * age;
+    bmr = gender === 'female' ? bmr - 161 : bmr + 5;
+
+    // 2. Tính Calo tập luyện hôm nay
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayWorkouts = await WorkoutLog.find({ user_id: user._id, date: { $gte: today } });
+    const todayActiveCal = todayWorkouts.reduce((sum, w) => sum + w.calories_burned, 0);
+
+    // Metabolic Rate = BMR cơ bản + Calo vận động
+    const metabolicRate = Math.round(bmr + todayActiveCal);
+
+    // 3. Lấy dữ liệu 7 ngày qua cho biểu đồ Workout Impact
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0,0,0,0);
+
+    const pastWorkouts = await WorkoutLog.find({
+      user_id: user._id,
+      date: { $gte: sevenDaysAgo }
+    });
+
+    const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const chartData = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayLabel = days[d.getDay()];
+      
+      // Tính tổng phút tập của ngày hôm đó
+      const minsThatDay = pastWorkouts
+        .filter(w => new Date(w.date).toDateString() === d.toDateString())
+        .reduce((sum, w) => sum + w.duration_minutes, 0);
+        
+      chartData.push({
+        day: dayLabel,
+        minutes: minsThatDay,
+        // Chuyển số phút thành phần trăm chiều cao cột (Giả sử 120 phút là 100% cột)
+        heightPercent: Math.min((minsThatDay / 120) * 100, 100) || 5 // mặc định 5% cho có vạch nhỏ
+      });
+    }
+
+    // 4. Giả lập Recovery & Sleep (Sau này có thể tạo bảng SleepLog để lưu số liệu thật)
+    // Nếu hôm nay tập nhiều -> Điểm phục hồi giảm
+    const recoveryScore = Math.max(100 - (todayActiveCal / 20), 40).toFixed(0); 
+    const sleepHours = 7;
+    const sleepMins = 45 - (todayWorkouts.length * 5); // Random logic cho vui
+    
+    // Đánh giá nguy cơ chấn thương
+    const injuryRisk = parseInt(recoveryScore) < 60 ? 'High' : parseInt(recoveryScore) < 80 ? 'Medium' : 'Low';
+
+    res.json({
+      metabolicRate,
+      recoveryScore,
+      sleep: `${sleepHours}h ${sleepMins}m`,
+      chartData,
+      injuryRisk
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
 
 module.exports = {
   registerUser,
@@ -283,4 +360,5 @@ module.exports = {
   googleLogin,
   getDailyRoutine,
   updateDailyRoutine,
+  getHealthMetrics,
 };
