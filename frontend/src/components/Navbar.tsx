@@ -138,7 +138,7 @@ const Navbar = () => {
           {user?.role === 'admin' && (
             <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/dashboard">Dashboard</Link>
           )}
-          <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/overview">Overview</Link>
+          
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/workouts">Workouts</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/meal-planner">Meal Plan</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/aicoach">AI Coach</Link>
@@ -196,6 +196,31 @@ const Navbar = () => {
                   >
                     View profile
                   </button>
+                </div>
+
+                 {/* Menu Items */}
+                 <div className="p-2 border-b border-slate-200 dark:border-slate-800">
+                    <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/overview'); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400">grid_view</span>
+                        <span className="text-sm font-medium">Overview</span>
+                    </button>
+                    <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/fitness-goals'); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400">ads_click</span>
+                        <span className="text-sm font-medium">Fitness Goals</span>
+                    </button>
+                    <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/schedule'); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[20px] text-slate-400">calendar_month</span>
+                        <span className="text-sm font-medium">Schedules</span>
+                    </button>
                 </div>
 
                 {/* Notifications */}
@@ -294,7 +319,7 @@ const Navbar = () => {
                     className="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                     role="menuitem"
                   >
-                    Profile
+                    Profile Settings
                   </button>
                   <button
                     type="button"
