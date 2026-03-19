@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import '../styles/admin-dashboard.css';
+
+
+
 
 // Add Material Icons font
 const link = document.createElement('link');
@@ -214,6 +217,7 @@ const SimpleBarChart: React.FC<{ data: Array<{ _id: string; count: number }>, pe
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeSessions: 0,
@@ -304,6 +308,7 @@ const AdminDashboard: React.FC = () => {
     navigate('/login');
   };
 
+
   const handleDataBackup = () => {
     // Implement data backup functionality
     console.log('Starting data backup...');
@@ -316,11 +321,13 @@ const AdminDashboard: React.FC = () => {
   };
 
   const navItems = [
+
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
     { id: 'users', label: 'Users', icon: 'group', route: '/admin/users' },
     { id: 'workouts', label: 'Workouts', icon: 'fitness_center', route: '/admin/workouts' },
     { id: 'logs', label: 'System Logs', icon: 'description', route: '/admin/logs' },
     { id: 'settings', label: 'Settings', icon: 'settings', route: '/admin/settings' }
+
   ];
 
   const getActivityIcon = (type: string) => {
@@ -358,6 +365,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <nav className="flex flex-col gap-2">
+
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -368,6 +376,7 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm font-medium leading-normal">{item.label}</p>
               </button>
             ))}
+
           </nav>
         </div>
         <div className="mt-auto pt-6 border-t border-[#28392e]">
@@ -390,7 +399,9 @@ const AdminDashboard: React.FC = () => {
         {/* Header */}
         <header className="flex items-center justify-between px-8 py-5 border-b border-[#28392e] bg-background-dark shrink-0">
           <div>
-            <h2 className="text-white text-3xl font-bold tracking-tight">System Overview</h2>
+            <Link to="/admin/dashboard" className="text-white text-3xl font-bold tracking-tight hover:text-primary transition-colors">
+              System Overview
+            </Link>
             <p className="text-text-dim text-sm mt-1">Real-time analytics and system health monitoring.</p>
           </div>
           <div className="flex gap-3">
@@ -420,7 +431,9 @@ const AdminDashboard: React.FC = () => {
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-8 scroll-smooth">
+
           <div className="max-w-7xl mx-auto flex flex-col gap-8">
+
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
               <div className="flex flex-col justify-between p-5 rounded-xl bg-surface-dark border border-[#28392e] hover:border-primary/30 transition-all group">

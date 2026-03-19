@@ -5,7 +5,7 @@ const mealPlanSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true,
-    index: true // Đánh index để truy vấn thực đơn của user nhanh hơn
+    index: true 
   },
   date: { 
     type: Date, 
@@ -15,15 +15,12 @@ const mealPlanSchema = new mongoose.Schema({
     type: Number, 
     default: 0 
   },
-  // Nhúng danh sách món ăn vào thực đơn (Giải quyết quan hệ N-M)
   items: [{
-    food_id: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'Food' // Sẽ tạo model Food sau nếu cần quản lý kho thực phẩm riêng
-    },
-    name: { type: String, required: true }, // Lưu tên trực tiếp để render nhanh
-    quantity: { type: Number, required: true }, // Số lượng (gram, ml...)
-    calories: { type: Number, required: true } // Calo tương ứng với quantity
+    food_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Food' },
+    name: { type: String, required: true }, 
+    quantity: { type: Number, required: true },
+    calories: { type: Number, required: true },
+    slot: { type: String, enum: ['breakfast', 'lunch', 'dinner', 'snack'], required: true, default: 'breakfast' } // BỔ SUNG TRƯỜNG NÀY
   }]
 }, { timestamps: true });
 
