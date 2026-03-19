@@ -19,6 +19,7 @@ import FitnessGoal from './pages/user/FitnessGoals';
 import WorkoutsUserPage from './pages/WorkoutsUserPage';
 import CommunityFeed from './pages/CommunityFeed';
 import OverviewPage from './pages/user/Overviewpage';
+import AdminFoodCatalogPage from './pages/admin/AdminFoodCatalogPage';
 
 export default function App() {
   return (

@@ -58,6 +58,7 @@ goal.done
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const FitnessGoal = () => {
+
 const [newGoal, setNewGoal] = useState("");
  const [progress, setProgress] = useState<any>(null);
 const [goal, setGoal] = useState<any>(null);
@@ -77,6 +78,7 @@ useEffect(() => {
       console.error(error);
     }
   };
+
 
   loadProgress();
 }, []);
@@ -159,14 +161,13 @@ const removeGoal = async (id: string) => {
               </p>
             </div>
 
-            <nav className="flex flex-col gap-2">
-              {[
-                { icon: 'grid_view', label: 'Overview' },
-                { icon: 'person', label: 'Profile Settings' },
-                { icon: 'ads_click', label: 'Fitness Goals', active: true },
-                { icon: 'analytics', label: 'Assessments' },
-                { icon: 'calendar_month', label: 'Schedules' },
-              ].map(({ icon, label, active }) => (
+              <nav className="flex flex-col gap-2">
+                {[
+                  { icon: 'grid_view', label: 'Overview' },
+                  { icon: 'person', label: 'Profile Settings' },
+                  { icon: 'ads_click', label: 'Fitness Goals', active: true },
+                  { icon: 'calendar_month', label: 'Schedules' },
+                ].map(({ icon, label, active }) => (
                 <button
                   key={label}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${

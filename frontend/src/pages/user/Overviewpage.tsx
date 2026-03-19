@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import { getMyWorkoutLogs } from '../../services/workoutService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,15 @@ const Icon = ({ name, className = '' }: { name: string; className?: string }) =>
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const OverviewPage = () => {
+  type WorkoutLogEntry = {
+    date?: string;
+    calories_burned?: number;
+    duration_minutes?: number;
+  };
+  type MealPlanResponse = {
+    items?: unknown[];
+  };
+
   const location = useLocation();
 
   const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
@@ -25,6 +35,11 @@ const OverviewPage = () => {
   const [entries, setEntries] = useState<
     { date: string; weight: number; height: number; bmi: number }[]
   >([]);
+  const [weeklyCalories, setWeeklyCalories] = useState<number>(0);
+  const [weeklyCaloriesByDay, setWeeklyCaloriesByDay] = useState<number[]>(new Array(7).fill(0));
+  const [weeklySessions, setWeeklySessions] = useState<number>(0);
+  const [weeklyDuration, setWeeklyDuration] = useState<number>(0);
+  const [mealsLogged, setMealsLogged] = useState<number>(0);
 
   const todayBmi =
     todayHeight && todayWeight
@@ -81,6 +96,77 @@ const OverviewPage = () => {
     }
     // Chỉ chạy một lần khi component mount để tránh loop cập nhật state
     // Nếu sau này hồ sơ user đổi, có thể bổ sung thêm logic lắng nghe riêng.
+  }, []);
+
+  useEffect(() => {
+    const loadWeeklyCalories = async () => {
+      try {
+        const logs = await getMyWorkoutLogs();
+        const today = new Date();
+        const day = today.getDay();
+        const diffToMonday = day === 0 ? 6 : day - 1;
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - diffToMonday);
+        weekStart.setHours(0, 0, 0, 0);
+
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        const byDay = new Array(7).fill(0);
+        let sessions = 0;
+        let duration = 0;
+
+        (Array.isArray(logs) ? logs : []).forEach((log: WorkoutLogEntry) => {
+          const logDate = new Date(log.date);
+          if (logDate < weekStart || logDate > weekEnd) return;
+
+          const jsDay = logDate.getDay();
+          const index = jsDay === 0 ? 6 : jsDay - 1; // Mon=0 ... Sun=6
+          byDay[index] += Number(log.calories_burned) || 0;
+          sessions += 1;
+          duration += Number(log.duration_minutes) || 0;
+        });
+
+        setWeeklyCaloriesByDay(byDay);
+        setWeeklyCalories(byDay.reduce((sum, value) => sum + value, 0));
+        setWeeklySessions(sessions);
+        setWeeklyDuration(duration);
+      } catch (error) {
+        console.error('Load weekly calories error', error);
+        setWeeklyCaloriesByDay(new Array(7).fill(0));
+        setWeeklyCalories(0);
+        setWeeklySessions(0);
+        setWeeklyDuration(0);
+      }
+    };
+
+    loadWeeklyCalories();
+  }, []);
+
+  useEffect(() => {
+    const loadTodayMeals = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const today = new Date().toISOString().split('T')[0];
+        const res = await fetch(`http://localhost:8000/api/meal-plans/${today}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) {
+          setMealsLogged(0);
+          return;
+        }
+        const data: MealPlanResponse = await res.json();
+        setMealsLogged(Array.isArray(data.items) ? data.items.length : 0);
+      } catch (error) {
+        console.error('Load today meal plan error', error);
+        setMealsLogged(0);
+      }
+    };
+
+    loadTodayMeals();
   }, []);
 
   const handleAddEntry = (e: React.FormEvent) => {
@@ -141,11 +227,14 @@ const OverviewPage = () => {
     { icon: 'grid_view', label: 'Overview', path: '/overview' },
     { icon: 'person_edit', label: 'Profile Settings', path: '/profile' },
     { icon: 'ads_click', label: 'Fitness Goals', path: '/fitness-goals' },
-    // Tạm thời cho Assessments quay về overview để tránh 404,
-    // sau này có trang riêng thì chỉ cần đổi path ở đây.
-    { icon: 'analytics', label: 'Assessments', path: '/overview' },
     { icon: 'calendar_month', label: 'Schedules', path: '/schedule' },
   ] as const;
+
+  const today = new Date();
+  const todayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+  const maxWeeklyCalories = Math.max(...weeklyCaloriesByDay, 1);
+  const WEEKLY_CALORIE_GOAL = 3500;
+  const goalProgress = Math.min(100, Math.round((weeklyCalories / WEEKLY_CALORIE_GOAL) * 100));
 
   return (
     <Layout>
@@ -222,54 +311,74 @@ const OverviewPage = () => {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-                    <span className="material-symbols-outlined">local_fire_department</span>
+                  <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <span className="material-symbols-outlined">fitness_center</span>
                   </div>
-                  <p className="font-semibold text-slate-600 dark:text-slate-400">Calories Burned</p>
+                  <p className="font-semibold text-slate-600 dark:text-slate-400">Workout Sessions</p>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">1,840</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">kcal</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{weeklySessions}</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">this week</span>
                 </div>
                 <div className="mt-4 flex items-center gap-2 text-primary font-bold text-sm">
-                  <span className="material-symbols-outlined text-sm">trending_up</span>
-                  <span>+12% from yesterday</span>
+                  <span className="material-symbols-outlined text-sm">event_repeat</span>
+                  <span>Logged workout count</span>
                 </div>
               </div>
 
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                    <span className="material-symbols-outlined">directions_walk</span>
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <span className="material-symbols-outlined">schedule</span>
                   </div>
-                  <p className="font-semibold text-slate-600 dark:text-slate-400">Steps Taken</p>
+                  <p className="font-semibold text-slate-600 dark:text-slate-400">Total Duration</p>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">8,245</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">/ 10,000</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{weeklyDuration.toLocaleString()}</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">minutes</span>
                 </div>
                 <div className="mt-4 w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full w-[82%] rounded-full" />
+                  <div
+                    className="bg-emerald-500 h-full rounded-full"
+                    style={{ width: `${Math.min(Math.round((weeklyDuration / 300) * 100), 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                    <span className="material-symbols-outlined">flag</span>
+                  </div>
+                  <p className="font-semibold text-slate-600 dark:text-slate-400">Goal Progress</p>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{goalProgress}%</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">weekly kcal goal</span>
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-orange-600 dark:text-orange-400 font-bold text-sm">
+                  <span className="material-symbols-outlined text-sm">local_fire_department</span>
+                  <span>{weeklyCalories.toLocaleString()} / {WEEKLY_CALORIE_GOAL.toLocaleString()} kcal</span>
                 </div>
               </div>
 
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
-                    <span className="material-symbols-outlined">water_drop</span>
+                    <span className="material-symbols-outlined">restaurant</span>
                   </div>
-                  <p className="font-semibold text-slate-600 dark:text-slate-400">Water Intake</p>
+                  <p className="font-semibold text-slate-600 dark:text-slate-400">Meals Logged</p>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">1.5</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">/ 2.5 Liters</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{mealsLogged}</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">today</span>
                 </div>
-                <div className="mt-4 flex items-center gap-2 text-red-500 font-bold text-sm">
-                  <span className="material-symbols-outlined text-sm">warning</span>
-                  <span>-0.4L below target</span>
+                <div className="mt-4 flex items-center gap-2 text-cyan-600 dark:text-cyan-400 font-bold text-sm">
+                  <span className="material-symbols-outlined text-sm">menu_book</span>
+                  <span>From meal planner entries</span>
                 </div>
               </div>
             </div>
@@ -410,39 +519,6 @@ const OverviewPage = () => {
                   </div>
                 </div>
 
-                {/* Community Highlights */}
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Community Highlights</h3>
-                    <a className="text-primary text-sm font-bold hover:underline" href="#">See all activity</a>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex gap-4">
-                      <img alt="User Avatar" className="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPbHZ-gk49Pmu4-TZFiJ_44LzM0H4jeO1RdRy6-_3QJ509JHBF1ozN_22XyfTp9KGlQ0O0-ZVAjM-aJl3RdkwkTpB5DUifTdF5oXEu2HWtziX8QAZJYBKsfRw4ri2iknL5OyVuBYt5Qstgs3N51kZ-8HBUrdtz41tOVAipQDM5YZHWuw9AlOKSKUkkHwJVvUbIAK0OobwUHwEIvnAqmJYesBDcx7-bkQsWZySJcKPS_2y46F2I-_yOKxX3qhfWYtH4m2eT5R1uf54" />
-                      <div>
-                        <p className="text-sm text-slate-900 dark:text-white font-bold">Sarah J. <span className="font-normal text-slate-500">just hit a 30-day streak!</span></p>
-                        <p className="text-xs text-slate-400 mt-1">2 mins ago • Consistency Queen</p>
-                        <div className="flex gap-1 mt-2">
-                          <button className="text-primary text-xs font-bold flex items-center gap-1">
-                            <span className="material-symbols-outlined text-sm">thumb_up</span> 14
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex gap-4">
-                      <img alt="User Avatar" className="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyipyg84YiYY6pnwWMJMB0Jlfbf3CHeU6l6mYQwUPiC5O08JFO1rED4xYwYDvLLOaUJxrDLigIvryVId_8mYierLNvAsxnGDbFBA6EA2GGVY8tO7hZgeOLl3LkBBccO6TuBy7bKwEgFUv4-5BeRn0UCQ8FLeNBN03rIEzVCcDKas7skyBd9OeGT_vv-N6CH2HUS6OB3RDZqwm_1H61HGc8_OCPGKrC7DH0pzE7B5KnrsWcNcpaHbZ9uUSLD05EvSolRuXev8Oryn8" />
-                      <div>
-                        <p className="text-sm text-slate-900 dark:text-white font-bold">Mike Chen <span className="font-normal text-slate-500">shared a new 'Quinoa Salad' recipe.</span></p>
-                        <p className="text-xs text-slate-400 mt-1">15 mins ago • Nutrition Hub</p>
-                        <div className="flex gap-1 mt-2">
-                          <button className="text-primary text-xs font-bold flex items-center gap-1">
-                            <span className="material-symbols-outlined text-sm">chat</span> 8 comments
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Right Sidebar */}
@@ -498,26 +574,25 @@ const OverviewPage = () => {
                     </select>
                   </div>
                   <div className="h-40 flex items-end justify-between gap-2 px-2">
-                    {[
-                      { h: '40%', bg: 'bg-primary/20', tooltip: 'Mon: 1.2k' },
-                      { h: '65%', bg: 'bg-primary/20', tooltip: 'Tue: 1.8k' },
-                      { h: '85%', bg: 'bg-primary/20', tooltip: 'Wed: 2.1k' },
-                      { h: '75%', bg: 'bg-primary', tooltip: 'Thu (Today): 1.9k' },
-                      { h: '20%', bg: 'bg-slate-200 dark:bg-slate-800', tooltip: 'Fri' },
-                      { h: '20%', bg: 'bg-slate-200 dark:bg-slate-800', tooltip: 'Sat' },
-                      { h: '20%', bg: 'bg-slate-200 dark:bg-slate-800', tooltip: 'Sun' },
-                    ].map(({ h, bg, tooltip }) => (
-                      <div key={tooltip} className={`w-full ${bg} rounded-t-lg group relative`} style={{ height: h }}>
+                    {weeklyCaloriesByDay.map((calories, index) => {
+                      const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                      const heightPercent = Math.max(20, Math.round((calories / maxWeeklyCalories) * 100));
+                      const tooltip = `${dayLabels[index]}: ${Math.round(calories).toLocaleString()} kcal`;
+                      const isToday = index === todayIndex;
+                      return (
+                      <div key={dayLabels[index]} className={`w-full ${isToday ? 'bg-primary' : 'bg-primary/20'} rounded-t-lg group relative`} style={{ height: `${heightPercent}%` }}>
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                           {tooltip}
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </div>
                   <div className="flex justify-between mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                    <span>M</span><span>T</span><span>W</span>
-                    <span className="text-primary">T</span>
-                    <span>F</span><span>S</span><span>S</span>
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((label, index) => (
+                      <span key={`${label}-${index}`} className={index === todayIndex ? 'text-primary' : ''}>
+                        {label}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>

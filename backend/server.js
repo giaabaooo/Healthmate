@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const connectDB = require("./config/db");
+const { Server } = require('socket.io');
+const http = require('http');
 
 // Import Routes
 const workoutRoutes = require("./routes/workoutRoutes");
@@ -18,10 +20,17 @@ const userWorkoutRoutes = require("./routes/userWorkouts");
 const goalRoutes = require("./routes/goalRoutes");
 const microGoalRoutes = require("./routes/microGoalRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const communityRoutes = require("./routes/community");
 // Kết nối database
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+app.use((req, res, next) => {
+  req.io = io; // Gán io vào request
+  next();
+});
 
 // Middleware
 // Gộp cấu hình CORS lại thành 1 lần duy nhất
@@ -55,12 +64,18 @@ app.use("/api/user/user-workouts", userWorkoutRoutes); // user
 app.use("/api/goals", goalRoutes);
 app.use("/api/micro-goals", microGoalRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/community", communityRoutes);
 // API test thử
 app.get("/", (req, res) => {
   res.send("Healthmate API đang chạy thành công! 🚀");
 });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`Server đang chạy tại http://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`🚀 Server & Socket đang chạy tại http://localhost:${PORT}`);
+});
+
+// Lắng nghe kết nối socket
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
 });
