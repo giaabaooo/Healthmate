@@ -168,30 +168,20 @@ const getAIRecommendations = async (req, res) => {
     const weight = user.profile?.weight_kg || 65;
     const goal = user.profile?.goal || "Duy trì sức khỏe";
 
-    // Lấy toàn bộ danh sách Food để AI chọn
-    const allFoods = await Food.find();
-    if (allFoods.length === 0) return res.json({});
-
-    const foodListText = allFoods.map(f => `- ID: ${f._id} | Tên: ${f.name} | Calo: ${f.calories} kcal/100g`).join("\n");
-
     const prompt = `
-Bạn là HLV Dinh Dưỡng. Dựa vào người dùng: Cao ${height}cm, Nặng ${weight}kg, Mục tiêu: ${goal}.
-Và Kho thực phẩm sau của hệ thống:
-${foodListText}
-
+Bạn là chuyên gia Dinh Dưỡng. Khách hàng: Cao ${height}cm, Nặng ${weight}kg, Mục tiêu: ${goal}.
 Hãy gợi ý thực đơn 1 ngày gồm 4 bữa (breakfast, lunch, dinner, snack). 
-⚠️ QUY TẮC BẮT BUỘC:
-- CHỈ chọn ID thực phẩm có trong danh sách trên.
-- "quantity" là lượng khuyên dùng (đơn vị: gram, là số nguyên).
-- "reason" giải thích ngắn (10-15 chữ) tại sao món này tốt cho họ.
-- KHÔNG thêm text giải thích, CHỈ TRẢ VỀ JSON thuần túy.
 
-Định dạng JSON:
+⚠️ QUY TẮC BẮT BUỘC: 
+- KHÔNG gợi ý nguyên liệu rời rạc. PHẢI gợi ý MÓN ĂN HOÀN CHỈNH (Ví dụ: "Cơm tấm sườn bì", "Salad ức gà sốt mè").
+- Tự tính toán TỔNG CALO cho toàn bộ món ăn đó dựa trên khẩu phần bạn đề xuất.
+- Trả về JSON thuần túy (không có markdown).
+Định dạng JSON chuẩn:
 {
-  "breakfast": [ { "food_id": "ID_TỪ_DANH_SÁCH", "quantity": 150, "reason": "Lý do..." } ],
-  "lunch": [ { "food_id": "...", "quantity": 200, "reason": "..." } ],
-  "dinner": [...],
-  "snack": [...]
+  "breakfast": [ { "food_id": "AI_CUSTOM", "name": "Bún bò Huế", "quantity": 1, "calories": 450, "reason": "Giàu protein" } ],
+  "lunch": [ { "food_id": "AI_CUSTOM", "name": "Cơm gạo lứt cá hồi", "quantity": 1, "calories": 520, "reason": "Omega-3" } ],
+  "dinner": [ { "food_id": "AI_CUSTOM", "name": "Salad ức gà", "quantity": 1, "calories": 300, "reason": "Nhẹ bụng" } ],
+  "snack": [ { "food_id": "AI_CUSTOM", "name": "Sữa chua Hy Lạp", "quantity": 1, "calories": 150, "reason": "Lợi khuẩn" } ]
 }
 `;
 
@@ -199,37 +189,36 @@ Hãy gợi ý thực đơn 1 ngày gồm 4 bữa (breakfast, lunch, dinner, snac
     const resultAI = await model.generateContent(prompt);
     const text = resultAI.response.text();
     const clean = text.replace(/```json|```/g, "").trim();
-    
     const parsed = JSON.parse(clean);
+    
+    const formatMeals = (meals) => meals.map(m => ({ ...m, _id: Math.random().toString(36).substr(2, 9) }));
+    res.json({
+        breakfast: formatMeals(parsed.breakfast || []),
+        lunch: formatMeals(parsed.lunch || []),
+        dinner: formatMeals(parsed.dinner || []),
+        snack: formatMeals(parsed.snack || []),
+    });
+  } catch (error) { res.status(500).json({ message: "Lỗi tạo menu", error: error.message }); }
+};
+const analyzeCaloriesLimit = async (req, res) => {
+    try {
+        const { totalCalories, targetCalories, goalType, currentWeight } = req.body;
+        const diff = totalCalories - targetCalories;
+        
+        if (diff < 0) return res.json({ feedback: "" }); // Chưa vượt thì không cần AI can thiệp
 
-    // Xử lý map ID do AI trả về thành dữ liệu thật hiển thị trên FE
-    const mapFoods = (aiList) => {
-      if (!Array.isArray(aiList)) return [];
-      return aiList.map(aiItem => {
-        const foodDoc = allFoods.find(f => f._id.toString() === aiItem.food_id);
-        if (!foodDoc) return null;
-        return {
-          _id: foodDoc._id,
-          name: foodDoc.name,
-          quantity: aiItem.quantity,
-          calories: Math.round((foodDoc.calories * aiItem.quantity) / 100),
-          reason: aiItem.reason
-        };
-      }).filter(Boolean);
-    };
+        const prompt = `
+        Bạn là HLV cá nhân. Học viên đang có mục tiêu: ${goalType}. Cân nặng hiện tại: ${currentWeight}kg.
+        Hôm nay họ đã nạp ${totalCalories} kcal, VƯỢT MỨC calo mục tiêu là ${targetCalories} kcal (Đang dư ${diff} kcal).
+        Hãy đưa ra MỘT lời khuyên ngắn gọn (2 câu) bằng Tiếng Việt để hướng dẫn họ xử lý (vd: dừng ăn hôm nay, đi bộ thêm 30p, hoặc cân đối lại vào ngày mai). Trả lời text thuần túy không dùng markdown.
+        `;
 
-    const finalRecs = {
-      breakfast: mapFoods(parsed.breakfast),
-      lunch: mapFoods(parsed.lunch),
-      dinner: mapFoods(parsed.dinner),
-      snack: mapFoods(parsed.snack)
-    };
-
-    res.json(finalRecs);
-  } catch (error) {
-    console.error("Lỗi AI Recommend:", error);
-    res.status(500).json({ message: "Không thể lấy gợi ý AI" });
-  }
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const resultAI = await model.generateContent(prompt);
+        res.json({ feedback: resultAI.response.text() });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 module.exports = {
@@ -238,5 +227,6 @@ module.exports = {
   removeFoodFromMealPlan,
   updateFoodQuantity,
   calculateAIGoal,
-  getAIRecommendations
+  getAIRecommendations,
+  analyzeCaloriesLimit
 };

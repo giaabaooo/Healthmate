@@ -141,6 +141,11 @@ const updateDailyRoutine = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // ĐOẠN FIX: Khởi tạo mảng nếu user chưa có daily_routine trong database
+    if (!user.daily_routine) {
+      user.daily_routine = [];
+    }
+
     const existing = user.daily_routine.find((d) => d.date === date);
 
     if (existing) {

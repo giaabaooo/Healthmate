@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import SchedulePlanner from "./user/SchedulePlanner";
+
 // --- UI helper types/components borrowed from WorkoutUser.tsx ---
 
 type DbWorkout = {
@@ -20,130 +21,130 @@ type DbWorkout = {
 };
 
 interface ExerciseRowProps {
-    set: string;
-    time: string;
-    image: string;
-    name: string;
-    muscle: string;
-    detail: string;
-    isActive?: boolean;
-    checked?: boolean; 
+  set: string;
+  time: string;
+  image: string;
+  name: string;
+  muscle: string;
+  detail: string;
+  isActive?: boolean;
+  checked?: boolean;
 }
 
 const ExerciseRow = ({ set, time, image, name, muscle, detail, isActive, checked }: ExerciseRowProps) => (
-    <div
-        className={`flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border group hover:border-primary/50 transition-colors ${isActive
-            ? 'border-slate-200 dark:border-slate-800 border-l-4 border-l-primary'
-            : 'border-slate-200 dark:border-slate-800'
-            }`}
-    >
-        <div className="flex flex-col items-center justify-center min-w-[60px] py-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{set}</span>
-            <span className="text-lg font-black text-slate-900 dark:text-slate-100">{time}</span>
-        </div>
-        <div className="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
-            <img alt={name} className="h-full w-full object-cover" src={image} />
-        </div>
-        <div className="flex-1">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100">{name}</h4>
-            <p className="text-sm text-slate-500">{muscle} • {detail}</p>
-        </div>
-        <div className="flex gap-2">
-            <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                <span className="material-symbols-outlined">edit</span>
-            </button>
-            <button className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                <span className="material-symbols-outlined">delete</span>
-            </button>
-        </div>
-        {checked ? (
-            <span className="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
-        ) : (
-            <span className="material-symbols-outlined text-slate-300">radio_button_unchecked</span>
-        )}
+  <div
+    className={`flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border group hover:border-primary/50 transition-colors ${isActive
+        ? 'border-slate-200 dark:border-slate-800 border-l-4 border-l-primary'
+        : 'border-slate-200 dark:border-slate-800'
+      }`}
+  >
+    <div className="flex flex-col items-center justify-center min-w-[60px] py-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+      <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{set}</span>
+      <span className="text-lg font-black text-slate-900 dark:text-slate-100">{time}</span>
     </div>
+    <div className="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+      <img alt={name} className="h-full w-full object-cover" src={image} />
+    </div>
+    <div className="flex-1">
+      <h4 className="font-bold text-slate-900 dark:text-slate-100">{name}</h4>
+      <p className="text-sm text-slate-500">{muscle} • {detail}</p>
+    </div>
+    <div className="flex gap-2">
+      <button className="p-2 text-slate-400 hover:text-primary transition-colors">
+        <span className="material-symbols-outlined">edit</span>
+      </button>
+      <button className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+        <span className="material-symbols-outlined">delete</span>
+      </button>
+    </div>
+    {checked ? (
+      <span className="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
+    ) : (
+      <span className="material-symbols-outlined text-slate-300">radio_button_unchecked</span>
+    )}
+  </div>
 );
 
 interface RecommendCardProps {
-    image: string;
-    badge: string;
-    name: string;
-    tags: string[];
-    workout: Workout; // 👈 thêm dòng này
-  onAdd: (w: Workout) => void; // 👈 thêm
+  image: string;
+  badge: string;
+  name: string;
+  tags: string[];
+  workout: Workout;
+  onAdd: (w: Workout) => void;
 }
 
 const RecommendCard = ({ image, badge, name, tags, workout, onAdd }: RecommendCardProps) => (
-    <div className="flex-shrink-0 w-72 group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-        <div className="aspect-video w-full overflow-hidden bg-slate-200 relative">
-            <img className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" src={image} alt={name} />
-            <div className="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-[10px] font-bold rounded">{badge}</div>
-        </div>
-        <div className="flex flex-col p-4 gap-2">
-            <h4 className="font-bold text-base">{name}</h4>
-
-            <div className="flex gap-2 flex-wrap">
-                {tags.map((tag) => (
-                    <span
-                        key={tag}
-                        className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase"
-                    >
-                        {tag}
-                    </span>
-                ))}
-            </div>
-
-            <button
-                onClick={() => onAdd(workout)} // 👈 thêm logic
-                className="mt-2 w-full py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-lg hover:opacity-90"
-            >
-                Add to Routine
-            </button>
-        </div>
+  <div className="flex-shrink-0 w-72 group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+    <div className="aspect-video w-full overflow-hidden bg-slate-200 relative">
+      <img className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" src={image} alt={name} />
+      <div className="absolute top-3 left-3 px-2 py-1 bg-primary text-slate-900 text-[10px] font-bold rounded">{badge}</div>
     </div>
+    <div className="flex flex-col p-4 gap-2">
+      <h4 className="font-bold text-base">{name}</h4>
+
+      <div className="flex gap-2 flex-wrap">
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      <button
+        onClick={() => onAdd(workout)}
+        className="mt-2 w-full py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold rounded-lg hover:opacity-90"
+      >
+        Add to Routine
+      </button>
+    </div>
+  </div>
 );
 
 interface ScheduleDayProps {
-    label: string;
-    date: number;
-    active?: boolean;
-    hasDot?: boolean;
+  label: string;
+  date: number;
+  active?: boolean;
+  hasDot?: boolean;
 }
 
 const ScheduleDay = ({ label, date, active, hasDot }: ScheduleDayProps) => (
-    <div className="flex flex-col items-center gap-2">
-        <span className="text-[10px] font-bold text-slate-400 uppercase">{label}</span>
-        <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${active
-                ? 'bg-primary text-slate-900 font-bold'
-                : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-        >
-            {date}
-        </div>
-        <div className={`w-1.5 h-1.5 rounded-full ${hasDot ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`} />
+  <div className="flex flex-col items-center gap-2">
+    <span className="text-[10px] font-bold text-slate-400 uppercase">{label}</span>
+    <div
+      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${active
+          ? 'bg-primary text-slate-900 font-bold'
+          : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+        }`}
+    >
+      {date}
     </div>
+    <div className={`w-1.5 h-1.5 rounded-full ${hasDot ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`} />
+  </div>
 );
 
 interface ScheduleEventProps {
-    icon: string;
-    iconBg: string;
-    iconColor: string;
-    title: string;
-    time: string;
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  time: string;
 }
 
 const ScheduleEvent = ({ icon, iconBg, iconColor, title, time }: ScheduleEventProps) => (
-    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer">
-        <div className={`${iconBg} p-2 rounded-lg ${iconColor}`}>
-            <span className="material-symbols-outlined">{icon}</span>
-        </div>
-        <div className="flex-1">
-            <h5 className="text-sm font-bold">{title}</h5>
-            <p className="text-[10px] text-slate-500">{time}</p>
-        </div>
-        <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center gap-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer">
+    <div className={`${iconBg} p-2 rounded-lg ${iconColor}`}>
+      <span className="material-symbols-outlined">{icon}</span>
     </div>
+    <div className="flex-1">
+      <h5 className="text-sm font-bold">{title}</h5>
+      <p className="text-[10px] text-slate-500">{time}</p>
+    </div>
+    <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+  </div>
 );
 
 // --- end UI helpers ---
@@ -160,11 +161,8 @@ import {
   updateDailyRoutine,
 } from "../services/workoutService";
 import { getAIWorkoutRecommend } from "../services/workoutService";
-
 import { createWorkoutLog } from "../services/workoutLogService";
-
-import { getUserGoal  } from "../services/goalService";
-
+import { getUserGoal } from "../services/goalService";
 
 interface Workout {
   _id: string;
@@ -173,10 +171,10 @@ interface Workout {
   difficulty: string;
   duration: number;
   estimatedCalories: number;
-   video_url?: string;  
-   cover_image?: string;
-   title: string;
-   exercises?: {   // 👈 thêm đoạn này
+  video_url?: string;
+  cover_image?: string;
+  title: string;
+  exercises?: {
     title: string;
     video_url?: string;
     duration_sec?: number;
@@ -203,43 +201,41 @@ interface TodaysExercise {
 const WorkoutsUserPage = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-const logsPerPage = 5;
+  const logsPerPage = 5;
   const [library, setLibrary] = useState<Workout[]>([]);
   const [myPlan, setMyPlan] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dbError, setDbError] = useState<string | null>(null); // for workout fetch errors
+  const [dbError, setDbError] = useState<string | null>(null);
   const [workoutSearch, setWorkoutSearch] = useState("");
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+  
   // Ai recommendation state
   const [aiRecommendations, setAiRecommendations] = useState<Workout[]>([]);
-    const [goal, setGoal] = useState<any>(null);
+  const [goal, setGoal] = useState<any>(null);
+
   useEffect(() => {
-   if (!goal || library.length === 0 || logs.length === 0) return;
+    if (!goal || library.length === 0 || logs.length === 0) return;
 
-  const loadAI = async () => {
-    try {
-      const rec = await getAIWorkoutRecommend(goal, logs, library);
-      setAiRecommendations(rec);
-    } catch (err) {
-      console.error("AI recommend error", err);
-      setAiRecommendations([]);
-    }
-  };
+    const loadAI = async () => {
+      try {
+        const rec = await getAIWorkoutRecommend(goal, logs, library);
+        setAiRecommendations(rec);
+      } catch (err) {
+        console.error("AI recommend error", err);
+        setAiRecommendations([]);
+      }
+    };
 
-  loadAI();
-}, [goal, logs, library]);
+    loadAI();
+  }, [goal, logs, library]);
 
   // preview modal state
   const [previewWorkoutId, setPreviewWorkoutId] = useState<string | null>(null);
   const [previewWorkout, setPreviewWorkout] = useState<Workout | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-
   const [goalProgress, setGoalProgress] = useState(0);
-
-
-  
 
   // daily progress
   const [dailyCaloTarget, setDailyCaloTarget] = useState(0);
@@ -258,110 +254,108 @@ const logsPerPage = 5;
   const [exerciseTimer, setExerciseTimer] = useState(0);
   const [finishingWorkout, setFinishingWorkout] = useState(false);
 
-// schedule planner state
-const today = new Date().toISOString().split("T")[0]
-const [selectedDate, setSelectedDate] = useState(today)
-  const [exercisesByDate, setExercisesByDate] = useState<
-Record<string, TodaysExercise[]>
->({})
-const [eventsByDate, setEventsByDate] = useState<
-Record<string, { title: string; time: string; image?: string }[]>
->({})
-const todaysExercises = exercisesByDate[selectedDate] || []
-const calculateGoalProgress = () => {
-  if (!goal || !logs || logs.length === 0) {
-    setGoalProgress(0);
-    return;
-  }
+  // schedule planner state
+  const today = new Date().toISOString().split("T")[0]
+  const [selectedDate, setSelectedDate] = useState(today)
+  const [exercisesByDate, setExercisesByDate] = useState<Record<string, TodaysExercise[]>>({})
+  const [eventsByDate, setEventsByDate] = useState<Record<string, { title: string; time: string; image?: string }[]>>({})
+  const todaysExercises = exercisesByDate[selectedDate] || []
 
-  let progress = 0;
+  const calculateGoalProgress = () => {
+    if (!goal || !logs || logs.length === 0) {
+      setGoalProgress(0);
+      return;
+    }
 
-  if (goal.goal_type === "fat_loss") {
-    const totalCalories = logs.reduce(
-      (sum, l) => sum + (l.calories_burned || 0)
-    );
+    let progress = 0;
 
-    progress = Math.min((totalCalories / 2000) * 100, 100);
-  }
+    if (goal.goal_type === "fat_loss") {
+      const totalCalories = logs.reduce(
+        (sum, l) => sum + (l.calories_burned || 0)
+      );
+      progress = Math.min((totalCalories / 2000) * 100, 100);
+    }
 
-  if (goal.goal_type === "endurance") {
-    const totalMinutes = logs.reduce(
-      (sum, l) => sum + (l.duration_minutes || 0)
-    );
+    if (goal.goal_type === "endurance") {
+      const totalMinutes = logs.reduce(
+        (sum, l) => sum + (l.duration_minutes || 0)
+      );
+      progress = Math.min((totalMinutes / 300) * 100, 100);
+    }
 
-    progress = Math.min((totalMinutes / 300) * 100, 100);
-  }
+    if (goal.goal_type === "muscle_gain") {
+      progress = Math.min((logs.length / 10) * 100, 100);
+    }
 
-  if (goal.goal_type === "muscle_gain") {
-    progress = Math.min((logs.length / 10) * 100, 100);
-  }
+    setGoalProgress(progress);
+  };
 
-  setGoalProgress(progress);
-};
+  const calculateBMR = (weight: number, height: number, age: number, gender: string) => {
+    if (gender === 'male') {
+      return 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      return 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+  };
 
-const calculateBMR = (weight: number, height: number, age: number, gender: string) => {
-  if (gender === 'male') {
-    return 10 * weight + 6.25 * height - 5 * age + 5;
-  } else {
-    return 10 * weight + 6.25 * height - 5 * age - 161;
-  }
-};
+  const calculateDailyCaloTarget = () => {
+    if (!goal?.profile) return 0;
 
-const calculateDailyCaloTarget = () => {
-  if (!goal?.profile) return 0;
+    const { weight_kg, height_cm, birth_date, gender } = goal.profile;
+    if (!weight_kg || !height_cm || !birth_date) return 0;
 
-  const { weight_kg, height_cm, birth_date, gender } = goal.profile;
-  if (!weight_kg || !height_cm || !birth_date) return 0;
+    const age = new Date().getFullYear() - new Date(birth_date).getFullYear();
+    const bmr = calculateBMR(weight_kg, height_cm, age, gender || 'male');
 
-  const age = new Date().getFullYear() - new Date(birth_date).getFullYear();
-  const bmr = calculateBMR(weight_kg, height_cm, age, gender || 'male');
+    // TDEE = BMR * activity factor (sedentary = 1.2)
+    const tdee = bmr * 1.2;
 
-  // TDEE = BMR * activity factor (sedentary = 1.2)
-  const tdee = bmr * 1.2;
+    // Target based on goal
+    if (goal.goal_type === 'fat_loss') {
+      return tdee - 500; // deficit
+    } else if (goal.goal_type === 'muscle_gain') {
+      return tdee + 300; // surplus
+    } else {
+      return tdee; // maintenance
+    }
+  };
 
-  // Target based on goal
-  if (goal.goal_type === 'fat_loss') {
-    return tdee - 500; // deficit
-  } else if (goal.goal_type === 'muscle_gain') {
-    return tdee + 300; // surplus
-  } else {
-    return tdee; // maintenance
-  }
-};
+  const calculateDailyProgress = () => {
+    const today = new Date().toDateString();
+    const todayLogs = logs.filter(log => new Date(log.date).toDateString() === today);
+    const burned = todayLogs.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
 
-const calculateDailyProgress = () => {
-  const today = new Date().toDateString();
-  const todayLogs = logs.filter(log => new Date(log.date).toDateString() === today);
-  const burned = todayLogs.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
+    setDailyCaloBurned(burned);
+    const target = calculateDailyCaloTarget();
+    setDailyCaloTarget(target);
 
-  setDailyCaloBurned(burned);
-  const target = calculateDailyCaloTarget();
-  setDailyCaloTarget(target);
+    const percent = target > 0 ? Math.min((burned / target) * 100, 100) : 0;
+    setDailyProgressPercent(percent);
 
-  const percent = target > 0 ? Math.min((burned / target) * 100, 100) : 0;
-  setDailyProgressPercent(percent);
+    // Show congrats if completed
+    if (percent >= 100 && !showCongrats) {
+      setShowCongrats(true);
+      setTimeout(() => setShowCongrats(false), 5000); // hide after 5s
+    }
+  };
 
-  // Show congrats if completed
-  if (percent >= 100 && !showCongrats) {
-    setShowCongrats(true);
-    setTimeout(() => setShowCongrats(false), 5000); // hide after 5s
-  }
-};
   // ==========================
   // LOAD DATA
   // ==========================
-const loadGoal = async () => {
-  try {
-    const g = await getUserGoal();
-    setGoal(g);
-  } catch (err) {
-    console.error("Load goal error", err);
-  }
-};
-useEffect(() => {
-  loadGoal();
-  loadAll();
-}, []);
+  const loadGoal = async () => {
+    try {
+      const g = await getUserGoal();
+      setGoal(g);
+    } catch (err) {
+      console.error("Load goal error", err);
+    }
+  };
+
+  useEffect(() => {
+    loadGoal();
+    loadAll();
+  }, []);
+
   const loadLibrary = async () => {
     try {
       const data = await getWorkoutLibrary();
@@ -384,42 +378,42 @@ useEffect(() => {
     setLogs(data);
   };
 
-const loadTodaysExercises = async () => {
-  try {
-    const data = await getDailyRoutine();
+  const loadTodaysExercises = async () => {
+    try {
+      const data = await getDailyRoutine();
 
-    const formatted: Record<string, TodaysExercise[]> = {};
+      const formatted: Record<string, TodaysExercise[]> = {};
 
-    Object.keys(data).forEach(date => {
-      formatted[date] = data[date].map((ex: any, index: number) => ({
-        id: ex.workout_id || `${date}-${index}`, // fallback id
-        name: ex.name,
-        startTime: ex.startTime,
-        endTime: ex.endTime,
-        image: ex.image,
-        duration: ex.duration,
-        calories: ex.calories
-      }));
-    });
+      Object.keys(data).forEach(date => {
+        formatted[date] = data[date].map((ex: any, index: number) => ({
+          id: ex.workout_id || `${date}-${index}`, // fallback id
+          name: ex.name,
+          startTime: ex.startTime,
+          endTime: ex.endTime,
+          image: ex.image,
+          duration: ex.duration,
+          calories: ex.calories
+        }));
+      });
 
-    setExercisesByDate(formatted);
+      setExercisesByDate(formatted);
 
-    const events: any = {};
+      const events: any = {};
 
-    Object.keys(formatted).forEach(date => {
-      events[date] = formatted[date].map((ex) => ({
-        title: ex.name,
-        time: `${ex.startTime} - ${ex.endTime}`,
-        image: ex.image
-      }));
-    });
+      Object.keys(formatted).forEach(date => {
+        events[date] = formatted[date].map((ex) => ({
+          title: ex.name,
+          time: `${ex.startTime} - ${ex.endTime}`,
+          image: ex.image
+        }));
+      });
 
-    setEventsByDate(events);
+      setEventsByDate(events);
 
-  } catch (error) {
-    console.error("Error loading daily routine:", error);
-  }
-};
+    } catch (error) {
+      console.error("Error loading daily routine:", error);
+    }
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -428,9 +422,9 @@ const loadTodaysExercises = async () => {
   };
 
   useEffect(() => {
-  calculateGoalProgress();
-  calculateDailyProgress();
-}, [logs, goal]);
+    calculateGoalProgress();
+    calculateDailyProgress();
+  }, [logs, goal]);
 
   // workout session timer
   useEffect(() => {
@@ -529,6 +523,7 @@ const loadTodaysExercises = async () => {
     return s1 < e2 && e1 > s2;
   };
 
+  // ĐÃ SỬA LỖI Ở ĐÂY - HÀM GỌN GÀNG VÀ CHUẨN CÚ PHÁP
   const addToRoutine = async (workout: Workout) => {
     // Validate time
     if (addStartTime >= addEndTime) {
@@ -546,47 +541,74 @@ const loadTodaysExercises = async () => {
       return;
     }
 
-    const exercises = workout.exercises || [];
+    let newExercisesFromWorkout = [];
 
-const newExercisesFromWorkout = exercises.map((ex: any, i: number) => ({
-  id: `${workout._id}-${i}`,
-  workout_id: workout._id,
-  name: ex.title || workout.title,
-  startTime: addStartTime,
-  endTime: addEndTime,
-  image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
-  duration: Math.round((ex.duration_sec || 60) / 60),
-  calories: Math.round(
-    (workout.calories_burned || workout.estimatedCalories || 0) / exercises.length
-  ),
-  video_url: ex.video_url
-}));
- const newExercises = [
-  ...(exercisesByDate[selectedDate] || []),
-  ...newExercisesFromWorkout
-];
+    // Kiểm tra xem workout có mảng bài tập con (exercises) không?
+    if (workout.exercises && workout.exercises.length > 0) {
+      newExercisesFromWorkout = workout.exercises.map((ex: any, i: number) => ({
+        id: `${workout._id}-${Date.now()}-${i}`,
+        workout_id: workout._id,
+        name: ex.title || workout.title || workout.name || "Workout",
+        startTime: addStartTime,
+        endTime: addEndTime,
+        image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
+        duration: Math.round((ex.duration_sec || 60) / 60),
+        calories: Math.round(
+          (workout.calories_burned || workout.estimatedCalories || 0) / workout.exercises!.length
+        ),
+        video_url: ex.video_url
+      }));
+    } else {
+      newExercisesFromWorkout = [{
+        id: `${workout._id}-${Date.now()}`,
+        workout_id: workout._id,
+        name: workout.title || workout.name || "Workout",
+        startTime: addStartTime,
+        endTime: addEndTime,
+        image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
+        duration: workout.duration || 30,
+        calories: workout.calories_burned || workout.estimatedCalories || 0,
+        video_url: workout.video_url
+      }];
+    }
 
-setExercisesByDate(prev => ({
-  ...prev,
-  [selectedDate]: newExercises
-}));
-await updateDailyRoutine({
-  date: selectedDate,
-  exercises: newExercises
-});
-   const newEvents = newExercises.map(ex => ({
-  title: ex.name,
-  time: `${ex.startTime} - ${ex.endTime}`,
-  image: ex.image
-}));
+    // Gộp bài tập mới vào danh sách hiện tại
+    const newExercises = [
+      ...(exercisesByDate[selectedDate] || []),
+      ...newExercisesFromWorkout
+    ];
 
-setEventsByDate(prev => ({
-  ...prev,
-  [selectedDate]: newEvents
-}));
-  // đóng modal sau khi thêm thành công
-setPreviewWorkoutId(null);
-  alert("Đã thêm bài tập vào lịch trình của bạn!");
+    // Cập nhật State để UI hiển thị ngay lập tức
+    setExercisesByDate(prev => ({
+      ...prev,
+      [selectedDate]: newExercises
+    }));
+
+    const newEvents = newExercises.map(ex => ({
+      title: ex.name,
+      time: `${ex.startTime} - ${ex.endTime}`,
+      image: ex.image
+    }));
+
+    setEventsByDate(prev => ({
+      ...prev,
+      [selectedDate]: newEvents
+    }));
+
+    // Đóng modal và báo thành công
+    setPreviewWorkoutId(null);
+    alert("Đã thêm bài tập vào lịch trình của bạn!");
+
+    // Gọi API lưu xuống DB
+    try {
+      await updateDailyRoutine({
+        date: selectedDate,
+        exercises: newExercises
+      });
+    } catch (error) {
+      console.error("Lỗi khi gọi API updateDailyRoutine:", error);
+      alert("Có lỗi khi lưu lên server. Vui lòng thử lại!");
+    }
   };
 
   const startWorkoutSession = () => {
@@ -605,18 +627,16 @@ setPreviewWorkoutId(null);
       setCurrentExerciseIndex(prev => prev + 1);
       setExerciseTimer(0);
     } else {
-      // Show completion state briefly before finishing
       setTimeout(() => {
         finishWorkoutSession();
-      }, 1500); // 1.5 seconds to show 100% progress
+      }, 1500); 
     }
   };
 
   const finishWorkoutSession = async () => {
     setFinishingWorkout(true);
     try {
-      // Create logs for all completed exercises
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0];
 
       console.log("Finishing workout session with exercises:", todaysExercises);
 
@@ -630,54 +650,47 @@ setPreviewWorkoutId(null);
           start_time: exercise.startTime,
         }).catch(error => {
           console.error("Error creating workout log for", exercise.name, error);
-          // Continue with other logs even if one fails
         });
       });
 
       const results = await Promise.all(logPromises);
       console.log("Workout logs created:", results);
 
-      // Clear today's exercises
       setExercisesByDate(prev => ({
-  ...prev,
-  [selectedDate]: []
-}));
+        ...prev,
+        [selectedDate]: []
+      }));
 
-await updateDailyRoutine({
-  date: selectedDate,
-  exercises: []
-});
+      await updateDailyRoutine({
+        date: selectedDate,
+        exercises: []
+      });
 
-      // Reset session state
       setIsWorkoutActive(false);
       setCurrentExerciseIndex(0);
       setWorkoutStartTime(null);
       setExerciseTimer(0);
 
-// Tính calories vừa tập
-const caloriesBurnedThisSession = todaysExercises.reduce(
-  (sum, ex) => sum + (ex.calories || 0),
-  0
-);
+      const caloriesBurnedThisSession = todaysExercises.reduce(
+        (sum, ex) => sum + (ex.calories || 0),
+        0
+      );
 
-// cập nhật progress
-setDailyProgressPercent((prev) => {
-  const newPercent = Math.min(
-    prev + (caloriesBurnedThisSession / dailyCaloTarget) * 100,
-    100
-  );
+      setDailyProgressPercent((prev) => {
+        const newPercent = Math.min(
+          prev + (caloriesBurnedThisSession / dailyCaloTarget) * 100,
+          100
+        );
 
-  if (newPercent >= 100) {
-    setShowCongrats(true);
-    setTimeout(() => setShowCongrats(false), 3000);
-  }
+        if (newPercent >= 100) {
+          setShowCongrats(true);
+          setTimeout(() => setShowCongrats(false), 3000);
+        }
 
-  return newPercent;
-});
+        return newPercent;
+      });
 
-// Reload logs
-await loadLogs();
-
+      await loadLogs();
 
     } catch (error) {
       console.error("Error finishing workout session:", error);
@@ -693,34 +706,33 @@ await loadLogs();
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
- const removeFromRoutine = async (index: number) => {
+  const removeFromRoutine = async (index: number) => {
+    const newExercises = todaysExercises.filter((_, i) => i !== index);
 
-  const newExercises = todaysExercises.filter((_, i) => i !== index);
+    setExercisesByDate(prev => ({
+      ...prev,
+      [selectedDate]: newExercises
+    }));
 
-  setExercisesByDate(prev => ({
-    ...prev,
-    [selectedDate]: newExercises
-  }));
-
-  await updateDailyRoutine({
-    date: selectedDate,
-    exercises: newExercises
-  });
-};
+    await updateDailyRoutine({
+      date: selectedDate,
+      exercises: newExercises
+    });
+  };
 
   const moveUp = async (index: number) => {
     if (index > 0) {
       const newExercises = [...todaysExercises];
       [newExercises[index - 1], newExercises[index]] = [newExercises[index], newExercises[index - 1]];
       setExercisesByDate(prev => ({
-  ...prev,
-  [selectedDate]: newExercises
-}));
+        ...prev,
+        [selectedDate]: newExercises
+      }));
       try {
         await updateDailyRoutine({
-  date: selectedDate,
-  exercises: newExercises
-});
+          date: selectedDate,
+          exercises: newExercises
+        });
       } catch (error) {
         console.error("Error saving daily routine:", error);
       }
@@ -732,14 +744,14 @@ await loadLogs();
       const newExercises = [...todaysExercises];
       [newExercises[index], newExercises[index + 1]] = [newExercises[index + 1], newExercises[index]];
       setExercisesByDate(prev => ({
-  ...prev,
-  [selectedDate]: newExercises
-}));
+        ...prev,
+        [selectedDate]: newExercises
+      }));
       try {
         await updateDailyRoutine({
-  date: selectedDate,
-  exercises: newExercises
-});
+          date: selectedDate,
+          exercises: newExercises
+        });
       } catch (error) {
         console.error("Error saving daily routine:", error);
       }
@@ -768,75 +780,72 @@ await loadLogs();
     }
   };
 
-  // sample UI data used by the new layout
+  const recommendations = useMemo(() => {
+    if (!aiRecommendations.length) return [];
 
-const recommendations = useMemo(() => {
-  if (!aiRecommendations.length) return [];
-
-  return aiRecommendations.map((w) => ({
-    image:
-      w.cover_image ||
-      "https://placehold.co/600x400/png?text=Workout",
-    badge: w.level?.toUpperCase() || "AI",
-    name: w.title,
-    tags: [
-  typeof w.category_id === "object"
-    ? w.category_id?.name || "General"
-    : "General",
-  w.level || "All",
-],
-    workout: w, // 👈 BẮT BUỘC
-  }));
-}, [aiRecommendations]);
-
- 
+    return aiRecommendations.map((w) => ({
+      image: w.cover_image || "https://placehold.co/600x400/png?text=Workout",
+      badge: w.level?.toUpperCase() || "AI",
+      name: w.title,
+      tags: [
+        typeof w.category_id === "object"
+          ? w.category_id?.name || "General"
+          : "General",
+        w.level || "All",
+      ],
+      workout: w,
+    }));
+  }, [aiRecommendations]);
 
   const scheduleEvents: ScheduleEventProps[] = [
     { icon: 'fitness_center', iconBg: 'bg-blue-500/10', iconColor: 'text-blue-500', title: 'Chest & Triceps', time: 'Tomorrow • 07:00 AM' },
     { icon: 'directions_run', iconBg: 'bg-orange-500/10', iconColor: 'text-orange-500', title: 'HIIT Cardio', time: 'Thu, Oct 27 • 06:30 PM' },
     { icon: 'self_improvement', iconBg: 'bg-purple-500/10', iconColor: 'text-purple-500', title: 'Active Recovery', time: 'Sat, Oct 29 • 10:00 AM' },
   ];
+
   const getEmbedUrl = (url: string) => {
-  if (!url) return "";
+    if (!url) return "";
 
-  if (url.includes("youtu.be")) {
-    const id = url.split("youtu.be/")[1].split("?")[0];
-    return `https://www.youtube.com/embed/${id}`;
-  }
+    if (url.includes("youtu.be")) {
+      const id = url.split("youtu.be/")[1].split("?")[0];
+      return `https://www.youtube.com/embed/${id}`;
+    }
 
-  if (url.includes("watch?v=")) {
-    const id = url.split("watch?v=")[1].split("&")[0];
-    return `https://www.youtube.com/embed/${id}`;
-  }
+    if (url.includes("watch?v=")) {
+      const id = url.split("watch?v=")[1].split("&")[0];
+      return `https://www.youtube.com/embed/${id}`;
+    }
 
-  return url;
-};
-const scheduleDays = useMemo(() => {
-  const today = new Date()
-  const days = []
+    return url;
+  };
 
-  for (let i = -3; i <= 3; i++) {
-    const d = new Date()
-    d.setDate(today.getDate() + i)
+  const scheduleDays = useMemo(() => {
+    const today = new Date()
+    const days = []
 
-    const dateStr = d.toISOString().split("T")[0]
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date()
+      d.setDate(today.getDate() + i)
 
-    days.push({
-      date: dateStr,
-      label: d.toLocaleDateString("en-US", { weekday: "short" }),
-      day: d.getDate()
-    })
-  }
+      const dateStr = d.toISOString().split("T")[0]
 
-  return days
-}, [])
+      days.push({
+        date: dateStr,
+        label: d.toLocaleDateString("en-US", { weekday: "short" }),
+        day: d.getDate()
+      })
+    }
+
+    return days
+  }, [])
+
   return (
     <Layout>
       <div className="flex flex-1 gap-8">
         {/* ── Main Content ── */}
         <div className="flex flex-col flex-1 gap-8">
 
-          {/* Header row (streak/progress + start button) */}
+          {/* Header row */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               <h1 className="text-slate-900 dark:text-slate-100 text-4xl font-black leading-tight tracking-[-0.033em]">
@@ -846,13 +855,12 @@ const scheduleDays = useMemo(() => {
                 <div className="flex items-center gap-2">
                   <div className="w-32 h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden relative">
                     <div
-                      className={`h-full transition-all duration-1000 ease-out rounded-full ${
-                        dailyProgressPercent === 0 ? 'bg-red-400' :
-                        dailyProgressPercent < 25 ? 'bg-orange-400' :
-                        dailyProgressPercent < 50 ? 'bg-yellow-400' :
-                        dailyProgressPercent < 75 ? 'bg-blue-400' :
-                        dailyProgressPercent < 200 ? 'bg-green-400' : 'bg-emerald-500'
-                      }`}
+                      className={`h-full transition-all duration-1000 ease-out rounded-full ${dailyProgressPercent === 0 ? 'bg-red-400' :
+                          dailyProgressPercent < 25 ? 'bg-orange-400' :
+                            dailyProgressPercent < 50 ? 'bg-yellow-400' :
+                              dailyProgressPercent < 75 ? 'bg-blue-400' :
+                                dailyProgressPercent < 200 ? 'bg-green-400' : 'bg-emerald-500'
+                        }`}
                       style={{ width: `${dailyProgressPercent}%` }}
                     />
                     {showCongrats && (
@@ -871,12 +879,9 @@ const scheduleDays = useMemo(() => {
                 <div className="text-xs text-slate-500">
                   Gợi ý: Tập {Math.ceil(dailyCaloTarget / 300)} bài
                 </div>
-                <span className="text-slate-400">|</span>
-                <span className="text-xs font-bold text-primary flex items-center gap-1"></span>
-                  
               </div>
             </div>
-            <button 
+            <button
               onClick={startWorkoutSession}
               className="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-slate-900 text-sm font-bold leading-normal transition-all hover:scale-[1.02] shadow-lg shadow-primary/20"
             >
@@ -885,17 +890,17 @@ const scheduleDays = useMemo(() => {
             </button>
           </div>
 
-          {/* Today's Routine (static example) */}
+          {/* Today's Routine */}
           <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">calendar_today</span>
                 Today's Routine
-               <span className="text-sm font-normal text-slate-500 ml-2">
-  {new Date(selectedDate).toDateString()}
-</span>
+                <span className="text-sm font-normal text-slate-500 ml-2">
+                  {new Date(selectedDate).toDateString()}
+                </span>
               </h3>
-              <button 
+              <button
                 className="text-primary text-sm font-bold hover:underline flex items-center gap-1"
                 onClick={() => document.getElementById('workout-selection')?.scrollIntoView({ behavior: 'smooth' })}
               >
@@ -936,7 +941,7 @@ const scheduleDays = useMemo(() => {
             </div>
           </section>
 
-          {/* Workout list from Database (search/filter) */}
+          {/* Workout list from Database */}
           <section id="workout-selection" className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
@@ -993,21 +998,18 @@ const scheduleDays = useMemo(() => {
                   {filteredDbWorkouts.slice(0, 9).map((w) => {
                     const title = w.title || w.name || "Workout";
                     const isSelected = selectedWorkoutId === w._id;
-                    const img =
-                      w.cover_image ||
-                      "https://placehold.co/600x400/png?text=Workout";
+                    const img = w.cover_image || "https://placehold.co/600x400/png?text=Workout";
                     const level = w.difficulty || "";
                     const calories = w.estimatedCalories;
                     const duration = w.duration;
-                    const category = w.category || "";
 
                     return (
                       <div
                         key={w._id}
                         onClick={() => setPreviewWorkoutId(w._id)}
                         className={`cursor-pointer text-left group rounded-xl border p-4 transition-all hover:shadow-md ${isSelected
-                          ? "border-primary bg-primary/5 shadow-md"
-                          : "border-slate-200 dark:border-slate-800 hover:border-primary/40"
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-slate-200 dark:border-slate-800 hover:border-primary/40"
                           }`}
                       >
                         {img && (
@@ -1048,114 +1050,101 @@ const scheduleDays = useMemo(() => {
             </div>
           </section>
 
-          {/* insert original plan/history sections */}
-  <div>
-  <h2 className="text-2xl font-bold mb-4">Workout History</h2>
+          {/* Workout History */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Workout History</h2>
+            {logs.length === 0 ? (
+              <div className="text-slate-500">No workout logs yet</div>
+            ) : (
+              <>
+                {(() => {
+                  const sortedLogs = [...logs].sort((a, b) => {
+                    const timeA = new Date(`${a.date}T${a.start_time || "00:00"}`);
+                    const timeB = new Date(`${b.date}T${b.start_time || "00:00"}`);
+                    return timeB.getTime() - timeA.getTime();
+                  });
 
-  {logs.length === 0 ? (
-    <div className="text-slate-500">No workout logs yet</div>
-  ) : (
-    <>
-      {(() => {
-        const sortedLogs = [...logs].sort((a, b) => {
-          const timeA = new Date(`${a.date}T${a.start_time || "00:00"}`);
-          const timeB = new Date(`${b.date}T${b.start_time || "00:00"}`);
-          return timeB.getTime() - timeA.getTime();
-        });
+                  const indexOfLast = currentPage * logsPerPage;
+                  const indexOfFirst = indexOfLast - logsPerPage;
+                  const currentLogs = sortedLogs.slice(indexOfFirst, indexOfLast);
+                  const totalPages = Math.ceil(sortedLogs.length / logsPerPage);
 
-        const indexOfLast = currentPage * logsPerPage;
-        const indexOfFirst = indexOfLast - logsPerPage;
-        const currentLogs = sortedLogs.slice(indexOfFirst, indexOfLast);
-        const totalPages = Math.ceil(sortedLogs.length / logsPerPage);
+                  return (
+                    <>
+                      <div className="bg-white dark:bg-slate-900 rounded-xl shadow overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-slate-200">
+                            <tr>
+                              <th className="p-3 text-left">Workout</th>
+                              <th className="p-3 text-left">Duration</th>
+                              <th className="p-3 text-left">Calories</th>
+                              <th className="p-3 text-left">Time</th>
+                              <th className="p-3 text-left">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {currentLogs.map((log) => {
+                              const workoutName =
+                                log.workout_id?.title ||
+                                log.workout_id?.name ||
+                                "Workout";
 
-        return (
-          <>
-            <div className="bg-white dark:bg-slate-900 rounded-xl shadow overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-200">
-                  <tr>
-                    <th className="p-3 text-left">Workout</th>
-                    <th className="p-3 text-left">Duration</th>
-                    <th className="p-3 text-left">Calories</th>
-                    <th className="p-3 text-left">Time</th>
-                    <th className="p-3 text-left">Date</th>
-                  </tr>
-                </thead>
+                              const formattedTime = log.start_time
+                                ? new Date(
+                                  `1970-01-01T${log.start_time}`
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                                : "N/A";
 
-                <tbody>
-                  {currentLogs.map((log) => {
-                    const workoutName =
-                      log.workout_id?.title ||
-                      log.workout_id?.name ||
-                      "Workout";
+                              const formattedDate = new Date(log.date).toLocaleDateString("en-GB", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                              });
 
-                    const formattedTime = log.start_time
-                      ? new Date(
-                          `1970-01-01T${log.start_time}`
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "N/A";
-
-                  const formattedDate = new Date(log.date).toLocaleDateString("en-GB", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-                    return (
-                      <tr key={log._id} className="border-t">
-                        <td className="p-3 font-medium">{workoutName}</td>
-
-                        <td className="p-3">{log.duration_minutes} min</td>
-
-                        <td className="p-3 text-orange-500 font-semibold">
-                          🔥 {log.calories_burned}
-                        </td>
-
-                        <td className="p-3">{formattedTime}</td>
-
-                        <td className="p-3">{formattedDate}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="flex justify-center items-center gap-3 mt-4">
-
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300"
-              >
-                ←
-              </button>
-
-              <span className="font-medium">
-                Page {currentPage} / {totalPages}
-              </span>
-
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(p + 1, totalPages))
-                }
-                className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300"
-              >
-                →
-              </button>
-
-            </div>
-          </>
-        );
-      })()}
-    </>
-  )}
-</div>
-
-
+                              return (
+                                <tr key={log._id} className="border-t">
+                                  <td className="p-3 font-medium">{workoutName}</td>
+                                  <td className="p-3">{log.duration_minutes} min</td>
+                                  <td className="p-3 text-orange-500 font-semibold">
+                                    🔥 {log.calories_burned}
+                                  </td>
+                                  <td className="p-3">{formattedTime}</td>
+                                  <td className="p-3">{formattedDate}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* Pagination */}
+                      <div className="flex justify-center items-center gap-3 mt-4">
+                        <button
+                          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                          className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300"
+                        >
+                          ←
+                        </button>
+                        <span className="font-medium">
+                          Page {currentPage} / {totalPages}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setCurrentPage((p) => Math.min(p + 1, totalPages))
+                          }
+                          className="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300"
+                        >
+                          →
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </>
+            )}
+          </div>
 
           {/* AI Recommendations */}
           <section className="flex flex-col gap-6">
@@ -1174,25 +1163,25 @@ const scheduleDays = useMemo(() => {
               </div>
             </div>
             <div className="flex gap-6 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-             {recommendations.map((rec) => (
-  <RecommendCard
-    key={rec.name}
-    {...rec}
-    workout={rec.workout} // 👈 thêm
-    onAdd={addToRoutine} // 👈 thêm
-  />
-))}
+              {recommendations.map((rec) => (
+                <RecommendCard
+                  key={rec.name}
+                  {...rec}
+                  workout={rec.workout}
+                  onAdd={addToRoutine}
+                />
+              ))}
             </div>
           </section>
         </div>
 
         {/* ── Sidebar ── */}
-<SchedulePlanner
-  days={scheduleDays}
-  eventsByDate={eventsByDate}
-  selectedDate={selectedDate}
-  onSelectDate={setSelectedDate}
-/>
+        <SchedulePlanner
+          days={scheduleDays}
+          eventsByDate={eventsByDate}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
 
         {/* Mobile FAB */}
         <div className="fixed bottom-6 right-6 xl:hidden flex flex-col gap-3">
@@ -1276,15 +1265,15 @@ const scheduleDays = useMemo(() => {
                                 )}
                               </div>
                               {ex.video_url && (
-  <iframe
-    src={getEmbedUrl(ex.video_url)}
-    className="w-full h-64 rounded-lg"
-    title={ex.title}
-    frameBorder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allowFullScreen
-  />
-)}
+                                <iframe
+                                  src={getEmbedUrl(ex.video_url)}
+                                  className="w-full h-64 rounded-lg"
+                                  title={ex.title}
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              )}
                             </div>
                           ))}
                         </div>
@@ -1323,16 +1312,6 @@ const scheduleDays = useMemo(() => {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      // Already showing details in modal
-                    }}
-                    className="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    Xem chi tiết bài tập
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => setPreviewWorkoutId(null)}
                     className="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
@@ -1343,13 +1322,12 @@ const scheduleDays = useMemo(() => {
             </div>
           </div>
         )}
-      </div>
+        </div>
 
       {/* Workout Session Modal */}
       {isWorkoutActive && todaysExercises.length > 0 && (
         <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center">
           <div className="w-full h-full bg-black flex flex-col">
-            {/* Header */}
             <div className="flex items-center justify-between p-4 bg-black/50 text-white">
               <div className="flex items-center gap-4">
                 <button
@@ -1378,27 +1356,24 @@ const scheduleDays = useMemo(() => {
               </div>
             </div>
 
-            {/* Video/Content */}
             <div className="flex-1 flex items-center justify-center p-4">
               <div className="w-full max-w-4xl">
-                {/* Placeholder for video - in real app, fetch video from workout */}
-               {todaysExercises[currentExerciseIndex].video_url ? (
-  <iframe
-    src={getEmbedUrl(todaysExercises[currentExerciseIndex].video_url)}
-    className="w-full aspect-video rounded-lg"
-    title={todaysExercises[currentExerciseIndex].name}
-    frameBorder="0"
-    allowFullScreen
-  />
-) : (
-  <div className="aspect-video bg-slate-800 rounded-lg flex items-center justify-center text-white">
-    No video available
-  </div>
-)}
+                {todaysExercises[currentExerciseIndex].video_url ? (
+                  <iframe
+                    src={getEmbedUrl(todaysExercises[currentExerciseIndex].video_url)}
+                    className="w-full aspect-video rounded-lg"
+                    title={todaysExercises[currentExerciseIndex].name}
+                    frameBorder="0"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="aspect-video bg-slate-800 rounded-lg flex items-center justify-center text-white">
+                    No video available
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Controls */}
             <div className="p-4 bg-black/50">
               <div className="flex items-center justify-center gap-4">
                 <button
@@ -1434,7 +1409,6 @@ const scheduleDays = useMemo(() => {
                 </button>
               </div>
 
-              {/* Progress bar */}
               <div className="mt-4">
                 <div className="w-full bg-white/20 rounded-full h-2">
                   <div

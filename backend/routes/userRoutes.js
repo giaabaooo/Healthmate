@@ -10,6 +10,7 @@ const {
   googleLogin,
   getDailyRoutine,
   updateDailyRoutine,
+  getHealthMetrics, // <-- FIX 1: Import hàm này vào
 } = require("../controllers/userController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
@@ -22,6 +23,7 @@ router.post("/google-login", googleLogin);
 // User profile 
 router.get("/me", protect, getMe);
 router.put("/me", protect, updateProfile);
+router.get("/me/health-metrics", protect, getHealthMetrics); // <-- FIX 2: Khai báo route
 
 // Daily routine
 router.get("/me/daily-routine", protect, getDailyRoutine);
