@@ -26,6 +26,17 @@ const userSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
     },
+    subscription: {
+      plan: {
+        type: String,
+        enum: ['free', 'pro'],
+        default: 'free'
+      },
+      endDate: {
+        type: Date,
+        default: null
+      }
+    },
     // Nhúng trực tiếp Profile vào User để tối ưu truy vấn
     profile: {
       full_name: { type: String, required: true },

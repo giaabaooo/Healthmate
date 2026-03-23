@@ -122,7 +122,11 @@ const updateFoodQuantity = async (req, res) => {
     res.json({ message: 'Cập nhật thành công', mealPlan });
   } catch (error) { res.status(error.status || 500).json({ message: error.message || 'Lỗi server' }); }
 };
-
+const checkIsPro = (user) => {
+    if (!user || !user.subscription || user.subscription.plan !== 'pro') return false;
+    const endDate = new Date(user.subscription.endDate);
+    return endDate >= new Date();
+};
 
 // ==================== AI FEATURES ====================
 
@@ -164,6 +168,12 @@ Tính lượng calo mục tiêu mỗi ngày và đưa ra giải thích ngắn g�
 const getAIRecommendations = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    
+    // YÊU CẦU GÓI PRO
+    if (!checkIsPro(user)) {
+        return res.status(403).json({ message: "Vui lòng nâng cấp Pro để sử dụng Đầu bếp AI." });
+    }
+
     const height = user.profile?.height_cm || 170;
     const weight = user.profile?.weight_kg || 65;
     const goal = user.profile?.goal || "Duy trì sức khỏe";
@@ -200,12 +210,21 @@ Hãy gợi ý thực đơn 1 ngày gồm 4 bữa (breakfast, lunch, dinner, snac
     });
   } catch (error) { res.status(500).json({ message: "Lỗi tạo menu", error: error.message }); }
 };
+
+// 2. AI CẢNH BÁO TỰ ĐỘNG
 const analyzeCaloriesLimit = async (req, res) => {
     try {
+        const user = await User.findById(req.user.id);
+        
+        // YÊU CẦU GÓI PRO - Nếu Free thì tự động câm lặng (không cảnh báo)
+        if (!checkIsPro(user)) {
+            return res.json({ feedback: "" }); 
+        }
+
         const { totalCalories, targetCalories, goalType, currentWeight } = req.body;
         const diff = totalCalories - targetCalories;
         
-        if (diff < 0) return res.json({ feedback: "" }); // Chưa vượt thì không cần AI can thiệp
+        if (diff < 0) return res.json({ feedback: "" }); 
 
         const prompt = `
         Bạn là HLV cá nhân. Học viên đang có mục tiêu: ${goalType}. Cân nặng hiện tại: ${currentWeight}kg.
