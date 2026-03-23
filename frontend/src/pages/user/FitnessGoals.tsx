@@ -63,6 +63,19 @@ const FitnessGoal = () => {
   const [checkinModal, setCheckinModal] = useState({ isOpen: false, week: 1 });
   const [checkinData, setCheckinData] = useState({ weight: '', feeling: 'normal' });
 
+  // KIỂM TRA QUYỀN PRO (Đã được chuyển lên trên cùng để tránh lỗi Rules of Hooks)
+  const [isProValid, setIsProValid] = useState(false);
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const u = JSON.parse(userStr);
+      if (u.subscription?.plan === 'pro') {
+        const end = new Date(u.subscription.endDate);
+        if (end >= new Date()) setIsProValid(true);
+      }
+    }
+  }, []);
+
   // Form States
   const [formData, setFormData] = useState({
     title: 'My Transformation Journey',
@@ -273,12 +286,33 @@ const FitnessGoal = () => {
       targetY = padTop + chartH - ((targetW - minW) / range) * chartH;
   }
 
+  // RETURN SỚM SAU KHI ĐÃ ĐỊNH NGHĨA XONG TẤT CẢ HOOKS
   if (loading) return <Layout><div className="p-10 text-center font-bold text-slate-500">Loading your journey...</div></Layout>;
 
   return (
     <Layout>
       <Toaster position="top-right" />
       <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-[#f8fafc] dark:bg-[#0f172a]">
+        
+        {/* LỚP PHỦ NẾU LÀ FREE (KHÔNG DÙNG BLUR, NỀN ĐẶC) */}
+        {!isProValid && (
+            <div className="absolute inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+                <div className="bg-[#111827] border border-slate-700 p-10 rounded-3xl max-w-md text-center shadow-2xl">
+                    <span className="material-symbols-outlined text-6xl text-amber-400 mb-4">workspace_premium</span>
+                    <h2 className="text-2xl font-black text-white mb-3">Tính năng dành cho Pro</h2>
+                    <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                        Lộ trình Mục tiêu cá nhân hóa (Fitness Goals) yêu cầu gói HealthMate Pro. Nâng cấp chỉ với 59k/tháng để mở khóa toàn bộ quyền năng của AI.
+                    </p>
+                    <button onClick={() => navigate('/subscription')} className="w-full py-3.5 bg-primary text-slate-900 font-bold rounded-xl shadow-lg hover:brightness-110 transition-all">
+                        Xem chi tiết & Nâng cấp
+                    </button>
+                    <button onClick={() => navigate('/overview')} className="w-full mt-4 text-sm text-slate-500 hover:text-white transition-colors">
+                        Quay lại Overview
+                    </button>
+                </div>
+            </div>
+        )}
+        
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full">
           
           <div className="mb-8 flex justify-between items-center flex-wrap gap-4">
