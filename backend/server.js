@@ -21,6 +21,7 @@ const goalRoutes = require("./routes/goalRoutes");
 const microGoalRoutes = require("./routes/microGoalRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const communityRoutes = require("./routes/community");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
 // Kết nối database
 connectDB();
 
@@ -65,6 +66,8 @@ app.use("/api/goals", goalRoutes);
 app.use("/api/micro-goals", microGoalRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/community", communityRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
+
 // API test thử
 app.get("/", (req, res) => {
   res.send("Healthmate API đang chạy thành công! 🚀");

@@ -22,6 +22,7 @@ import WorkoutsUserPage from './pages/WorkoutsUserPage';
 import CommunityFeed from './pages/CommunityFeed';
 import OverviewPage from './pages/user/Overviewpage';
 import AdminFoodCatalogPage from './pages/admin/AdminFoodCatalogPage';
+import SubscriptionPage from './pages/user/SubscriptionPage';
 
 export default function App() {
   return (
@@ -46,6 +47,8 @@ export default function App() {
           <Route path="/workouts" element={<WorkoutsUserPage />} />
           <Route path="/community-feed" element={<CommunityFeed/>} />
             <Route path="/overview" element={<OverviewPage/>} />
+            <Route path="/subscription" element={<SubscriptionPage/>} />
+            
         </Route>
 
         {/* PROTECTED ROUTES - Admin */}

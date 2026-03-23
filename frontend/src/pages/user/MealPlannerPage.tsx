@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Layout from '../../components/Layout';
 import ConfirmModal from '../../components/confirm-modal';
@@ -49,11 +49,25 @@ function groupBySlot(items: MealItem[]): Record<MealSlot, MealItem[]> {
 }
 
 const MealPlannerPage = () => {
+  const navigate = useNavigate();
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [items, setItems] = useState<MealItem[]>([]);
   const [totalCalories, setTotalCalories] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // KIỂM TRA QUYỀN PRO
+  const [isProValid, setIsProValid] = useState(false);
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const u = JSON.parse(userStr);
+      if (u.subscription?.plan === 'pro') {
+        const end = new Date(u.subscription.endDate);
+        if (end >= new Date()) setIsProValid(true);
+      }
+    }
+  }, []);
 
   // Auto Calculation States
   const [calorieGoal, setCalorieGoal] = useState(2000);
@@ -116,10 +130,12 @@ const MealPlannerPage = () => {
     autoCalculateTarget();
   }, []);
 
-  useEffect(() => { fetchMealPlan(); fetchAiRecs(); }, [selectedDate]);
+  useEffect(() => { fetchMealPlan(); fetchAiRecs(); }, [selectedDate, isProValid]); // Chạy lại khi có kết quả verify Pro
 
   useEffect(() => {
       const analyzeLimit = async () => {
+          if (!isProValid) return; // Free plan không gọi AI cảnh báo
+          
           if (totalCalories >= calorieGoal && calorieGoal > 0 && totalCalories !== prevCal.current) {
               prevCal.current = totalCalories;
               setIsAnalyzingLimit(true);
@@ -141,7 +157,7 @@ const MealPlannerPage = () => {
 
       const timeoutId = setTimeout(analyzeLimit, 1000); 
       return () => clearTimeout(timeoutId);
-  }, [totalCalories, calorieGoal]);
+  }, [totalCalories, calorieGoal, isProValid]);
 
   const fetchMealPlan = async () => {
     try {
@@ -165,6 +181,8 @@ const MealPlannerPage = () => {
   };
 
   const fetchAiRecs = async (forceGenerate = false) => {
+    if (!isProValid) return; // Free plan không cho lấy gợi ý AI
+
     const cacheKey = `hm_ai_meal_rec_${todayStr}`;
     const cachedData = localStorage.getItem(cacheKey);
 
@@ -175,14 +193,14 @@ const MealPlannerPage = () => {
 
     try {
       setLoadingAI(true);
-      toast.loading("Đầu bếp AI đang lên thực đơn...", { id: 'ai' });
+      if (forceGenerate) toast.loading("Đầu bếp AI đang lên thực đơn...", { id: 'ai' });
       const res = await fetch('http://localhost:8000/api/meal-plans/ai/recommend', { headers: getAuthHeaders() });
       const data = await res.json();
       setAiRecs(data || {});
       localStorage.setItem(cacheKey, JSON.stringify(data));
-      toast.success("Thực đơn mới đã sẵn sàng!", { id: 'ai' });
+      if (forceGenerate) toast.success("Thực đơn mới đã sẵn sàng!", { id: 'ai' });
     } catch (err) { 
-        toast.error("Lỗi tạo thực đơn", { id: 'ai' });
+        if (forceGenerate) toast.error("Lỗi tạo thực đơn", { id: 'ai' });
     } finally { 
         setLoadingAI(false); 
     }
@@ -257,119 +275,136 @@ const MealPlannerPage = () => {
 
   return (
     <Layout>
-      <div className="space-y-5">
+      <div className="space-y-5 px-4 md:px-8 py-10 max-w-[1400px] mx-auto min-h-screen">
         
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Thực đơn của tôi</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Theo dõi dinh dưỡng hàng ngày</p>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Thực đơn của tôi</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1 text-lg">Theo dõi dinh dưỡng hàng ngày</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* NÚT AI COACH: Nổi bật vàng cam nếu Free, bình thường nếu Pro */}
             <button 
-              onClick={() => fetchAiRecs(true)} 
-              disabled={loadingAI || hasAiLoadedToday}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg transition-all ${hasAiLoadedToday ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' : 'bg-primary/20 text-primary hover:bg-primary hover:text-slate-900'}`}>
-               <span className={`material-symbols-outlined text-lg ${loadingAI ? 'animate-spin' : ''}`}>auto_awesome</span> 
-               {loadingAI ? 'Đang tạo...' : hasAiLoadedToday ? 'Đã tạo menu hôm nay' : 'Làm mới AI'}
+              onClick={() => isProValid ? fetchAiRecs(true) : navigate('/subscription')} 
+              disabled={loadingAI || (isProValid && hasAiLoadedToday)}
+              className={`flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm
+                ${!isProValid 
+                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 shadow-amber-500/20 hover:scale-105' 
+                    : hasAiLoadedToday 
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' 
+                        : 'bg-primary/20 text-primary hover:bg-primary hover:text-slate-900'
+                }`}
+            >
+               <span className={`material-symbols-outlined text-lg ${loadingAI ? 'animate-spin' : ''}`}>
+                 {!isProValid ? 'workspace_premium' : 'auto_awesome'}
+               </span> 
+               {!isProValid 
+                  ? 'Nâng cấp Pro để dùng AI' 
+                  : loadingAI 
+                      ? 'Đang tạo...' 
+                      : hasAiLoadedToday ? 'Đã tạo menu hôm nay' : 'Đầu bếp AI'
+               }
             </button>
-            <Link to="/foods" className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-slate-600 dark:text-slate-300">
+
+            <Link to="/foods" className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm text-slate-600 dark:text-slate-300">
               <span className="material-symbols-outlined text-[18px]">restaurant_menu</span> Thư viện
             </Link>
           </div>
         </div>
 
         {/* --- Date nav --- */}
-        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-sm w-max">
           <button onClick={() => setSelectedDate(d => offsetDate(d, -1))} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
             <span className="material-symbols-outlined text-slate-500">chevron_left</span>
           </button>
-          <button onClick={() => dateInputRef.current?.showPicker?.()} className="flex-1 text-center font-medium text-slate-900 dark:text-white hover:text-primary transition capitalize cursor-pointer relative">
+          <button onClick={() => dateInputRef.current?.showPicker?.()} className="min-w-[150px] text-center font-bold text-slate-900 dark:text-white hover:text-primary transition capitalize cursor-pointer relative">
             {formatDate(selectedDate)}
             <input ref={dateInputRef} type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="absolute inset-0 opacity-0 w-full cursor-pointer" />
           </button>
           <button onClick={() => setSelectedDate(d => offsetDate(d, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
             <span className="material-symbols-outlined text-slate-500">chevron_right</span>
           </button>
-          <button onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])} className="px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer">
+          <button onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])} className="px-4 py-1.5 text-xs font-bold bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer ml-2">
             Hôm nay
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* CỘT TRÁI: BỮA ĂN VÀ GỢI Ý AI */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-6">
             {MEAL_SLOTS.map(slot => {
               const slotItems = grouped[slot.key];
               const slotCals = slotItems.reduce((s, i) => s + i.calories, 0);
-              const recs = aiRecs[slot.key] || [];
+              const recs = isProValid ? (aiRecs[slot.key] || []) : []; // Chặn AI nếu ko phải Pro
 
               return (
-                <div key={slot.key} className={`rounded-xl border overflow-hidden ${slot.color}`}>
-                  <div className="flex items-center justify-between px-4 py-3 bg-white/40 dark:bg-slate-900/40">
+                <div key={slot.key} className={`rounded-2xl border overflow-hidden shadow-sm ${slot.color}`}>
+                  <div className="flex items-center justify-between px-5 py-4 bg-white/40 dark:bg-slate-900/40">
                     <div className="flex items-center gap-3">
-                      <div className={`w-2.5 h-2.5 rounded-full ${slot.dot}`} />
+                      <div className={`w-3 h-3 rounded-full shadow-sm ${slot.dot}`} />
                       <div>
-                        <span className="font-semibold text-slate-800 dark:text-white text-sm">{slot.label}</span>
-                        <span className="ml-2 text-xs text-slate-400">{slot.time}</span>
+                        <span className="font-bold text-slate-800 dark:text-white text-base">{slot.label}</span>
+                        <span className="ml-2 text-xs font-medium text-slate-500">{slot.time}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {slotCals > 0 && <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${slot.badge}`}>{slotCals} kcal</span>}
-                      <button onClick={() => openFoodModal(slot.key)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:scale-105 transition cursor-pointer text-slate-600 dark:text-slate-300">
-                        <span className="material-symbols-outlined text-[16px]">add</span>
+                      {slotCals > 0 && <span className={`text-xs px-2.5 py-1 rounded-full font-bold shadow-sm ${slot.badge}`}>{slotCals} kcal</span>}
+                      <button onClick={() => openFoodModal(slot.key)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:scale-105 hover:text-primary transition cursor-pointer text-slate-600 dark:text-slate-300">
+                        <span className="material-symbols-outlined text-[18px]">add</span>
                       </button>
                     </div>
                   </div>
 
                   {slotItems.length === 0 ? (
-                    <div className="px-4 py-4 text-center text-xs text-slate-400 bg-white/30 dark:bg-slate-900/30">
-                      Chưa có món — nhấn dấu cộng để thêm
+                    <div className="px-5 py-6 text-center text-sm font-medium text-slate-400 bg-white/30 dark:bg-slate-900/30">
+                      Chưa có món nào — nhấn dấu cộng để thêm nhé!
                     </div>
                   ) : (
                     <div className="bg-white/50 dark:bg-slate-900/50 divide-y divide-white/60 dark:divide-slate-700/50">
                       {slotItems.map(item => (
-                        <div key={item._id} className="flex items-center gap-3 px-4 py-2.5 group">
+                        <div key={item._id} className="flex items-center gap-4 px-5 py-3 group">
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-slate-800 dark:text-white truncate">{item.name}</p>
+                            <p className="font-bold text-sm text-slate-800 dark:text-white truncate">{item.name}</p>
                             {editingItem === item._id ? (
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <input type="number" value={editQuantity} onChange={e => setEditQuantity(parseInt(e.target.value) || 0)} className="w-16 px-2 py-0.5 text-xs bg-white dark:bg-slate-800 border border-primary rounded focus:outline-none" autoFocus onKeyDown={e => { if (e.key === 'Enter') updateQuantity(item._id); if (e.key === 'Escape') setEditingItem(null); }} />
-                                <span className="text-xs text-slate-400">g</span>
-                                <button onClick={() => updateQuantity(item._id)} className="text-xs text-primary font-medium hover:underline">Lưu</button>
-                                <button onClick={() => setEditingItem(null)} className="text-xs text-slate-400 hover:underline">Hủy</button>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <input type="number" value={editQuantity} onChange={e => setEditQuantity(parseInt(e.target.value) || 0)} className="w-20 px-2 py-1 text-xs bg-white dark:bg-slate-800 border border-primary rounded-lg focus:outline-none" autoFocus onKeyDown={e => { if (e.key === 'Enter') updateQuantity(item._id); if (e.key === 'Escape') setEditingItem(null); }} />
+                                <span className="text-xs text-slate-500 font-medium">g</span>
+                                <button onClick={() => updateQuantity(item._id)} className="text-xs px-2 py-1 bg-primary/20 text-primary font-bold rounded hover:bg-primary hover:text-slate-900 transition">Lưu</button>
+                                <button onClick={() => setEditingItem(null)} className="text-xs px-2 py-1 bg-slate-200 text-slate-600 font-bold rounded hover:bg-slate-300 transition">Hủy</button>
                               </div>
                             ) : (
-                              <button onClick={() => { setEditingItem(item._id); setEditQuantity(item.quantity); }} className="flex items-center gap-1 mt-0.5 text-xs text-slate-400 hover:text-primary transition group/qty">
+                              <button onClick={() => { setEditingItem(item._id); setEditQuantity(item.quantity); }} className="flex items-center gap-1 mt-1 text-xs font-medium text-slate-500 hover:text-primary transition group/qty">
                                 <span>{item.quantity} {item.food_id === "AI_CUSTOM" ? "khẩu phần" : "g"}</span>
-                                <span className="material-symbols-outlined text-[12px] opacity-0 group-hover/qty:opacity-100 transition">edit</span>
+                                <span className="material-symbols-outlined text-[14px] opacity-0 group-hover/qty:opacity-100 transition">edit</span>
                               </button>
                             )}
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <span className="font-semibold text-sm text-primary">{item.calories}</span>
-                            <span className="text-xs text-slate-400 ml-0.5">kcal</span>
+                            <span className="font-black text-base text-primary">{item.calories}</span>
+                            <span className="text-xs font-bold text-slate-400 ml-1 uppercase">kcal</span>
                           </div>
-                          <button onClick={() => setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name })} className="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100">
-                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          <button onClick={() => setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name })} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100">
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {recs.length > 0 && (
-                    <div className="p-3 bg-white/30 dark:bg-slate-900/30 border-t border-white/50 dark:border-slate-800">
-                      <p className="text-xs font-black text-primary uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">auto_awesome</span> Gợi ý từ Đầu Bếp AI
+                  {/* CHỈ HIỂN THỊ AI RECOMMENDATION NẾU LÀ PRO VÀ CÓ DATA */}
+                  {(isProValid && recs.length > 0) && (
+                    <div className="p-4 bg-white/30 dark:bg-slate-900/30 border-t border-white/50 dark:border-slate-800">
+                      <p className="text-xs font-black text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px]">auto_awesome</span> Gợi ý từ Đầu Bếp AI
                       </p>
                       {recs.map((rcm: any, idx: number) => (
-                         <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 mb-2">
-                           <div className="pr-4">
-                             <p className="text-sm font-bold dark:text-white">{rcm.name}</p>
-                             <p className="text-[11px] text-slate-500 mt-0.5"><span className="text-amber-500 font-medium">{rcm.calories} kcal</span> / khẩu phần</p>
-                             <p className="text-[10px] text-primary italic mt-1">{rcm.reason}</p>
+                         <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 mb-2 hover:border-primary/30 transition-colors">
+                           <div className="pr-4 flex-1">
+                             <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{rcm.name}</p>
+                             <p className="text-xs text-slate-500 mt-1"><span className="text-amber-500 font-bold">{rcm.calories} kcal</span> / khẩu phần</p>
+                             <p className="text-[11px] text-primary italic mt-1.5 leading-snug">{rcm.reason}</p>
                            </div>
-                           <button onClick={() => addFoodToMealPlan(rcm, slot.key)} className="bg-primary/20 text-primary hover:bg-primary hover:text-slate-900 px-3 py-1.5 rounded text-xs font-bold transition flex-shrink-0">
+                           <button onClick={() => addFoodToMealPlan(rcm, slot.key)} className="bg-primary/10 text-primary hover:bg-primary hover:text-slate-900 px-4 py-2 rounded-lg text-xs font-bold transition flex-shrink-0">
                              Thêm
                            </button>
                          </div>
@@ -383,77 +418,78 @@ const MealPlannerPage = () => {
           </div>
 
           {/* CỘT PHẢI: STATS & GOALS */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-              <div className="flex justify-between items-center mb-4">
-                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Mục tiêu Calo</p>
-                 <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded flex items-center gap-1">
-                   <span className="material-symbols-outlined text-[12px]">auto_awesome</span> AI Tự động
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Mục tiêu Calo</p>
+                 <span className="text-[10px] font-black bg-primary/10 text-primary px-2.5 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider">
+                   <span className="material-symbols-outlined text-[12px]">auto_awesome</span> AI Tính Toán
                  </span>
               </div>
 
-              <div className="flex items-center justify-center mb-4 relative">
-                <div className="relative w-32 h-32">
-                  <svg className="w-32 h-32 -rotate-90" viewBox="0 0 112 112">
+              <div className="flex items-center justify-center mb-6 relative">
+                <div className="relative w-36 h-36">
+                  <svg className="w-36 h-36 -rotate-90" viewBox="0 0 112 112">
                     <circle cx="56" cy="56" r="44" fill="none" stroke="currentColor" strokeWidth="10" className="text-slate-100 dark:text-slate-800" />
                     <circle cx="56" cy="56" r="44" fill="none" stroke="currentColor" strokeWidth="10" strokeDasharray={`${2 * Math.PI * 44}`} strokeDashoffset={`${2 * Math.PI * 44 * (1 - caloriePercent / 100)}`} strokeLinecap="round" className={calorieBarColor} style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">{caloriePercent}%</span>
+                    <span className="text-4xl font-black text-slate-900 dark:text-white">{caloriePercent}%</span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-center mb-4">
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-                  <p className="text-xl font-bold text-slate-900 dark:text-white">{totalCalories}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Đã nạp</p>
+              <div className="grid grid-cols-2 gap-4 text-center mb-6">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50">
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{totalCalories}</p>
+                  <p className="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Đã nạp</p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-                  <p className="text-xl font-bold text-slate-900 dark:text-white">{calorieRemain}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Còn lại</p>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50">
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{calorieRemain}</p>
+                  <p className="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Còn lại</p>
                 </div>
               </div>
 
-              <div className="text-center pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
-                    Mục tiêu: {calorieGoal.toLocaleString()} kcal 
+              <div className="text-center pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    Mục tiêu: <span className="text-primary font-black">{calorieGoal.toLocaleString()}</span> kcal 
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-1">Được tính toán dựa trên {userCurrentWeight}kg & lộ trình cá nhân.</p>
+                  <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">Được AI tính toán tự động dựa trên <br/>cân nặng {userCurrentWeight}kg & mục tiêu cá nhân.</p>
               </div>
             </div>
 
-            {aiLimitWarning && (
-                <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 animate-fade-in relative overflow-hidden">
+            {/* Khối Cảnh báo AI (Hiển thị khi Vượt Mức và là user PRO) */}
+            {isProValid && aiLimitWarning && (
+                <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-3xl p-6 animate-fade-in relative overflow-hidden shadow-sm">
                     <div className="absolute right-0 top-0 opacity-10">
-                        <span className="material-symbols-outlined text-6xl text-rose-500">warning</span>
+                        <span className="material-symbols-outlined text-8xl text-rose-500">warning</span>
                     </div>
                     <div className="relative z-10">
-                        <p className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1 mb-2">
-                            <span className="material-symbols-outlined text-[14px]">psychology</span> Phân tích từ AI
+                        <p className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest flex items-center gap-1.5 mb-3">
+                            <span className="material-symbols-outlined text-[16px]">psychology</span> Phân tích từ AI
                         </p>
                         <p className="text-sm text-rose-800 dark:text-rose-200 font-medium leading-relaxed">
-                            {isAnalyzingLimit ? 'Đang phân tích...' : aiLimitWarning}
+                            {isAnalyzingLimit ? 'Đang phân tích dữ liệu calo...' : aiLimitWarning}
                         </p>
                     </div>
                 </div>
             )}
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Phân bổ Dưỡng chất (Ước tính)</p>
-              <div className="space-y-3">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-5">Phân bổ Dưỡng chất (Ước tính)</p>
+              <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between mb-1"><span className="text-xs text-slate-600 dark:text-slate-400">Carbohydrate (50%)</span><span className="text-xs font-bold dark:text-slate-300">{estCarb}g</span></div>
-                  <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-blue-400 rounded-full" style={{ width: '50%' }} /></div>
+                  <div className="flex justify-between mb-1.5"><span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Carbohydrate (50%)</span><span className="text-xs font-bold dark:text-slate-300">{estCarb}g</span></div>
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-blue-400 rounded-full" style={{ width: '50%' }} /></div>
                 </div>
                 <div>
-                  <div className="flex justify-between mb-1"><span className="text-xs text-slate-600 dark:text-slate-400">Protein (25%)</span><span className="text-xs font-bold dark:text-slate-300">{estProtein}g</span></div>
-                  <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-primary rounded-full" style={{ width: '25%' }} /></div>
+                  <div className="flex justify-between mb-1.5"><span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Protein (25%)</span><span className="text-xs font-bold dark:text-slate-300">{estProtein}g</span></div>
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-primary rounded-full" style={{ width: '25%' }} /></div>
                 </div>
                 <div>
-                  <div className="flex justify-between mb-1"><span className="text-xs text-slate-600 dark:text-slate-400">Chất béo (25%)</span><span className="text-xs font-bold dark:text-slate-300">{estFat}g</span></div>
-                  <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-amber-400 rounded-full" style={{ width: '25%' }} /></div>
+                  <div className="flex justify-between mb-1.5"><span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Chất béo (25%)</span><span className="text-xs font-bold dark:text-slate-300">{estFat}g</span></div>
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-amber-400 rounded-full" style={{ width: '25%' }} /></div>
                 </div>
               </div>
             </div>
@@ -462,28 +498,33 @@ const MealPlannerPage = () => {
         </div>
       </div>
 
+      {/* Modal Chọn Món Thủ Công */}
       {showFoodModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="font-bold text-slate-900 dark:text-white">Thêm vào: {MEAL_SLOTS.find(s=>s.key===targetSlot)?.label}</h3>
-              <button onClick={() => setShowFoodModal(false)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+              <h3 className="font-bold text-lg text-slate-900 dark:text-white">Thêm vào: {MEAL_SLOTS.find(s=>s.key===targetSlot)?.label}</h3>
+              <button onClick={() => setShowFoodModal(false)} className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-900 hover:bg-slate-200 dark:hover:text-white transition flex items-center justify-center shadow-sm">
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
-            <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 space-y-2">
-              <input type="text" placeholder="Tìm món ăn..." value={foodSearch} onChange={e => setFoodSearch(e.target.value)} className="w-full px-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" autoFocus />
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                  <input type="text" placeholder="Tìm món ăn..." value={foodSearch} onChange={e => setFoodSearch(e.target.value)} className="w-full pl-12 pr-4 py-3 text-sm font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all" autoFocus />
+              </div>
             </div>
-            <div className="overflow-y-auto flex-1 p-2">
+            <div className="overflow-y-auto flex-1 p-3 scrollbar-hide">
               {filteredFoods.map(food => (
-                <div key={food._id} className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-lg transition">
+                <div key={food._id} className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-700 mb-1">
                   <div>
-                    <p className="font-bold text-sm dark:text-white">{food.name}</p>
-                    <p className="text-xs text-slate-500">{food.calories} kcal/100g {food.category && `• ${food.category}`}</p>
+                    <p className="font-bold text-sm text-slate-900 dark:text-white mb-1">{food.name}</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{food.calories} kcal/100g {food.category && `• ${food.category}`}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <input type="number" value={quantities[food._id] ?? 100} onChange={e => setQuantities(q => ({ ...q, [food._id]: parseInt(e.target.value) || 0 }))} className="w-14 px-1 py-1 text-xs text-center bg-white dark:bg-slate-900 border rounded" />
-                    <button onClick={() => addFoodToMealPlan({ _id: food._id, name: food.name, quantity: quantities[food._id] ?? 100, calories: Math.round((food.calories * (quantities[food._id] ?? 100)) / 100) }, targetSlot)} className="px-3 py-1.5 bg-primary text-slate-900 text-xs font-bold rounded-lg hover:brightness-110">Thêm</button>
+                    <input type="number" value={quantities[food._id] ?? 100} onChange={e => setQuantities(q => ({ ...q, [food._id]: parseInt(e.target.value) || 0 }))} className="w-16 px-2 py-1.5 text-sm font-bold text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary" />
+                    <span className="text-[10px] font-bold text-slate-400">g</span>
+                    <button onClick={() => addFoodToMealPlan({ _id: food._id, name: food.name, quantity: quantities[food._id] ?? 100, calories: Math.round((food.calories * (quantities[food._id] ?? 100)) / 100) }, targetSlot)} className="ml-2 px-4 py-2 bg-primary text-slate-900 text-xs font-bold rounded-xl hover:brightness-110 shadow-sm transition-all">Thêm</button>
                   </div>
                 </div>
               ))}
