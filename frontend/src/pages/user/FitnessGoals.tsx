@@ -426,7 +426,7 @@ const FitnessGoal = () => {
                       const weekNum = i + 1;
                       const weekTasks = microGoals.filter(g => g.week === weekNum);
                       const weekDone = weekTasks.filter(g => g.done).length;
-                      const weekProgress = weekTasks.length > 0 ? Math.round((weekDone / weekTasks.length) * 100) : 0;
+                      // const weekProgress = weekTasks.length > 0 ? Math.round((weekDone / weekTasks.length) * 100) : 0;
                       const isExpanded = expandedWeek === weekNum;
                       
                       const isCheckedIn = goal?.weekly_log?.some((l: WeeklyLog) => l.week === weekNum);
