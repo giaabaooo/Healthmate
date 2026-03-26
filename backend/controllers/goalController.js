@@ -42,7 +42,13 @@ exports.generateAIRoadmap = async (req, res) => {
   try {
     const { title, goal_type, duration_weeks, commitment_days_per_week, motivation, target_weight, target_health_metric, fitness_level } = req.body;
     
-    if (!duration_weeks || duration_weeks < 1) return res.status(400).json({message: "Duration weeks is required."});
+    // Server-side validation
+    if (!duration_weeks || duration_weeks < 1 || duration_weeks > 52) 
+      return res.status(400).json({message: "Duration must be between 1 and 52 weeks."});
+    if (!commitment_days_per_week || commitment_days_per_week < 1 || commitment_days_per_week > 7) 
+      return res.status(400).json({message: "Commitment days must be between 1 and 7."});
+    if (!target_weight || target_weight < 20 || target_weight > 300) 
+      return res.status(400).json({message: "Target weight must be between 20kg and 300kg."});
 
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -62,12 +68,15 @@ THÔNG TIN NGƯỜI DÙNG:
 - Mục tiêu chính: ${goal_type} (Kéo dài ${duration_weeks} tuần)
 - Cân nặng hướng tới: ${target_weight}kg
 - Chỉ số sức khỏe mục tiêu: ${target_health_metric}
-- Cam kết: ${commitment_days_per_week} ngày/tuần.
+- Cam kết tập: ${commitment_days_per_week} ngày/tuần.
 - Lời tâm sự (Motivation): "${motivation}"
 
 NHIỆM VỤ:
 1. Chia ${duration_weeks} tuần thành 3 Giai đoạn (Phases). Tiêu đề (title) và Mô tả (desc) của mỗi Phase PHẢI NHẮC TỚI chỉ số ${target_health_metric}, cân nặng ${target_weight}kg, và dựa vào lời tâm sự "${motivation}". Đừng viết chung chung.
-2. Tạo các công việc cụ thể (Micro Goals) cho TỪNG TUẦN (từ tuần 1 đến tuần ${duration_weeks}). Mỗi tuần đúng 3 công việc: 1 Dinh dưỡng (có số liệu g/kcal rõ ràng), 1 Tập luyện, 1 Thói quen. Bám sát trình độ ${fitness_level}.
+2. Tạo kế hoạch CHI TIẾT 7 NGÀY cho TỪNG TUẦN (từ tuần 1 đến tuần ${duration_weeks}). 
+- MỖI TUẦN PHẢI CÓ ĐÚNG 7 CÔNG VIỆC (Micro Goals), đại diện cho 7 ngày trong tuần.
+- Bao gồm đầy đủ các yếu tố: Lịch tập (Dựa theo số ngày cam kết tập), Dinh dưỡng (calo/protein), Phục hồi (ngủ/dãn cơ), và Cấp nước (Hydration).
+- Format label BẮT BUỘC bắt đầu bằng "Day X: " (Ví dụ: "Day 1: Tập ngực & ăn 150g protein").
 
 ⚠️ QUY TẮC BẮT BUỘC: CHỈ trả về JSON thuần túy, tuyệt đối KHÔNG bọc trong markdown \`\`\`json.
 {
@@ -77,9 +86,14 @@ NHIỆM VỤ:
     { "title": "[Tên Phase 3 Cụ thể]", "desc": "[Chi tiết...]", "startWeek": ${p2End + 1}, "endWeek": ${duration_weeks} }
   ],
   "microGoals": [
-    { "week": 1, "label": "Eat 150g protein to build muscle for ${target_health_metric}" },
-    { "week": 1, "label": "Do ${commitment_days_per_week} workouts focusing on form" },
-    ...
+    { "week": 1, "label": "Day 1: Upper body workout + Uống 3 lít nước" },
+    { "week": 1, "label": "Day 2: LISS Cardio 30p + Nạp 150g protein" },
+    { "week": 1, "label": "Day 3: Active recovery (Yoga/Đi bộ) + Ngủ 8 tiếng" },
+    { "week": 1, "label": "Day 4: Lower body workout + Bổ sung Carbs" },
+    { "week": 1, "label": "Day 5: Full body workout + Uống đủ nước" },
+    { "week": 1, "label": "Day 6: Nghỉ ngơi + Dãn cơ tĩnh 15p" },
+    { "week": 1, "label": "Day 7: Meal prep cho tuần mới + Cheat meal nhẹ" },
+    { "week": 2, "label": "Day 1: Tăng tạ Upper body + ..." }
   ]
 }
 `;
@@ -103,7 +117,7 @@ NHIỆM VỤ:
       target_weight,
       target_health_metric,
       fitness_level,
-      phases: parsedData.phases // Lưu Roadmap cá nhân hóa từ AI
+      phases: parsedData.phases
     });
 
     const microGoalsToInsert = parsedData.microGoals.map(mg => ({
@@ -121,19 +135,19 @@ NHIỆM VỤ:
     res.status(500).json({ message: "Failed to generate AI roadmap", error: error.message });
   }
 };
+
 exports.checkinWeekly = async (req, res) => {
   try {
     const { week, weight, feeling } = req.body;
     const goalId = req.params.id;
 
-    if (!week || !weight) {
-      return res.status(400).json({ message: "Week and Weight are required." });
-    }
+    // Server-side validation
+    if (!week || !weight) return res.status(400).json({ message: "Week and Weight are required." });
+    if (weight < 20 || weight > 300) return res.status(400).json({ message: "Invalid weight submitted." });
 
     const goal = await Goal.findById(goalId);
     if (!goal) return res.status(404).json({ message: "Goal not found" });
 
-    // Kiểm tra xem tuần này đã check-in chưa, nếu có thì ghi đè (update), nếu chưa thì thêm mới
     const existingIndex = goal.weekly_log.findIndex(log => log.week === Number(week));
     if (existingIndex >= 0) {
       goal.weekly_log[existingIndex].weight = Number(weight);
@@ -149,6 +163,7 @@ exports.checkinWeekly = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 exports.analyzeProgress = async (req, res) => {
   try {
     const { oldWeight, currentWeight } = req.body;
@@ -180,5 +195,14 @@ KHÔNG dùng markdown hay định dạng phức tạp. Trả về text thuần t
     res.json({ feedback: resultAI.response.text() });
   } catch (error) {
     res.status(500).json({ message: "Lỗi AI phân tích", error: error.message });
+  }
+};
+exports.getGoalHistory = async (req, res) => {
+  try {
+    // Lọc ra các goal của user có trạng thái là "archived", sắp xếp mới nhất lên đầu
+    const historyGoals = await Goal.find({ user_id: req.user.id, status: "archived" }).sort({ createdAt: -1 });
+    res.json(historyGoals);
+  } catch (error) { 
+    res.status(500).json({ message: "Lỗi lấy lịch sử", error: error.message }); 
   }
 };

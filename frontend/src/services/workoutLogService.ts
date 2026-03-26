@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000/api/workout-logs";
+const API_URL = "https://healthmate.onrender.com/api/workout-logs";
 
 export const createWorkoutLog = async (logData: {
   workout_id: string;

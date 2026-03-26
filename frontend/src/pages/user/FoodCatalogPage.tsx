@@ -43,7 +43,7 @@ const FoodCatalogPage = () => {
       if (selectedCategory !== 'Tất cả') params.append('category', selectedCategory);
       if (search.trim()) params.append('search', search.trim());
 
-      const response = await fetch(`http://localhost:8000/api/foods?${params.toString()}`);
+      const response = await fetch(`https://healthmate.onrender.com/api/foods?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setFoods(data);
@@ -77,7 +77,7 @@ const FoodCatalogPage = () => {
       // Nếu chưa có, gọi AI để tạo
       try {
           setLoadingAI(true);
-          const response = await fetch(`http://localhost:8000/api/foods/recommend`, getAuthHeaders());
+          const response = await fetch(`https://healthmate.onrender.com/api/foods/recommend`, getAuthHeaders());
           if (response.ok) {
               const data = await response.json();
               setRecommendedFoods(data);
@@ -108,7 +108,7 @@ const FoodCatalogPage = () => {
           slot: slot
       };
 
-      const res = await fetch(`http://localhost:8000/api/meal-plans/${todayStr}/items`, {
+      const res = await fetch(`https://healthmate.onrender.com/api/meal-plans/${todayStr}/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ const FoodCatalogPage = () => {
       <div className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border transition-all hover:shadow-md ${isAI ? 'border-primary/40 dark:border-primary/30' : 'border-slate-200 dark:border-slate-800 hover:border-primary/30'}`}>
           <div className="h-40 bg-slate-100 dark:bg-slate-800 relative overflow-hidden group">
             {food.image ? (
-              <img src={`http://localhost:8000${food.image}`} alt={food.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <img src={`https://healthmate.onrender.com${food.image}`} alt={food.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-300">
                 <span className="material-symbols-outlined text-5xl">restaurant</span>

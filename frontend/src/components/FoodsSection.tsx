@@ -45,7 +45,7 @@ const FoodsSection: React.FC<FoodsSectionProps> = ({ onBack }) => {
       if (selectedCategory !== 'Tất cả') params.append('category', selectedCategory);
       if (search.trim()) params.append('search', search.trim());
 
-      const response = await fetch(`http://localhost:8000/api/foods?${params.toString()}`);
+      const response = await fetch(`https://healthmate.onrender.com/api/foods?${params.toString()}`);
       const data = await response.json();
       setFoods(data);
     } catch (error) {
@@ -61,7 +61,7 @@ const FoodsSection: React.FC<FoodsSectionProps> = ({ onBack }) => {
 
   const handleDeleteConfirm = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/foods/${deleteModal.foodId}`, {
+      const response = await fetch(`https://healthmate.onrender.com/api/foods/${deleteModal.foodId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
@@ -157,7 +157,7 @@ const FoodsSection: React.FC<FoodsSectionProps> = ({ onBack }) => {
               <div className="w-full h-32 bg-[#112218] flex items-center justify-center overflow-hidden">
                 {food.image ? (
                   <img
-                    src={`http://localhost:8000${food.image}`}
+                    src={`https://healthmate.onrender.com${food.image}`}
                     alt={food.name}
                     className="w-full h-full object-cover"
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}

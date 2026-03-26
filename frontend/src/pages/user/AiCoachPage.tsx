@@ -23,7 +23,6 @@ const AiCoachPage = () => {
 
   useEffect(() => {
     checkProStatus();
-    // Lắng nghe sự kiện để mở khóa ngay lập tức khi thanh toán xong
     window.addEventListener('user-updated', checkProStatus);
     return () => window.removeEventListener('user-updated', checkProStatus);
   }, []);
@@ -32,23 +31,23 @@ const AiCoachPage = () => {
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
-      text: "Hello! I've analyzed your sleep data and recent workouts. How can I help you optimize your training today?"
+      text: "Hello! I've analyzed your biological data and recent workouts. How can I help you optimize your training today?"
     }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
-  // --- STATE CHO CHỈ SỐ SỨC KHỎE ---
+  // --- STATE CHO CHỈ SỐ SỨC KHỎE (Lấy từ API) ---
   const [metrics, setMetrics] = useState({
     metabolicRate: 0,
     recoveryScore: 0,
     sleep: "0h 0m",
     injuryRisk: "Low",
     chartData: [
-      { day: 'MON', heightPercent: 10 }, { day: 'TUE', heightPercent: 10 },
-      { day: 'WED', heightPercent: 10 }, { day: 'THU', heightPercent: 10 },
-      { day: 'FRI', heightPercent: 10 }, { day: 'SAT', heightPercent: 10 },
-      { day: 'SUN', heightPercent: 10 }
+      { day: 'MON', heightPercent: 5 }, { day: 'TUE', heightPercent: 5 },
+      { day: 'WED', heightPercent: 5 }, { day: 'THU', heightPercent: 5 },
+      { day: 'FRI', heightPercent: 5 }, { day: 'SAT', heightPercent: 5 },
+      { day: 'SUN', heightPercent: 5 }
     ]
   });
 
@@ -62,38 +61,25 @@ const AiCoachPage = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // --- FETCH DỮ LIỆU THẬT 100% TỪ BACKEND ---
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
         const token = localStorage.getItem('token');
-        const isGoogle = localStorage.getItem('isGoogleLogin');
-        
-        if (isGoogle === 'true') {
-           setMetrics({
-              metabolicRate: 2350,
-              recoveryScore: 82,
-              sleep: "7h 15m",
-              injuryRisk: "Low",
-              chartData: [
-                { day: 'MON', heightPercent: 40 }, { day: 'TUE', heightPercent: 80 },
-                { day: 'WED', heightPercent: 30 }, { day: 'THU', heightPercent: 90 },
-                { day: 'FRI', heightPercent: 60 }, { day: 'SAT', heightPercent: 100 },
-                { day: 'SUN', heightPercent: 20 }
-              ]
-           });
-           return;
-        }
 
-        const response = await fetch('http://localhost:8000/api/users/metrics', {
+        const response = await fetch('https://healthmate.onrender.com/api/users/metrics', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (response.ok) {
           const data = await response.json();
-          setMetrics(data);
+          // Đảm bảo dữ liệu không bị undefined
+          if(data && data.chartData) {
+              setMetrics(data);
+          }
         }
       } catch (error) {
-        console.error("Lỗi tải metrics:", error);
+        console.error("Lỗi tải metrics từ Backend:", error);
       }
     };
 
@@ -113,14 +99,14 @@ const AiCoachPage = () => {
       const userString = localStorage.getItem('user');
       const user = userString ? JSON.parse(userString) : null;
 
-      const response = await fetch('http://localhost:8000/api/chat/ask', {
+      const response = await fetch('https://healthmate.onrender.com/api/chat/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ 
-            userId: user?._id || 'ID_GIA_LAP',
+            userId: user?._id || 'unknown',
             message: currentInput 
         }) 
       });
@@ -133,7 +119,7 @@ const AiCoachPage = () => {
         setMessages(prev => [...prev, { sender: 'ai', text: "Lỗi: " + data.error }]);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { sender: 'ai', text: "Hệ thống AI đang quá tải, thử lại sau nhé." }]);
+      setMessages(prev => [...prev, { sender: 'ai', text: "Hệ thống AI đang quá tải hoặc mất mạng, thử lại sau nhé." }]);
     } finally {
       setIsTyping(false);
     }
@@ -141,22 +127,23 @@ const AiCoachPage = () => {
 
   return (
     <Layout>
-      <div className="relative flex h-[calc(100vh-70px)] bg-[#f8fafc] dark:bg-[#0f172a] text-slate-900 dark:text-white overflow-hidden">
+      {/* Xóa class ép cứng chiều cao h-[calc...], thêm min-h-screen và pb-10 để page scroll tự do */}
+      <div className="relative min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] text-slate-900 dark:text-white pb-12">
         
-        <div className="p-4 md:p-8 grid grid-cols-12 gap-6 relative z-10 max-w-7xl mx-auto w-full">
+        <div className="p-6 md:p-10 grid grid-cols-12 gap-8 relative z-10 max-w-[1400px] mx-auto w-full">
           
-          {/* HEADER LUÔN HIỂN THỊ */}
-          <header className="col-span-12 flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+          {/* HEADER */}
+          <header className="col-span-12 flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Health Analytics <span className="text-primary">& AI Coach</span></h1>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">Deep biological insights powered by HealthMate AI</p>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Health Analytics <span className="text-primary">& AI Coach</span></h1>
+              <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">Deep biological insights powered by HealthMate AI</p>
             </div>
             <div className="flex gap-4">
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
-                <span className="w-3 h-3 rounded-full bg-primary animate-pulse"></span>
-                <span className="text-sm font-medium text-slate-900 dark:text-white">Live Biometrics Syncing</span>
+              <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">Live Sync Active</span>
               </div>
-              <button className="px-6 py-2 bg-primary text-slate-900 font-bold rounded-lg hover:opacity-90 transition-opacity">
+              <button className="px-6 py-2.5 bg-primary text-slate-900 font-bold rounded-xl shadow-sm hover:brightness-105 transition-all">
                 Export Report
               </button>
             </div>
@@ -164,12 +151,12 @@ const AiCoachPage = () => {
 
           {/* RENDER NỘI DUNG HOẶC MÀN HÌNH KHÓA */}
           {!isProValid ? (
-            <div className="col-span-12 flex items-center justify-center py-20">
+            <div className="col-span-12 flex items-center justify-center py-32">
               <div className="bg-[#111827] border border-slate-700 p-10 rounded-3xl max-w-md text-center shadow-2xl">
                  <span className="material-symbols-outlined text-6xl text-primary mb-4">smart_toy</span>
                  <h2 className="text-2xl font-black text-white mb-3">AI Coach Độc Quyền</h2>
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-                    Trò chuyện 24/7 với chuyên gia AI cần tài khoản Pro. Mở khóa ngay chỉ với 59k/tháng.
+                    Trò chuyện 24/7 với chuyên gia AI cần tài khoản Pro. Nâng cấp để mở khóa phân tích sức khỏe nâng cao.
                  </p>
                  <button onClick={() => navigate('/subscription')} className="w-full py-3.5 bg-primary text-slate-900 font-bold rounded-xl shadow-lg hover:brightness-110 transition-all">
                     Nâng cấp Pro Ngay
@@ -178,124 +165,138 @@ const AiCoachPage = () => {
             </div>
           ) : (
             <>
-              {/* Nội dung bên trái */}
-              <div className="col-span-12 lg:col-span-8 space-y-6">
+              {/* CỘT TRÁI: Dữ liệu Sức Khỏe */}
+              <div className="col-span-12 lg:col-span-8 space-y-8">
+                
+                {/* Metrics 3 cột */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Metabolic Rate</span>
-                      <span className="material-icons text-primary">speed</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-wider">Metabolic Rate</span>
+                      <span className="material-symbols-outlined text-primary">speed</span>
                     </div>
-                    <div className="text-3xl font-bold text-slate-900 dark:text-white">
-                      {metrics.metabolicRate.toLocaleString()} <span className="text-sm font-normal text-slate-400">kcal</span>
+                    <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {metrics.metabolicRate.toLocaleString()} <span className="text-base font-bold text-slate-400 ml-1">kcal</span>
                     </div>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Recovery Score</span>
-                      <span className="material-icons text-primary">battery_charging_full</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-wider">Recovery Score</span>
+                      <span className="material-symbols-outlined text-primary">battery_charging_full</span>
                     </div>
-                    <div className="text-3xl font-bold text-slate-900 dark:text-white">
-                      {metrics.recoveryScore}<span className="text-sm font-normal text-slate-400">%</span>
+                    <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {metrics.recoveryScore}<span className="text-base font-bold text-slate-400 ml-1">%</span>
                     </div>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Sleep Quality</span>
-                      <span className="material-icons text-primary">nights_stay</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-wider">Sleep Quality</span>
+                      <span className="material-symbols-outlined text-primary">nights_stay</span>
                     </div>
-                    <div className="text-3xl font-bold text-slate-900 dark:text-white">{metrics.sleep}</div>
+                    <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mt-1">{metrics.sleep}</div>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                {/* Biểu đồ Impact */}
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   <div className="flex justify-between items-center mb-8">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Workout Impact Analysis (7 Days)</h2>
                   </div>
-                  <div className="h-64 relative flex items-end justify-between gap-2 px-4">
+                  <div className="h-64 relative flex items-end justify-between gap-3 px-2">
                     {metrics.chartData.map((data, idx) => (
-                      <div key={idx} className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative group overflow-hidden" style={{ height: `${data.heightPercent}%` }}>
-                        <div className="absolute bottom-0 w-full bg-primary/40 group-hover:bg-primary transition-all h-full"></div>
+                      <div key={idx} className="w-full bg-primary/20 hover:bg-primary/40 rounded-t-xl relative group overflow-hidden transition-all cursor-pointer" style={{ height: `${data.heightPercent}%` }}>
+                        <div className="absolute bottom-0 w-full bg-primary transition-all h-full origin-bottom scale-y-0 group-hover:scale-y-100"></div>
                         <div className="absolute opacity-0 group-hover:opacity-100 bottom-2 w-full text-center text-[10px] font-bold text-slate-900">{data.heightPercent > 5 ? 'Active' : ''}</div>
                       </div>
                     ))}
                   </div>
-                  <div className="flex justify-between mt-4 text-xs text-slate-400 font-medium px-4">
+                  <div className="flex justify-between mt-5 text-xs text-slate-400 font-bold px-2">
                     {metrics.chartData.map((data, idx) => (
                       <span key={idx} className="w-full text-center">{data.day}</span>
                     ))}
                   </div>
                 </div>
 
+                {/* Phân tích AI bên dưới */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <h3 className="font-bold mb-4 text-slate-900 dark:text-white">Injury Risk Assessment</h3>
+                  {/* Injury Risk */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 className="font-bold mb-8 text-slate-900 dark:text-white text-lg">Injury Risk Assessment</h3>
                     <div className="relative flex flex-col items-center">
                       <div className="w-48 h-24 overflow-hidden relative">
-                        <div className="absolute top-0 w-48 h-48 rounded-full border-[12px] border-slate-100 dark:border-slate-800"></div>
-                        <div className={`absolute top-0 w-48 h-48 rounded-full border-[12px] border-transparent border-l-primary border-t-primary transition-transform duration-1000 ${metrics.injuryRisk === 'Low' ? 'rotate-[15deg]' : metrics.injuryRisk === 'Medium' ? 'rotate-[90deg] border-l-amber-500 border-t-amber-500' : 'rotate-[165deg] border-l-red-500 border-t-red-500'}`}></div>
+                        <div className="absolute top-0 w-48 h-48 rounded-full border-[16px] border-slate-100 dark:border-slate-800"></div>
+                        <div className={`absolute top-0 w-48 h-48 rounded-full border-[16px] border-transparent border-l-primary border-t-primary transition-transform duration-1000 ${metrics.injuryRisk === 'Low' ? 'rotate-[15deg]' : metrics.injuryRisk === 'Medium' ? 'rotate-[90deg] border-l-amber-500 border-t-amber-500' : 'rotate-[165deg] border-l-red-500 border-t-red-500'}`}></div>
                       </div>
                       <div className="absolute top-16 text-center">
-                        <span className={`text-2xl font-bold ${metrics.injuryRisk === 'High' ? 'text-red-500' : metrics.injuryRisk === 'Medium' ? 'text-amber-500' : 'text-slate-900 dark:text-white'}`}>
+                        <span className={`text-3xl font-black ${metrics.injuryRisk === 'High' ? 'text-red-500' : metrics.injuryRisk === 'Medium' ? 'text-amber-500' : 'text-slate-900 dark:text-white'}`}>
                           {metrics.injuryRisk}
                         </span>
-                        <p className="text-[10px] text-slate-400 uppercase">Current Risk Level</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Current Risk Level</p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-xl border border-primary/20 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="material-icons text-primary">auto_awesome</span>
-                      <h3 className="font-bold text-primary">AI Performance Insight</h3>
+                  {/* AI Insight Highlight */}
+                  <div className="bg-[#eefcf3] dark:bg-primary/10 p-8 rounded-3xl border border-[#bbf0ce] dark:border-primary/20 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <span className="material-symbols-outlined text-8xl text-primary">auto_awesome</span>
                     </div>
-                    <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                      <li className="flex gap-2">
-                        <span className="material-icons text-xs text-primary mt-0.5">check_circle</span>
-                        Based on your {metrics.metabolicRate} kcal burn rate, ensure adequate protein intake today.
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="material-icons text-xs text-primary mt-0.5">check_circle</span>
-                        Recovery is at {metrics.recoveryScore}%. {Number(metrics.recoveryScore) > 70 ? 'Ready for high intensity.' : 'Consider active recovery or rest.'}
-                      </li>
-                    </ul>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-6">
+                        <span className="material-symbols-outlined text-primary">psychology</span>
+                        <h3 className="font-black text-primary text-lg">AI Performance Insight</h3>
+                        </div>
+                        <ul className="space-y-4 text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                        <li className="flex gap-3 items-start">
+                            <span className="material-symbols-outlined text-base text-primary mt-0.5">check_circle</span>
+                            <span>Based on your {metrics.metabolicRate} kcal burn rate, ensure adequate protein intake today.</span>
+                        </li>
+                        <li className="flex gap-3 items-start">
+                            <span className="material-symbols-outlined text-base text-primary mt-0.5">check_circle</span>
+                            <span>Recovery is at {metrics.recoveryScore}%. {Number(metrics.recoveryScore) > 70 ? 'Your body is fully ready for high intensity training.' : 'Consider active recovery or a rest day to prevent overtraining.'}</span>
+                        </li>
+                        </ul>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Cột phải: Chatbot */}
-              <div className="col-span-12 lg:col-span-4 h-full">
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col h-[600px] lg:h-[calc(100vh-140px)] sticky top-24 overflow-hidden">
-                  <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-4 shrink-0">
+              {/* CỘT PHẢI: Chatbot (Sticky để trượt theo khi scroll) */}
+              <div className="col-span-12 lg:col-span-4 h-full relative">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col sticky top-[100px] h-[600px] lg:h-[calc(100vh-140px)] overflow-hidden">
+                  
+                  {/* Khung Header Chat */}
+                  <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-4 shrink-0">
                     <div className="relative">
-                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                        <span className="material-icons text-slate-900">smart_toy</span>
+                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-inner">
+                        <span className="material-symbols-outlined text-slate-900 text-[22px]">smart_toy</span>
                       </div>
-                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-primary border-2 border-white dark:border-slate-900 rounded-full"></span>
+                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></span>
                     </div>
                     <div>
-                      <h3 className="font-bold leading-tight text-slate-900 dark:text-white">Coach HealthMate</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">AI Personal Health Strategist</p>
+                      <h3 className="font-black leading-tight text-slate-900 dark:text-white">Coach HealthMate</h3>
+                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">AI Personal Health Strategist</p>
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  {/* Vùng Tin Nhắn */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700">
                     {messages.map((msg, index) => (
                       <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                         {msg.sender === 'ai' ? (
                           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                            <span className="material-icons text-sm text-primary">smart_toy</span>
+                            <span className="material-symbols-outlined text-[16px] text-primary">smart_toy</span>
                           </div>
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                            <span className="material-icons text-sm text-slate-600 dark:text-slate-300">person</span>
+                          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-[16px] text-slate-600 dark:text-slate-300">person</span>
                           </div>
                         )}
 
-                        <div className={`p-4 rounded-xl max-w-[85%] text-sm ${
+                        <div className={`p-3.5 rounded-2xl max-w-[85%] text-sm shadow-sm ${
                           msg.sender === 'user' 
-                            ? 'bg-primary text-slate-900 rounded-tr-none font-medium' 
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-none leading-relaxed'
+                            ? 'bg-primary text-slate-900 rounded-tr-sm font-bold' 
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-sm font-medium leading-relaxed'
                         }`}>
                           {msg.text}
                         </div>
@@ -304,20 +305,23 @@ const AiCoachPage = () => {
                     {isTyping && (
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                          <span className="material-icons text-sm text-primary">smart_toy</span>
+                          <span className="material-symbols-outlined text-[16px] text-primary">smart_toy</span>
                         </div>
-                        <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl rounded-tl-none text-sm text-slate-500 flex items-center gap-1">
-                          <span className="animate-bounce">.</span><span className="animate-bounce delay-100">.</span><span className="animate-bounce delay-200">.</span>
+                        <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl rounded-tl-sm text-sm text-slate-500 flex items-center gap-1 shadow-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-100"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-200"></span>
                         </div>
                       </div>
                     )}
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="p-4 md:p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+                  {/* Input Chat */}
+                  <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
                     <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1 hide-scrollbar">
-                      <button onClick={() => setInput("Adjust my macros for today")} className="whitespace-nowrap px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold rounded-full text-slate-500 hover:text-primary transition-colors">Adjust macros</button>
-                      <button onClick={() => setInput("Show my current progress")} className="whitespace-nowrap px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold rounded-full text-slate-500 hover:text-primary transition-colors">Show my progress</button>
+                      <button onClick={() => setInput("Adjust my macros for today")} className="whitespace-nowrap px-3 py-1.5 bg-slate-50 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-[11px] font-bold rounded-full text-slate-600 hover:text-primary transition-colors shadow-sm">Adjust macros</button>
+                      <button onClick={() => setInput("Show my current progress")} className="whitespace-nowrap px-3 py-1.5 bg-slate-50 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-[11px] font-bold rounded-full text-slate-600 hover:text-primary transition-colors shadow-sm">Show my progress</button>
                     </div>
                     
                     <div className="relative flex gap-2">
@@ -325,12 +329,12 @@ const AiCoachPage = () => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-3 pl-4 pr-12 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 transition-all outline-none" 
+                        className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 pl-4 pr-12 text-sm font-medium text-slate-900 dark:text-white focus:border-primary outline-none transition-all" 
                         placeholder="Ask anything about your health..." 
                         disabled={isTyping}
                       />
-                      <button onClick={handleSendMessage} disabled={isTyping || !input.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-primary text-slate-900 rounded-lg flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100">
-                        <span className="material-icons text-sm">send</span>
+                      <button onClick={handleSendMessage} disabled={isTyping || !input.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-primary text-slate-900 rounded-lg flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-sm">
+                        <span className="material-symbols-outlined text-[18px]">send</span>
                       </button>
                     </div>
                   </div>

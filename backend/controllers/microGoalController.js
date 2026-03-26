@@ -26,13 +26,21 @@ exports.createMicroGoal = async (req, res) => {
 
 exports.toggleMicroGoal = async (req, res) => {
   try {
-    const goal = await MicroGoal.findById(req.params.id);
+    const microGoal = await MicroGoal.findById(req.params.id);
+    if (!microGoal) return res.status(404).json({ message: "MicroGoal not found" });
 
-    goal.done = !goal.done;
+    // 1. Nếu frontend gửi 'label' lên -> Cập nhật label
+    if (req.body.label !== undefined) {
+      microGoal.label = req.body.label;
+    }
 
-    await goal.save();
+    // 2. Nếu frontend gửi 'done' lên -> Cập nhật trạng thái done
+    if (req.body.done !== undefined) {
+      microGoal.done = req.body.done;
+    } 
 
-    res.json(goal);
+    await microGoal.save();
+    res.json(microGoal);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

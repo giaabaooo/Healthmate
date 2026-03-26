@@ -41,7 +41,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000/api';
+        const API_BASE = 'https://healthmate.onrender.com/api';
         let token = '';
 
         function showResult(id, message, isError = false) {
@@ -56,7 +56,7 @@
             try {
                 showResult('backendResult', '🔄 Testing backend...');
                 
-                const response = await fetch('http://localhost:8000');
+                const response = await fetch('https://healthmate.onrender.com');
                 const text = await response.text();
                 
                 if (response.ok) {

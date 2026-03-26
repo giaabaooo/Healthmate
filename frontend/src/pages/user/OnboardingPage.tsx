@@ -29,7 +29,7 @@ const OnboardingPage = () => {
       const token = localStorage.getItem('token');
       
       // Gọi API cập nhật thông tin về Backend
-      const response = await fetch('http://localhost:8000/api/users/me', {
+      const response = await fetch('https://healthmate.onrender.com/api/users/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

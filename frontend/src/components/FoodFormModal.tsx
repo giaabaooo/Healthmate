@@ -103,7 +103,7 @@ const FoodFormModal = ({ isOpen, foodId, onClose, onSuccess }: FoodFormModalProp
   const fetchFood = async (id: string) => {
     setFetchingFood(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/foods/${id}`);
+      const response = await fetch(`https://healthmate.onrender.com/api/foods/${id}`);
       const data = await response.json();
       if (response.ok) {
         setFormData({
@@ -115,7 +115,7 @@ const FoodFormModal = ({ isOpen, foodId, onClose, onSuccess }: FoodFormModalProp
           fat: data.fat != null ? String(data.fat) : ''
         });
         if (data.image) {
-          setImagePreview(`http://localhost:8000${data.image}`);
+          setImagePreview(`https://healthmate.onrender.com${data.image}`);
         }
       } else {
         toast.error(data.message || 'Không tìm thấy món ăn');
@@ -171,7 +171,7 @@ const FoodFormModal = ({ isOpen, foodId, onClose, onSuccess }: FoodFormModalProp
     } else {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/foods?search=${encodeURIComponent(formData.name.trim())}`,
+          `https://healthmate.onrender.com/api/foods?search=${encodeURIComponent(formData.name.trim())}`,
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
         const data = await res.json();
@@ -219,8 +219,8 @@ const FoodFormModal = ({ isOpen, foodId, onClose, onSuccess }: FoodFormModalProp
 
     setLoading(true);
     const url = isEditMode
-      ? `http://localhost:8000/api/foods/${foodId}`
-      : 'http://localhost:8000/api/foods';
+      ? `https://healthmate.onrender.com/api/foods/${foodId}`
+      : 'https://healthmate.onrender.com/api/foods';
     const method = isEditMode ? 'PUT' : 'POST';
 
     try {

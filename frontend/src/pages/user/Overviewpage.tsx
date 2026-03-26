@@ -2,6 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { getDailyRoutine } from '../../services/workoutService';
+import toast, { Toaster } from 'react-hot-toast'; 
+
+const getLocalDateString = (dateObj: Date) => {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const dateNum = String(dateObj.getDate()).padStart(2, "0");
+  return `${year}-${month}-${dateNum}`;
+};
 
 const OverviewPage = () => {
   const navigate = useNavigate();
@@ -10,14 +18,12 @@ const OverviewPage = () => {
   const parsedUser = storedUser ? JSON.parse(storedUser) : null;
   const displayName = parsedUser?.profile?.full_name || 'User';
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const todayStrLocal = getLocalDateString(new Date());
+  const [selectedDate, setSelectedDate] = useState<string>(todayStrLocal);
 
   const [todayWeight, setTodayWeight] = useState<string>('');
   const [todayHeight, setTodayHeight] = useState<string>('');
-  const [formError, setFormError] = useState<string | null>(null);
   
-  // Dữ liệu hiển thị trong ngày đã chọn
   const [dailyCaloriesIn, setDailyCaloriesIn] = useState<number>(0);
   const [dailyCaloriesBurned, setDailyCaloriesBurned] = useState<number>(0);
   const [dailyWorkoutsCompleted, setDailyWorkoutsCompleted] = useState<number>(0);
@@ -25,32 +31,35 @@ const OverviewPage = () => {
   const [weeklyCaloriesByDay, setWeeklyCaloriesByDay] = useState<number[]>(new Array(7).fill(0));
   const [upcomingWorkout, setUpcomingWorkout] = useState<any>(null);
   
-  // Lịch sử Check-in và Nhận xét của AI
   const [entries, setEntries] = useState<{ date: string; weight: number; height: number; bmi: number }[]>([]);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const todayBmi = todayHeight && todayWeight ? Number(todayWeight) / Math.pow(Number(todayHeight) / 100, 2) : null;
 
-  // Lấy lịch sử Check-in từ LocalStorage
+  // ĐỒNG BỘ: Luôn lấy cân nặng/chiều cao mới nhất từ User Profile
   useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const u = JSON.parse(userStr);
+      if (u.profile?.height_cm) setTodayHeight(String(u.profile.height_cm));
+      if (u.profile?.weight_kg) setTodayWeight(String(u.profile.weight_kg));
+    }
+
     const storedHistory = localStorage.getItem('bodyCheckinHistory');
     if (storedHistory) {
       try {
         const parsed = JSON.parse(storedHistory);
-        if (Array.isArray(parsed)) setEntries(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) setEntries(parsed);
       } catch { }
     }
   }, []);
 
-  // Fetch dữ liệu Calories In, Workouts & Calories Burned dựa trên Ngày đã chọn
   useEffect(() => {
     const loadDailyData = async () => {
       try {
         const token = localStorage.getItem('token');
-        
-        // 1. Lấy dữ liệu Calories In (Từ Meal Plan)
-        const mealRes = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}`, {
+        const mealRes = await fetch(`https://healthmate.onrender.com/api/meal-plans/${selectedDate}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (mealRes.ok) {
@@ -60,20 +69,16 @@ const OverviewPage = () => {
             setDailyCaloriesIn(0);
         }
 
-        // 2. Lấy dữ liệu Calories Burned & Workouts
-        const logRes = await fetch(`http://localhost:8000/api/workout-logs`, {
+        const logRes = await fetch(`https://healthmate.onrender.com/api/workout-logs`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (logRes.ok) {
             const logs = await logRes.json();
-            
-            // Lọc log đúng ngày được chọn
             const dailyLogs = logs.filter((log: any) => log.date && log.date.startsWith(selectedDate));
             setDailyWorkoutsCompleted(dailyLogs.length);
             setDailyDuration(dailyLogs.reduce((sum: number, log: any) => sum + (log.duration_minutes || 0), 0));
             setDailyCaloriesBurned(dailyLogs.reduce((sum: number, log: any) => sum + (log.calories_burned || 0), 0));
 
-            // Tính toán dữ liệu cho Biểu đồ Weekly Performance (Của tuần chứa selectedDate)
             const selectedD = new Date(selectedDate);
             const day = selectedD.getDay();
             const diffToMonday = day === 0 ? 6 : day - 1;
@@ -98,11 +103,9 @@ const OverviewPage = () => {
         }
       } catch (error) { console.error(error); }
     };
-    
     loadDailyData();
   }, [selectedDate]);
 
-  // Lấy dữ liệu Upcoming Workout (Dựa trên ngày đã chọn)
   useEffect(() => {
     const loadUpcomingWorkout = async () => {
       try {
@@ -117,48 +120,69 @@ const OverviewPage = () => {
     loadUpcomingWorkout();
   }, [selectedDate]);
 
-  // Xử lý khi User cập nhật thông tin body & Gọi AI nhận xét
+  // ĐỒNG BỘ: Cập nhật Profile DB khi Update Body Metrics
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
-
-    if (!todayWeight || !todayHeight) { setFormError('Vui lòng nhập đủ Cân nặng & Chiều cao.'); return; }
+    if (!todayWeight || !todayHeight) return toast.error('Vui lòng nhập đầy đủ Cân nặng & Chiều cao.'); 
+    
     const weight = Number(todayWeight);
     const height = Number(todayHeight);
-    if (weight <= 0 || height <= 0) { setFormError('Chỉ số phải lớn hơn 0.'); return; }
-
-    const bmi = weight / Math.pow(height / 100, 2);
-    const dateLabel = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const latestEntry = { date: dateLabel, weight, height, bmi: Number(bmi.toFixed(1)) };
-
-    const oldWeight = entries.length > 0 ? entries[0].weight : weight;
-
-    setEntries((prev) => {
-      const next = [latestEntry, ...prev];
-      localStorage.setItem('bodyCheckinHistory', JSON.stringify(next));
-      return next;
-    });
+    
+    if (weight < 20 || weight > 300) return toast.error('Cân nặng không hợp lệ (20 - 300kg).'); 
+    if (height < 50 || height > 250) return toast.error('Chiều cao không hợp lệ (50 - 250cm).');
 
     setIsAnalyzing(true);
+    toast.loading("Đang lưu dữ liệu và AI phân tích...", { id: 'ai-analyze' });
+    
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:8000/api/goals/analyze-progress', {
+
+        // 1. GỌI API ĐỂ UPDATE PROFILE GLOBAL
+        const profileRes = await fetch('https://healthmate.onrender.com/api/users/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ profile: { weight_kg: weight, height_cm: height } })
+        });
+
+        if (profileRes.ok) {
+            const updatedData = await profileRes.json();
+            const u = JSON.parse(localStorage.getItem('user') || '{}');
+            u.profile = updatedData.profile;
+            localStorage.setItem('user', JSON.stringify(u)); // Lưu lại vào LocalStorage
+        }
+
+        // 2. Lưu vào lịch sử local cho UI Overview
+        const bmi = weight / Math.pow(height / 100, 2);
+        const dateLabel = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const latestEntry = { date: dateLabel, weight, height, bmi: Number(bmi.toFixed(1)) };
+        const oldWeight = entries.length > 0 ? entries[0].weight : weight;
+
+        setEntries((prev) => {
+          const next = [latestEntry, ...prev];
+          localStorage.setItem('bodyCheckinHistory', JSON.stringify(next));
+          return next;
+        });
+
+        // 3. Phân tích AI
+        const res = await fetch('https://healthmate.onrender.com/api/goals/analyze-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ oldWeight, currentWeight: weight })
         });
+
         if(res.ok) {
             const data = await res.json();
             setAiFeedback(data.feedback);
+            toast.success("Cập nhật thành công!", { id: 'ai-analyze' });
+        } else {
+            toast.dismiss('ai-analyze');
+            toast.error("Không thể lấy dữ liệu phân tích.");
         }
     } catch(err) {
-        console.error("AI Error", err);
+        toast.error("Lỗi kết nối.", { id: 'ai-analyze' });
     } finally {
         setIsAnalyzing(false);
     }
-
-    setTodayWeight(''); 
-    setFormError(null);
   };
 
   const getGreeting = () => {
@@ -173,10 +197,10 @@ const OverviewPage = () => {
 
   return (
     <Layout>
+      <Toaster position="top-right" />
       <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-[#f8fafc] dark:bg-[#0f172a]">
         <main className="flex-1 px-8 py-10 max-w-[1400px] mx-auto w-full">
 
-          {/* Header & Date Picker */}
           <div className="mb-10 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
             <div>
               <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -191,7 +215,7 @@ const OverviewPage = () => {
                 <span className="material-symbols-outlined text-primary ml-2">calendar_month</span>
                 <input 
                     type="date" 
-                    max={todayStr} 
+                    max={todayStrLocal} 
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     className="bg-transparent border-none text-base font-bold text-slate-700 dark:text-white outline-none cursor-pointer pr-2"
@@ -199,7 +223,6 @@ const OverviewPage = () => {
             </div>
           </div>
 
-          {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
             <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
               <div className="absolute right-0 top-0 opacity-[0.03] group-hover:scale-110 transition-transform">
@@ -269,8 +292,7 @@ const OverviewPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               
-              {/* Upcoming Workout */}
-              <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 group min-h-[250px] flex flex-col justify-center">
+              <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 group min-h-[250px] flex flex-col justify-center shadow-lg">
                 <div className="absolute top-0 right-0 w-1/2 h-full">
                   <img
                     alt="Next Workout"
@@ -292,7 +314,7 @@ const OverviewPage = () => {
                               Time: {upcomingWorkout.startTime} - {upcomingWorkout.endTime} • Burn ~{upcomingWorkout.calories || 0} kcal
                           </p>
                           <div className="flex gap-4">
-                            <button onClick={() => navigate('/workouts')} className="bg-primary text-slate-900 font-bold px-6 py-3 rounded-xl hover:brightness-110 transition-all flex items-center gap-2">
+                            <button onClick={() => navigate('/workouts')} className="bg-primary text-slate-900 font-bold px-6 py-3 rounded-xl hover:brightness-110 transition-all flex items-center gap-2 shadow-sm shadow-primary/20">
                               <span className="material-symbols-outlined">play_arrow</span>
                               Start Workout
                             </button>
@@ -312,7 +334,6 @@ const OverviewPage = () => {
                 </div>
               </div>
 
-              {/* Daily Body Metrics Form */}
               <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -337,14 +358,11 @@ const OverviewPage = () => {
                     </div>
                   </div>
 
-                  {formError && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center font-medium">{formError}</p>}
-
                   <button type="submit" disabled={isAnalyzing} className="w-full flex justify-center items-center gap-2 rounded-xl bg-primary px-6 py-4 text-sm font-bold text-slate-900 shadow-md shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-50">
                     {isAnalyzing ? <><span className="material-symbols-outlined animate-spin text-[18px]">refresh</span> AI is analyzing...</> : <><span className="material-symbols-outlined text-[18px]">check_circle</span> Update & Analyze</>}
                   </button>
                 </form>
 
-                {/* AI Feedback */}
                 {aiFeedback && (
                     <div className="mt-8 bg-[#eefcf3] dark:bg-primary/10 border border-[#bbf0ce] dark:border-primary/20 rounded-2xl p-6 relative overflow-hidden animate-fade-in">
                         <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -361,7 +379,6 @@ const OverviewPage = () => {
                     </div>
                 )}
 
-                {/* History */}
                 {entries.length > 0 && (
                   <div className="mt-8 border-t border-slate-100 dark:border-slate-800 pt-6">
                     <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-4">Recent Check-in History</p>
@@ -391,9 +408,7 @@ const OverviewPage = () => {
 
             </div>
 
-            {/* Right Sidebar */}
             <div className="space-y-8">
-              {/* Weekly Performance */}
               <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">

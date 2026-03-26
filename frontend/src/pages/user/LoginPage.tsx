@@ -43,7 +43,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/users/login', {
+      const response = await fetch('https://healthmate.onrender.com/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -88,7 +88,7 @@ const LoginPage = () => {
         const userInfo = await userInfoRes.json();
 
         // 2. Gửi thông tin Google xuống Backend của bạn
-        const beResponse = await fetch('http://localhost:8000/api/users/google-login', {
+        const beResponse = await fetch('https://healthmate.onrender.com/api/users/google-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
