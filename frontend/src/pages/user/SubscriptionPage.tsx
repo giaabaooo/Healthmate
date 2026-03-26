@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import toast, { Toaster } from 'react-hot-toast';
 
 const SubscriptionPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -23,12 +24,32 @@ const SubscriptionPage = () => {
   const proEndDate = isPro ? new Date(user.subscription.endDate) : null;
   const isActivePro = isPro && proEndDate && proEndDate > new Date();
 
-  const handleUpgrade = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return navigate('/login');
+  // ─── XỬ LÝ KHI PAYOS TRẢ NGƯỜI DÙNG VỀ TRANG NÀY ───
+  useEffect(() => {
+    // PayOS có thể trả về status=CANCELLED, cancel=true, hoặc status=success/PAID
+    const status = searchParams.get('status');
+    const isCancel = searchParams.get('cancel') === 'true' || status === 'CANCELLED' || status === 'cancel';
+    const isSuccess = status === 'success' || status === 'PAID';
 
-    setLoading(true);
-    toast.loading("Đang xử lý giao dịch...", { id: 'upgrade' });
+    if (isSuccess) {
+      // 1. Dọn dẹp URL ngay lập tức để người dùng F5 không bị gọi lại API
+      navigate('/subscription', { replace: true });
+      // 2. Gọi hàm xác nhận nâng cấp
+      confirmUpgradeSuccess();
+    } else if (isCancel) {
+      // 1. Dọn dẹp URL ngay lập tức
+      navigate('/subscription', { replace: true });
+      // 2. Báo lỗi cho người dùng
+      toast.error('Bạn đã hủy quá trình thanh toán.', { id: 'payment' });
+    }
+  }, [searchParams, navigate]);
+
+  // HÀM: Chốt nâng cấp vào DB sau khi thanh toán PayOS báo thành công
+  const confirmUpgradeSuccess = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    toast.loading("Đang xác nhận giao dịch...", { id: 'payment' });
 
     try {
       const res = await fetch('http://localhost:8000/api/subscriptions/upgrade', {
@@ -39,22 +60,48 @@ const SubscriptionPage = () => {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Kích hoạt Event để toàn hệ thống cập nhật UI tức thì
         window.dispatchEvent(new Event('user-updated'));
         
-        toast.success("Nâng cấp Pro thành công! Tận hưởng nhé.", { id: 'upgrade' });
-        setTimeout(() => navigate('/overview'), 1500);
+        toast.success("Thanh toán thành công! Chào mừng bạn đến với gói Pro.", { id: 'payment' });
+        
+        // Sau khi báo thành công, đưa người dùng về trang Overview
+        setTimeout(() => navigate('/overview'), 2000);
+      }
+    } catch (error) {
+      toast.error("Lỗi cập nhật dữ liệu. Vui lòng liên hệ Admin.", { id: 'payment' });
+    }
+  };
+
+  // HÀM: Khi bấm nút "Nâng cấp" -> Xin link PayOS và chuyển hướng
+  const handleUpgradeClick = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return navigate('/login');
+
+    setLoading(true);
+    toast.loading("Đang khởi tạo cổng thanh toán PayOS...", { id: 'upgrade' });
+
+    try {
+      const res = await fetch('http://localhost:8000/api/subscriptions/create-payment-link', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        toast.success("Đang chuyển hướng...", { id: 'upgrade' });
+        // Chuyển hướng người dùng sang trang quét mã QR của PayOS
+        window.location.href = data.checkoutUrl; 
       } else {
-        toast.error("Có lỗi xảy ra.", { id: 'upgrade' });
+        toast.error("Không thể tạo link thanh toán.", { id: 'upgrade' });
+        setLoading(false);
       }
     } catch (error) {
       toast.error("Lỗi kết nối mạng.", { id: 'upgrade' });
-    } finally {
       setLoading(false);
     }
   };
 
+  // Hàm Hạ cấp
   const handleDowngrade = async () => {
     const token = localStorage.getItem('token');
     if (!token) return navigate('/login');
@@ -75,8 +122,6 @@ const SubscriptionPage = () => {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Kích hoạt Event để toàn hệ thống khóa các tính năng Pro lại
         window.dispatchEvent(new Event('user-updated'));
         
         toast.success("Đã hủy gói Pro và trở về gói Free.", { id: 'downgrade' });
@@ -138,11 +183,12 @@ const SubscriptionPage = () => {
               </ul>
               
               <button 
-                onClick={handleUpgrade}
+                onClick={handleUpgradeClick}
                 disabled={loading}
-                className={`w-full py-3 rounded-xl font-bold transition-all shadow-lg ${isActivePro ? 'bg-primary/20 text-primary hover:bg-primary/40' : 'bg-primary text-slate-900 hover:brightness-110'}`}
+                className={`w-full py-3 rounded-xl font-bold transition-all shadow-lg flex justify-center items-center gap-2 ${isActivePro ? 'bg-primary/20 text-primary hover:bg-primary/40' : 'bg-primary text-slate-900 hover:brightness-110'}`}
               >
-                {loading ? 'Đang xử lý...' : isActivePro ? 'Gia hạn gói Pro (+30 ngày)' : 'Nâng cấp ngay'}
+                {loading ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : null}
+                {isActivePro ? 'Gia hạn gói Pro (+30 ngày)' : 'Nâng cấp qua PayOS'}
               </button>
               {isActivePro && <p className="text-center text-xs text-slate-400 mt-3">Hạn sử dụng hiện tại: {proEndDate?.toLocaleDateString('vi-VN')}</p>}
             </div>

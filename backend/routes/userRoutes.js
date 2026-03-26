@@ -24,6 +24,7 @@ router.post("/google-login", googleLogin);
 router.get("/me", protect, getMe);
 router.put("/me", protect, updateProfile);
 router.get("/me/health-metrics", protect, getHealthMetrics); // <-- FIX 2: Khai báo route
+router.put("/profile", protect, updateProfile);
 
 // Daily routine
 router.get("/me/daily-routine", protect, getDailyRoutine);

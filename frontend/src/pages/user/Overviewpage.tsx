@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { getDailyRoutine } from '../../services/workoutService';
+import toast, { Toaster } from 'react-hot-toast'; // Đã thêm thư viện Toast
+
+// Hàm lấy ngày chuẩn múi giờ địa phương (Tránh lỗi UTC lệch ngày)
+const getLocalDateString = (dateObj: Date) => {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const dateNum = String(dateObj.getDate()).padStart(2, "0");
+  return `${year}-${month}-${dateNum}`;
+};
 
 const OverviewPage = () => {
   const navigate = useNavigate();
@@ -10,12 +19,11 @@ const OverviewPage = () => {
   const parsedUser = storedUser ? JSON.parse(storedUser) : null;
   const displayName = parsedUser?.profile?.full_name || 'User';
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const todayStrLocal = getLocalDateString(new Date());
+  const [selectedDate, setSelectedDate] = useState<string>(todayStrLocal);
 
   const [todayWeight, setTodayWeight] = useState<string>('');
   const [todayHeight, setTodayHeight] = useState<string>('');
-  const [formError, setFormError] = useState<string | null>(null);
   
   // Dữ liệu hiển thị trong ngày đã chọn
   const [dailyCaloriesIn, setDailyCaloriesIn] = useState<number>(0);
@@ -32,15 +40,25 @@ const OverviewPage = () => {
 
   const todayBmi = todayHeight && todayWeight ? Number(todayWeight) / Math.pow(Number(todayHeight) / 100, 2) : null;
 
-  // Lấy lịch sử Check-in từ LocalStorage
+  // Lấy lịch sử Check-in từ LocalStorage & Tự động điền dữ liệu vào Form
   useEffect(() => {
+    let lastHeight = parsedUser?.profile?.height_cm || '';
+    let lastWeight = parsedUser?.profile?.weight_kg || '';
+
     const storedHistory = localStorage.getItem('bodyCheckinHistory');
     if (storedHistory) {
       try {
         const parsed = JSON.parse(storedHistory);
-        if (Array.isArray(parsed)) setEntries(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            setEntries(parsed);
+            lastHeight = parsed[0].height;
+            lastWeight = parsed[0].weight;
+        }
       } catch { }
     }
+    
+    if (lastHeight) setTodayHeight(String(lastHeight));
+    if (lastWeight) setTodayWeight(String(lastWeight));
   }, []);
 
   // Fetch dữ liệu Calories In, Workouts & Calories Burned dựa trên Ngày đã chọn
@@ -117,15 +135,19 @@ const OverviewPage = () => {
     loadUpcomingWorkout();
   }, [selectedDate]);
 
-  // Xử lý khi User cập nhật thông tin body & Gọi AI nhận xét
+  // Xử lý khi User cập nhật thông tin body (Tích hợp Toast + Validation)
   const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
 
-    if (!todayWeight || !todayHeight) { setFormError('Vui lòng nhập đủ Cân nặng & Chiều cao.'); return; }
+    if (!todayWeight || !todayHeight) { 
+        return toast.error('Vui lòng nhập đầy đủ Cân nặng & Chiều cao.'); 
+    }
+    
     const weight = Number(todayWeight);
     const height = Number(todayHeight);
-    if (weight <= 0 || height <= 0) { setFormError('Chỉ số phải lớn hơn 0.'); return; }
+    
+    if (weight < 20 || weight > 300) return toast.error('Cân nặng không hợp lệ (20 - 300kg).'); 
+    if (height < 50 || height > 250) return toast.error('Chiều cao không hợp lệ (50 - 250cm).');
 
     const bmi = weight / Math.pow(height / 100, 2);
     const dateLabel = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -140,6 +162,8 @@ const OverviewPage = () => {
     });
 
     setIsAnalyzing(true);
+    toast.loading("AI đang phân tích tiến độ của bạn...", { id: 'ai-analyze' });
+    
     try {
         const token = localStorage.getItem('token');
         const res = await fetch('http://localhost:8000/api/goals/analyze-progress', {
@@ -150,15 +174,17 @@ const OverviewPage = () => {
         if(res.ok) {
             const data = await res.json();
             setAiFeedback(data.feedback);
+            toast.success("Phân tích hoàn tất!", { id: 'ai-analyze' });
+        } else {
+            toast.dismiss('ai-analyze');
+            toast.error("Không thể lấy dữ liệu phân tích.");
         }
     } catch(err) {
         console.error("AI Error", err);
+        toast.error("Lỗi kết nối đến AI Coach.", { id: 'ai-analyze' });
     } finally {
         setIsAnalyzing(false);
     }
-
-    setTodayWeight(''); 
-    setFormError(null);
   };
 
   const getGreeting = () => {
@@ -173,6 +199,7 @@ const OverviewPage = () => {
 
   return (
     <Layout>
+      <Toaster position="top-right" />
       <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-[#f8fafc] dark:bg-[#0f172a]">
         <main className="flex-1 px-8 py-10 max-w-[1400px] mx-auto w-full">
 
@@ -191,7 +218,7 @@ const OverviewPage = () => {
                 <span className="material-symbols-outlined text-primary ml-2">calendar_month</span>
                 <input 
                     type="date" 
-                    max={todayStr} 
+                    max={todayStrLocal} 
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     className="bg-transparent border-none text-base font-bold text-slate-700 dark:text-white outline-none cursor-pointer pr-2"
@@ -270,7 +297,7 @@ const OverviewPage = () => {
             <div className="lg:col-span-2 space-y-8">
               
               {/* Upcoming Workout */}
-              <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 group min-h-[250px] flex flex-col justify-center">
+              <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 group min-h-[250px] flex flex-col justify-center shadow-lg">
                 <div className="absolute top-0 right-0 w-1/2 h-full">
                   <img
                     alt="Next Workout"
@@ -292,7 +319,7 @@ const OverviewPage = () => {
                               Time: {upcomingWorkout.startTime} - {upcomingWorkout.endTime} • Burn ~{upcomingWorkout.calories || 0} kcal
                           </p>
                           <div className="flex gap-4">
-                            <button onClick={() => navigate('/workouts')} className="bg-primary text-slate-900 font-bold px-6 py-3 rounded-xl hover:brightness-110 transition-all flex items-center gap-2">
+                            <button onClick={() => navigate('/workouts')} className="bg-primary text-slate-900 font-bold px-6 py-3 rounded-xl hover:brightness-110 transition-all flex items-center gap-2 shadow-sm shadow-primary/20">
                               <span className="material-symbols-outlined">play_arrow</span>
                               Start Workout
                             </button>
@@ -336,8 +363,6 @@ const OverviewPage = () => {
                       <input type="number" step="1" value={todayHeight} onChange={(e) => setTodayHeight(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 text-lg font-bold text-slate-900 dark:text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-center" placeholder="e.g. 170" />
                     </div>
                   </div>
-
-                  {formError && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center font-medium">{formError}</p>}
 
                   <button type="submit" disabled={isAnalyzing} className="w-full flex justify-center items-center gap-2 rounded-xl bg-primary px-6 py-4 text-sm font-bold text-slate-900 shadow-md shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-50">
                     {isAnalyzing ? <><span className="material-symbols-outlined animate-spin text-[18px]">refresh</span> AI is analyzing...</> : <><span className="material-symbols-outlined text-[18px]">check_circle</span> Update & Analyze</>}

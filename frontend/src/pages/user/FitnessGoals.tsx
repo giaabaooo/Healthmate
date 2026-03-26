@@ -44,6 +44,17 @@ const mapGoalTypeToDisplay = (type: string) => {
   }
 };
 
+// Hàm tính toán BMI và trả về gợi ý mục tiêu
+const calculateSuggestedGoal = (weight_kg?: number, height_cm?: number) => {
+  if (!weight_kg || !height_cm) return 'muscle_gain'; // Default
+  const height_m = height_cm / 100;
+  const bmi = weight_kg / (height_m * height_m);
+  
+  if (bmi >= 25) return 'fat_loss'; // Thừa cân/Béo phì -> Giảm mỡ
+  if (bmi < 18.5) return 'muscle_gain'; // Thiếu cân -> Tăng cơ
+  return 'maintain'; // Bình thường -> Duy trì
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const FitnessGoal = () => {
   const navigate = useNavigate();
@@ -63,15 +74,25 @@ const FitnessGoal = () => {
   const [checkinModal, setCheckinModal] = useState({ isOpen: false, week: 1 });
   const [checkinData, setCheckinData] = useState({ weight: '', feeling: 'normal' });
 
-  // KIỂM TRA QUYỀN PRO (Đã được chuyển lên trên cùng để tránh lỗi Rules of Hooks)
+  // KIỂM TRA QUYỀN PRO & LẤY THÔNG TIN USER GỢI Ý MỤC TIÊU
   const [isProValid, setIsProValid] = useState(false);
+  const [suggestedGoalType, setSuggestedGoalType] = useState('muscle_gain');
+
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const u = JSON.parse(userStr);
+      // Check Pro
       if (u.subscription?.plan === 'pro') {
         const end = new Date(u.subscription.endDate);
         if (end >= new Date()) setIsProValid(true);
+      }
+      
+      // Auto-suggest Goal Type based on BMI
+      if (u.profile?.weight_kg && u.profile?.height_cm) {
+          const suggested = calculateSuggestedGoal(u.profile.weight_kg, u.profile.height_cm);
+          setSuggestedGoalType(suggested);
+          setFormData(prev => ({ ...prev, goal_type: suggested })); // Cập nhật luôn form
       }
     }
   }, []);
@@ -79,7 +100,7 @@ const FitnessGoal = () => {
   // Form States
   const [formData, setFormData] = useState({
     title: 'My Transformation Journey',
-    goal_type: 'muscle_gain',
+    goal_type: 'muscle_gain', // Sẽ được ghi đè bởi useEffect ở trên nếu có user data
     duration_weeks: 12,
     commitment_days_per_week: 5,
     motivation: '',
@@ -132,15 +153,30 @@ const FitnessGoal = () => {
   }, []);
 
   const handleGenerateAIRoadmap = async () => {
+      // --- VALIDATION BẮT BUỘC TRƯỚC KHI GỌI API ---
+      if (!formData.title.trim()) return toast.error("Vui lòng nhập tiêu đề hành trình.");
+      
+      const duration = Number(formData.duration_weeks);
+      if (duration < 1 || duration > 52) return toast.error("Thời gian (Duration) phải từ 1 đến 52 tuần.");
+      
+      const days = Number(formData.commitment_days_per_week);
+      if (days < 1 || days > 7) return toast.error("Số ngày tập mỗi tuần phải từ 1 đến 7 ngày.");
+      
+      const tWeight = Number(formData.target_weight);
+      if (!tWeight || tWeight < 20 || tWeight > 300) return toast.error("Vui lòng nhập cân nặng mục tiêu hợp lý (20kg - 300kg).");
+      
+      if (!formData.target_health_metric.trim()) return toast.error("Vui lòng nhập chỉ số sức khỏe mục tiêu (vd: Bench press 50kg).");
+      // ---------------------------------------------
+
       const token = localStorage.getItem("token");
       if (!token) return;
 
       if(goal?._id) {
-          if(!window.confirm("Generating a new AI roadmap will reset your current journey. Proceed?")) return;
+          if(!window.confirm("Tạo Roadmap AI mới sẽ reset lại hành trình hiện tại của bạn. Bạn có chắc chắn?")) return;
       }
 
       setLoadingAI(true);
-      toast.loading("AI is analyzing your profile to generate a personalized roadmap...", { id: 'ai' });
+      toast.loading("AI đang phân tích hồ sơ và chỉ số BMI để tạo lộ trình 7-ngày/tuần cho bạn...", { id: 'ai' });
       try {
           const res = await fetch(`http://localhost:8000/api/goals/generate-roadmap`, {
               method: "POST",
@@ -149,23 +185,26 @@ const FitnessGoal = () => {
           });
 
           if(res.ok) {
-              toast.success("Personalized AI Roadmap generated!", { id: 'ai' });
+              toast.success("Đã tạo thành công lộ trình cá nhân hóa!", { id: 'ai' });
               fetchGoalData(); 
           } else {
-              toast.error("Failed to generate AI Roadmap.", { id: 'ai' });
+              const errData = await res.json();
+              toast.error(errData.message || "Lỗi khi tạo AI Roadmap.", { id: 'ai' });
           }
       } catch (err) {
-          toast.error("Network error.", { id: 'ai' });
+          toast.error("Lỗi kết nối mạng.", { id: 'ai' });
       } finally {
           setLoadingAI(false);
       }
   };
 
   const handleResetGoal = () => {
-    if (window.confirm("Are you sure you want to setup a new goal?")) {
+    if (window.confirm("Bạn có chắc chắn muốn thiết lập mục tiêu mới?")) {
       setIsEditingGoal(true);
       setGoal(null);
       setMicroGoals([]);
+      // Reset form_type về gợi ý BMI
+      setFormData(prev => ({ ...prev, goal_type: suggestedGoalType }));
     }
   };
 
@@ -174,6 +213,7 @@ const FitnessGoal = () => {
     setIsEditingGoal(true);
     setGoal(null);
     setMicroGoals([]);
+    setFormData(prev => ({ ...prev, goal_type: suggestedGoalType }));
   };
 
   const toggleMicroGoal = async (id: string, currentStatus: boolean) => {
@@ -187,7 +227,7 @@ const FitnessGoal = () => {
         });
     } catch(err) {
         setMicroGoals(prev => prev.map(g => g._id === id ? { ...g, done: currentStatus } : g));
-        toast.error("Error updating status");
+        toast.error("Lỗi cập nhật trạng thái");
     }
   };
 
@@ -202,21 +242,28 @@ const FitnessGoal = () => {
   };
 
   const submitCheckin = async () => {
-      if(!checkinData.weight) { toast.error("Please enter your weight"); return; }
+      // --- VALIDATION CHECK-IN ---
+      const w = Number(checkinData.weight);
+      if (!w || w < 20 || w > 300) { 
+          toast.error("Vui lòng nhập cân nặng hiện tại hợp lý (20kg - 300kg)."); 
+          return; 
+      }
+      // ---------------------------
+
       const token = localStorage.getItem("token");
       try {
           const res = await fetch(`http://localhost:8000/api/goals/checkin/${goal._id}`, {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ week: checkinModal.week, weight: Number(checkinData.weight), feeling: checkinData.feeling })
+              body: JSON.stringify({ week: checkinModal.week, weight: w, feeling: checkinData.feeling })
           });
           if(res.ok) {
-              toast.success(`Check-in for Week ${checkinModal.week} successful!`);
+              toast.success(`Check-in Tuần ${checkinModal.week} thành công!`);
               setCheckinModal({ isOpen: false, week: 1 });
               fetchGoalData(); 
           }
       } catch (err) {
-          toast.error("Failed to check-in");
+          toast.error("Lỗi khi check-in");
       }
   };
 
@@ -256,10 +303,8 @@ const FitnessGoal = () => {
   const logs = goal?.weekly_log?.sort((a: any, b: any) => a.week - b.week) || [];
   const hasLogs = logs.length > 0;
   
-  // Lấy cân nặng hiện tại từ checkin mới nhất, nếu không có lấy mặc định
   const currentWeightDisplay = hasLogs ? logs[logs.length - 1].weight : (goal?.target_weight || 'N/A');
 
-  // SVG Chart Calculation
   let chartPoints = "";
   let targetY = 0;
   const svgWidth = 800;
@@ -275,7 +320,7 @@ const FitnessGoal = () => {
       const weights = logs.map((l: any) => l.weight).concat(targetW);
       const minW = Math.min(...weights) - 2; 
       const maxW = Math.max(...weights) + 2;
-      const range = maxW - minW || 1; // tránh chia cho 0
+      const range = maxW - minW || 1; 
       
       chartPoints = logs.map((log: any, idx: number) => {
           const x = padX + (idx / Math.max(logs.length - 1, 1)) * chartW;
@@ -286,7 +331,6 @@ const FitnessGoal = () => {
       targetY = padTop + chartH - ((targetW - minW) / range) * chartH;
   }
 
-  // RETURN SỚM SAU KHI ĐÃ ĐỊNH NGHĨA XONG TẤT CẢ HOOKS
   if (loading) return <Layout><div className="p-10 text-center font-bold text-slate-500">Loading your journey...</div></Layout>;
 
   return (
@@ -294,7 +338,6 @@ const FitnessGoal = () => {
       <Toaster position="top-right" />
       <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-[#f8fafc] dark:bg-[#0f172a]">
         
-        {/* LỚP PHỦ NẾU LÀ FREE (KHÔNG DÙNG BLUR, NỀN ĐẶC) */}
         {!isProValid && (
             <div className="absolute inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
                 <div className="bg-[#111827] border border-slate-700 p-10 rounded-3xl max-w-md text-center shadow-2xl">
@@ -333,11 +376,14 @@ const FitnessGoal = () => {
             <div className="flex flex-col gap-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Goal Setup & Action Plan</h2>
               
-              {/* PRIMARY GOAL CARD */}
               <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm relative">
                 {isEditingGoal ? (
                   <div className="animate-fade-in">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Setup Your Journey</h3>
+                    <div className="bg-primary/10 border border-primary/20 p-3 rounded-lg mb-6">
+                        <p className="text-xs text-primary font-bold">💡 Mục tiêu ({mapGoalTypeToDisplay(formData.goal_type)}) được AI gợi ý dựa trên chỉ số BMI của bạn. Bạn vẫn có thể thay đổi nếu muốn.</p>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                       <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Journey Title</label>
@@ -353,11 +399,11 @@ const FitnessGoal = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Duration (Weeks)</label>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Duration (Weeks) [1-52]</label>
                         <input type="number" min={1} max={52} value={formData.duration_weeks} onChange={e => setFormData({...formData, duration_weeks: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary" />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Workout Days / Week</label>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Workout Days / Week [1-7]</label>
                         <input type="number" min={1} max={7} value={formData.commitment_days_per_week} onChange={e => setFormData({...formData, commitment_days_per_week: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary" />
                       </div>
                       <div>
@@ -390,7 +436,6 @@ const FitnessGoal = () => {
                   </div>
                 ) : (
                   <div className="animate-fade-in">
-                    {/* Header Goal */}
                     <div className="flex justify-between items-start mb-6">
                       <div>
                         <h2 className="text-2xl font-black text-slate-900 dark:text-white leading-none mb-1.5">{goal?.title}</h2>
@@ -399,7 +444,6 @@ const FitnessGoal = () => {
                       <button onClick={() => setIsEditingGoal(true)} className="text-slate-400 hover:text-slate-700 p-1.5 bg-slate-50 rounded-full border border-slate-200"><Icon name="edit" className="text-[18px]" /></button>
                     </div>
 
-                    {/* Grid 8 Thông Tin (Phục hồi chuẩn thiết kế) */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-6 mb-8">
                       <div>
                         <p className="text-[11px] text-slate-500 mb-1 font-bold uppercase tracking-wider">Goal Type</p>
@@ -439,7 +483,6 @@ const FitnessGoal = () => {
                       </div>
                     </div>
 
-                    {/* Motivation UI chuẩn xanh lá nhạt */}
                     {goal?.motivation && (
                       <div className="bg-[#eefcf3] dark:bg-primary/10 border border-[#bbf0ce] dark:border-primary/20 rounded-xl p-4">
                         <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">Motivation</p>
@@ -450,19 +493,17 @@ const FitnessGoal = () => {
                 )}
               </section>
 
-              {/* WEEKLY ACTION PLAN (MICRO GOALS Accordion) */}
+              {/* WEEKLY ACTION PLAN */}
               {!isEditingGoal && (
                 <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Weekly Action Plan</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">7-Day Action Plan</h3>
                   
                   <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                     {Array.from({ length: totalDurationWeeks }).map((_, i) => {
                       const weekNum = i + 1;
                       const weekTasks = microGoals.filter(g => g.week === weekNum);
                       const weekDone = weekTasks.filter(g => g.done).length;
-                      const weekProgress = weekTasks.length > 0 ? Math.round((weekDone / weekTasks.length) * 100) : 0;
                       const isExpanded = expandedWeek === weekNum;
-                      
                       const isCheckedIn = goal?.weekly_log?.some((l: WeeklyLog) => l.week === weekNum);
 
                       return (
@@ -478,19 +519,23 @@ const FitnessGoal = () => {
                           
                           {isExpanded && (
                             <div className="p-4 bg-white dark:bg-slate-900 flex flex-col gap-3">
-                              {weekTasks.length > 0 ? weekTasks.map((task) => (
+                              {weekTasks.length > 0 ? weekTasks.map((task) => {
+                                // Tách "Day X:" để bôi đậm nếu AI tuân thủ đúng prompt
+                                const parts = task.label.split(': ');
+                                const hasDayPrefix = parts.length > 1 && parts[0].toLowerCase().includes('day');
+                                
+                                return (
                                 <div key={task._id} className="flex items-start gap-3 group bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
                                   <input type="checkbox" checked={task.done} onChange={() => toggleMicroGoal(task._id, task.done)} className="mt-1 h-5 w-5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer transition-all shrink-0" />
                                   <div className="flex-1 flex flex-col items-start min-w-0 pr-2">
                                       <span className={`text-sm leading-snug transition-all whitespace-normal break-words w-full ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>
-                                          {task.label}
+                                          {hasDayPrefix ? (
+                                              <><span className="font-bold text-primary">{parts[0]}: </span>{parts.slice(1).join(': ')}</>
+                                          ) : task.label}
                                       </span>
-                                      <button onClick={(e) => { e.preventDefault(); navigate('/workouts'); }} className="mt-2 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-[11px] font-bold text-primary hover:bg-primary hover:text-slate-900 transition-colors">
-                                        Go to Workouts <Icon name="arrow_forward" className="text-[12px]" />
-                                      </button>
                                   </div>
                                 </div>
-                              )) : (
+                              )}) : (
                                 <div className="text-center py-4 text-sm text-slate-500 italic">No tasks generated. Please use AI Roadmap feature.</div>
                               )}
                               
@@ -513,28 +558,23 @@ const FitnessGoal = () => {
             <div className="flex flex-col gap-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Journey Analytics</h2>
               
-              {/* ANALYTICS / TRACKING CHART VỚI SVG CHUẨN */}
               {!isEditingGoal && (
                 <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Weight Tracking</h3>
                    
                    {hasLogs ? (
                        <div className="w-full h-48 mt-6 relative pb-6 pl-6">
-                           {/* Trục X và Trục Y (Border) */}
                            <div className="absolute inset-0 border-b-2 border-l-2 border-slate-200 dark:border-slate-700 ml-6 mb-6"></div>
 
-                           {/* Target Line */}
                            {goal?.target_weight && (
                                <div className="absolute w-[calc(100%-24px)] ml-6 border-t border-dashed border-red-400 z-0" style={{top: `${targetY}px`}}>
                                    <span className="absolute -top-4 right-0 text-[10px] text-red-500 font-bold">Target: {goal.target_weight}kg</span>
                                </div>
                            )}
                            
-                           {/* Line Chart SVG sử dụng fixed viewBox để tránh méo ảnh */}
                            <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full overflow-visible z-10 relative">
                                <polyline points={chartPoints} fill="none" stroke="#10b981" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
                                {logs.map((log: any, idx: number) => {
-                                   // Cùng thuật toán lấy ra tọa độ x, y
                                    const targetW = goal?.target_weight || logs[0].weight;
                                    const weights = logs.map((l: any) => l.weight).concat(targetW);
                                    const minW = Math.min(...weights) - 2; 
@@ -544,7 +584,6 @@ const FitnessGoal = () => {
                                    const y = padTop + chartH - ((log.weight - minW) / range) * chartH;
                                    return (
                                        <g key={idx}>
-                                           {/* Circle chuẩn không bị oval */}
                                            <circle cx={x} cy={y} r="6" fill="#10b981" stroke="#fff" strokeWidth="2" className="cursor-pointer hover:r-8 transition-all" />
                                            <text x={x} y={y - 15} fill="currentColor" fontSize="16" fontWeight="bold" textAnchor="middle" className="text-slate-700 dark:text-slate-300">
                                                {log.weight}
@@ -724,12 +763,17 @@ const FitnessGoal = () => {
                         <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">Phase {phaseIndex}</span>
                       </div>
                       <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1 mt-2">
-                        {weekTasks.length > 0 ? weekTasks.map((t, idx) => (
+                        {weekTasks.length > 0 ? weekTasks.map((t, idx) => {
+                           const parts = t.label.split(': ');
+                           const hasDayPrefix = parts.length > 1 && parts[0].toLowerCase().includes('day');
+                           return (
                            <p key={idx} className="flex items-start gap-1.5">
                              <span className="text-primary mt-0.5">•</span> 
-                             <span className="whitespace-normal break-words">{t.label}</span>
+                             <span className="whitespace-normal break-words">
+                               {hasDayPrefix ? <><span className="font-bold">{parts[0]}: </span>{parts.slice(1).join(': ')}</> : t.label}
+                             </span>
                            </p>
-                        )) : (
+                        )}) : (
                            <p className="italic text-slate-400">Waiting for AI generation...</p>
                         )}
                       </div>

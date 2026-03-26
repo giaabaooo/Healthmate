@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from 'react-hot-toast';
 
 const socket = io("http://localhost:8000");
 
@@ -19,13 +20,14 @@ const formatDateTime = (dateString: string) => {
 };
 
 const CommunityFeed = () => {
-    const [activeView, setActiveView] = useState('feed'); // 'feed', 'leaderboard', 'groups', 'group_detail'
+    const [activeView, setActiveView] = useState('feed'); 
     const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
     const [currentGroupData, setCurrentGroupData] = useState<any>(null);
     
     const [activeTab, setActiveTab] = useState('all');
     const [posts, setPosts] = useState<any[]>([]);
-    const [leaderboard, setLeaderboard] = useState<any[]>([]);
+    
+    const [leaderboard, setLeaderboard] = useState<{workout: any[], contribution: any[], challenge: any[]}>({ workout: [], contribution: [], challenge: [] });
     
     const [content, setContent] = useState("");
     const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -35,41 +37,27 @@ const CommunityFeed = () => {
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     const token = localStorage.getItem("token");
 
-    // Lắng nghe sự thay đổi của activeView và currentGroupId để Fetch dữ liệu
     useEffect(() => {
         let url = "http://localhost:8000/api/community/posts";
-        
-        // Cập nhật URL nếu đang xem Post của 1 Group cụ thể
         if (activeView === 'group_detail' && currentGroupId) {
             url += `?groupId=${currentGroupId}`;
-            fetch(`http://localhost:8000/api/community/groups/${currentGroupId}`)
-                .then(res => res.json())
-                .then(data => setCurrentGroupData(data));
+            fetch(`http://localhost:8000/api/community/groups/${currentGroupId}`).then(res => res.json()).then(data => setCurrentGroupData(data));
         } else {
             setCurrentGroupData(null);
         }
 
-        // Fetch danh sách bài viết
-        fetch(url)
-            .then(res => res.json())
-            .then(data => setPosts(Array.isArray(data) ? data : []))
-            .catch(err => console.error("API Error:", err));
-
-        // Fetch Leaderboard LIÊN TỤC để cột Right Leaderboard Preview luôn có data thật
+        fetch(url).then(res => res.json()).then(data => setPosts(Array.isArray(data) ? data : [])).catch(console.error);
+        
         fetch("http://localhost:8000/api/community/leaderboard")
             .then(res => res.json())
             .then(data => setLeaderboard(data))
-            .catch(err => console.error("API Leaderboard Error:", err));
-
+            .catch(console.error);
     }, [activeView, currentGroupId]);
 
-    // Socket.io listeners
     useEffect(() => {
         socket.on('new_post', (newPost) => {
             const isGroupMatch = activeView === 'group_detail' ? newPost.groupId === currentGroupId : !newPost.groupId;
-            if (isGroupMatch) {
-                setPosts(prev => [newPost, ...prev]);
-            }
+            if (isGroupMatch) setPosts(prev => [newPost, ...prev]);
         });
         socket.on('post_updated', (updatedPost) => {
             setPosts(prev => prev.map(p => p._id === updatedPost._id ? updatedPost : p));
@@ -84,24 +72,19 @@ const CommunityFeed = () => {
         const formData = new FormData();
         formData.append("content", content);
         formData.append("tag", activeView === 'group_detail' ? "Group Discussion" : "Update");
-        
-        if (activeView === 'group_detail' && currentGroupId) {
-            formData.append("groupId", currentGroupId);
-        }
-
+        if (activeView === 'group_detail' && currentGroupId) formData.append("groupId", currentGroupId);
         if (locationInfo) formData.append("location", locationInfo);
         if (mediaFile) formData.append("media", mediaFile);
 
         const response = await fetch("http://localhost:8000/api/community/posts", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${token}` },
-            body: formData
+            method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData
         });
 
         if (response.ok) {
             const newPost = await response.json();
             setPosts(prev => [newPost, ...prev]);
             setContent(""); setMediaFile(null); setLocationInfo("");
+            toast.success("Đã đăng bài thành công!");
         }
     };
 
@@ -111,7 +94,7 @@ const CommunityFeed = () => {
 
     const filteredPosts = posts.filter(post => {
         if (activeTab === 'all') return true;
-        if (activeTab === 'ai') return post.isAIPost;
+        if (activeTab === 'ai') return post.isAIPost || post.tag === 'AI Coach';
         if (activeTab === 'saved') return post.savedBy?.includes(currentUser._id);
         return true;
     });
@@ -119,19 +102,20 @@ const CommunityFeed = () => {
     return (
         <div className="flex flex-col min-h-screen bg-[#f6f8f6] dark:bg-[#102216] font-['Inter']">
             <Navbar />
+            <Toaster position="top-right"/>
             <main className="flex-grow max-w-[1280px] mx-auto px-6 py-8 w-full">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     
-                    {/* CỘT TRÁI */}
-                    <div className="hidden lg:flex lg:col-span-3 flex-col gap-6">
-                        <LeftSidebar activeView={activeView} setActiveView={(view: string) => {
-                            setActiveView(view);
-                            if(view !== 'group_detail') setCurrentGroupId(null);
-                        }} user={currentUser} />
-                        <CommunityGroupsPreview setActiveView={setActiveView} setCurrentGroupId={setCurrentGroupId} />
+                    <div className="hidden lg:block lg:col-span-3 sticky top-24">
+                        <div className="flex flex-col gap-6">
+                            <LeftSidebar activeView={activeView} setActiveView={(view: string) => {
+                                setActiveView(view);
+                                if(view !== 'group_detail') setCurrentGroupId(null);
+                            }} user={currentUser} />
+                            <CommunityGroupsPreview setActiveView={setActiveView} setCurrentGroupId={setCurrentGroupId} />
+                        </div>
                     </div>
 
-                    {/* CỘT GIỮA */}
                     <div className="lg:col-span-6 flex flex-col gap-6">
                         
                         {(activeView === 'feed' || activeView === 'group_detail') && (
@@ -155,18 +139,13 @@ const CommunityFeed = () => {
                                         content={content} setContent={setContent} 
                                         mediaFile={mediaFile} setMediaFile={setMediaFile}
                                         locationInfo={locationInfo} setLocationInfo={setLocationInfo}
-                                        handlePost={handlePost} 
-                                        user={currentUser} 
+                                        handlePost={handlePost} user={currentUser} 
                                     />
                                 )}
                                 
                                 {activeView === 'feed' && (
                                     <div className="flex border-b border-slate-200 dark:border-slate-800 gap-8">
-                                        {[
-                                            { id: 'all', label: 'All Posts' },
-                                            { id: 'ai', label: 'AI Coach' },
-                                            { id: 'saved', label: 'Saved' } 
-                                        ].map(tab => (
+                                        {[ { id: 'all', label: 'All Posts' }, { id: 'ai', label: 'AI Coach' }, { id: 'saved', label: 'Saved' } ].map(tab => (
                                             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                                                 className={`pb-3 text-sm font-bold uppercase tracking-tighter transition-colors ${
                                                     activeTab === tab.id ? 'border-b-2 border-primary text-slate-900 dark:text-white' : 'text-slate-500 hover:text-primary'
@@ -181,22 +160,21 @@ const CommunityFeed = () => {
                                         filteredPosts.map(post => (
                                             <PostCard key={post._id} post={post} currentUserId={currentUser._id} token={token} navigate={navigate} onUpdate={handleUpdatePost} />
                                         ))
-                                    ) : (
-                                        <p className="text-center text-slate-500 py-10">Chưa có bài viết nào.</p>
-                                    )}
+                                    ) : <p className="text-center text-slate-500 py-10">Chưa có bài viết nào.</p>}
                                 </div>
                             </>
                         )}
                         
                         {activeView === 'leaderboard' && <LeaderboardView data={leaderboard} />}
                         {activeView === 'groups' && <DiscoverGroups user={currentUser} setActiveView={setActiveView} setCurrentGroupId={setCurrentGroupId} />}
-                        {activeView === 'challenges' && <MyChallenges />}
+                        {activeView === 'challenges' && <ChallengesView user={currentUser} setActiveView={setActiveView} />}
                     </div>
 
-                    {/* CỘT PHẢI */}
-                    <div className="hidden lg:flex lg:col-span-3 flex-col gap-6">
-                        <RightLeaderboardPreview data={leaderboard} setActiveView={setActiveView} />
-                        <TrendingTags />
+                    <div className="hidden lg:block lg:col-span-3 sticky top-24">
+                        <div className="flex flex-col gap-6">
+                            <RightLeaderboardPreview data={leaderboard} setActiveView={setActiveView} />
+                            <TrendingTags />
+                        </div>
                     </div>
                 </div>
             </main>
@@ -205,7 +183,143 @@ const CommunityFeed = () => {
     );
 };
 
-// ─── COMPONENT: DISCOVER GROUPS ──────────────────────────────────────────
+// ─── CHALLENGES VIEW ĐÃ ĐƯỢC THÊM TÙY CHỌN PRIVATE ───
+
+const ChallengesView = ({ user, setActiveView }: any) => {
+    const [challenges, setChallenges] = useState<any[]>([]);
+    const [showCreate, setShowCreate] = useState(false);
+    
+    // Thêm trường isPrivate vào state form
+    const [formData, setFormData] = useState({ title: '', target: '', metric: 'KM', isPrivate: false });
+    const token = localStorage.getItem("token");
+
+    const fetchChallenges = () => {
+        // Cần gửi header Authorization để backend biết ai đang xem nhằm lấy các Private Challenge của riêng họ
+        fetch("http://localhost:8000/api/community/challenges", {
+            headers: token ? { "Authorization": `Bearer ${token}` } : {}
+        })
+            .then(res => res.json()).then(data => setChallenges(data)).catch(console.error);
+    };
+
+    useEffect(() => { fetchChallenges(); }, []);
+
+    const handleCreate = async () => {
+        if (!formData.title || !formData.target || !token) return;
+        const res = await fetch("http://localhost:8000/api/community/challenges", {
+            method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({ 
+                title: formData.title, 
+                target: Number(formData.target), 
+                metric: formData.metric,
+                isPrivate: formData.isPrivate // Gửi kèm thuộc tính Private
+            })
+        });
+        if (res.ok) {
+            toast.success(formData.isPrivate ? "Tạo thử thách riêng tư thành công!" : "Tạo thử thách thành công! Đã chia sẻ lên Feed.");
+            setShowCreate(false); 
+            setFormData({ title: '', target: '', metric: 'KM', isPrivate: false });
+            fetchChallenges();
+        }
+    };
+
+    const handleJoin = async (id: string) => {
+        if (!token) return;
+        const res = await fetch(`http://localhost:8000/api/community/challenges/${id}/join`, {
+            method: "PUT", headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) { toast.success("Đã tham gia thử thách!"); fetchChallenges(); }
+    };
+
+    return (
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">stars</span> Thử thách cộng đồng
+                </h2>
+                <button onClick={() => setShowCreate(!showCreate)} className="bg-primary text-slate-900 px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95 transition-all">
+                    + Tạo Thử Thách
+                </button>
+            </div>
+
+            {showCreate && (
+                <div className="mb-8 p-5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 animate-fade-in">
+                    <h3 className="font-bold text-sm mb-4 dark:text-white">Khởi tạo Thử Thách Mới</h3>
+                    <div className="space-y-3 mb-4">
+                        <input type="text" placeholder="Tên thử thách (VD: Chạy bộ xuyên Việt)" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-primary" />
+                        <div className="flex gap-3">
+                            <input type="number" placeholder="Mục tiêu (Số)" value={formData.target} onChange={e => setFormData({...formData, target: e.target.value})} className="w-2/3 px-3 py-2 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-primary" />
+                            <select value={formData.metric} onChange={e => setFormData({...formData, metric: e.target.value})} className="w-1/3 px-3 py-2 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-sm outline-none focus:border-primary">
+                                <option value="KM">KM</option>
+                                <option value="Lần">Lần</option>
+                                <option value="Giờ">Giờ</option>
+                                <option value="Ngày">Ngày</option>
+                            </select>
+                        </div>
+                        {/* CHECKBOX PRIVATE */}
+                        <div className="flex items-center gap-2 pt-2">
+                            <input 
+                                type="checkbox" 
+                                id="isPrivate" 
+                                checked={formData.isPrivate} 
+                                onChange={e => setFormData({...formData, isPrivate: e.target.checked})} 
+                                className="rounded border-slate-300 text-primary focus:ring-primary size-4" 
+                            />
+                            <label htmlFor="isPrivate" className="text-sm dark:text-slate-300 cursor-pointer select-none font-medium">
+                                Thử thách riêng tư (Không đăng lên Bảng tin)
+                            </label>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                        <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm font-bold text-slate-500">Hủy</button>
+                        <button onClick={handleCreate} className="bg-primary text-black px-4 py-2 rounded-lg text-sm font-bold">Xác nhận tạo</button>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-6">
+                {challenges.map(c => {
+                    const isJoined = c.participants?.some((p:any) => p._id === user._id);
+                    return (
+                        <div key={c._id} className="bg-slate-900 p-6 rounded-2xl text-white relative overflow-hidden shadow-lg border border-slate-800">
+                            <div className="absolute top-0 right-0 size-32 bg-primary/20 blur-3xl rounded-full -mr-10 -mt-10 pointer-events-none"></div>
+                            
+                            {/* NẾU LÀ PRIVATE THÌ HIỂN THỊ ICON KHÓA */}
+                            {c.isPrivate && (
+                                <div className="absolute top-4 right-4 bg-white/10 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[12px]">lock</span> Private
+                                </div>
+                            )}
+
+                            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
+                                <div>
+                                    <p className="text-primary font-black text-[10px] uppercase mb-1.5 tracking-[0.2em]">Cộng đồng</p>
+                                    <h3 className="text-2xl font-black italic mb-2">{c.title}</h3>
+                                    <p className="text-xs text-slate-400">Được tạo bởi: <span className="font-bold text-white">{c.creator?.profile?.full_name}</span></p>
+                                </div>
+                                <div className="flex flex-col items-end gap-3 shrink-0">
+                                    <div className="text-right">
+                                        <p className="text-3xl font-black text-primary leading-none">{c.target} <span className="text-base text-white">{c.metric}</span></p>
+                                        <p className="text-[10px] text-slate-400 uppercase mt-1">{c.participants?.length || 0} Người tham gia</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => !isJoined && handleJoin(c._id)} 
+                                        disabled={isJoined}
+                                        className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wider transition-all ${isJoined ? 'bg-white/10 text-white cursor-not-allowed border border-white/20' : 'bg-primary text-black hover:brightness-110 shadow-[0_0_15px_rgba(18,236,91,0.3)]'}`}
+                                    >
+                                        {isJoined ? 'Đã tham gia' : 'Tham gia ngay'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })}
+                {challenges.length === 0 && <p className="text-center text-slate-500 py-6">Chưa có thử thách nào.</p>}
+            </div>
+        </div>
+    );
+};
+
+// ─── CÁC COMPONENT CÒN LẠI (GIỮ NGUYÊN TỪ PHIÊN BẢN TRƯỚC) ───
 
 const DiscoverGroups = ({ user, setActiveView, setCurrentGroupId }: any) => {
     const [groups, setGroups] = useState<any[]>([]);
@@ -303,9 +417,6 @@ const DiscoverGroups = ({ user, setActiveView, setCurrentGroupId }: any) => {
     );
 };
 
-
-// ─── COMPONENT: COMMUNITY GROUPS PREVIEW (Cột Trái - DỮ LIỆU THẬT) ─────────
-
 const CommunityGroupsPreview = ({ setActiveView, setCurrentGroupId }: any) => {
     const [previewGroups, setPreviewGroups] = useState<any[]>([]);
 
@@ -313,7 +424,7 @@ const CommunityGroupsPreview = ({ setActiveView, setCurrentGroupId }: any) => {
         fetch("http://localhost:8000/api/community/groups")
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) setPreviewGroups(data.slice(0, 3)); // Lấy top 3 nhóm
+                if (Array.isArray(data)) setPreviewGroups(data.slice(0, 3));
             })
             .catch(err => console.error(err));
     }, []);
@@ -353,13 +464,10 @@ const CommunityGroupsPreview = ({ setActiveView, setCurrentGroupId }: any) => {
     );
 };
 
-
-// ─── CÁC COMPONENT CÒN LẠI (Sửa RightLeaderboardPreview) ──────────────────
-
 const LeftSidebar = ({ activeView, setActiveView, user }: any) => { 
     const avatar = getAvatar(user.profile?.full_name, user.profile?.picture);
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 sticky top-24">
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-4 mb-6">
                 <img src={avatar} className="size-12 rounded-full object-cover border-2 border-primary p-0.5" alt="Profile" />
                 <div className="flex flex-col">
@@ -473,6 +581,7 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate }: any) => {
     
     const isLiked = post.likes?.includes(currentUserId);
     const isSaved = post.savedBy?.includes(currentUserId);
+    const isAI = post.isAIPost || post.tag === 'AI Coach';
 
     const toggleAction = async (action: 'like' | 'save') => {
         if (!token) return navigate("/login");
@@ -505,11 +614,17 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate }: any) => {
         } catch (error) { console.error("Lỗi khi comment:", error); }
     };
 
+    const handleShare = () => {
+        const url = `${window.location.origin}/community-feed?postId=${post._id}`;
+        navigator.clipboard.writeText(url);
+        toast.success("Đã copy link bài viết vào Clipboard!");
+    };
+
     const isVideo = post.mediaType?.includes("video");
 
     return (
         <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 transition-hover hover:shadow-md relative">
-            {post.isAIPost && (
+            {isAI && (
                 <div className="absolute top-4 right-4 bg-primary/20 text-primary text-[10px] font-black px-2 py-1 rounded-full flex items-center gap-1">
                     <span className="material-symbols-outlined text-[12px]">auto_awesome</span> AI COACH
                 </div>
@@ -528,7 +643,7 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate }: any) => {
                         </div>
                     </div>
                 </div>
-                {!post.isAIPost && <button className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">more_horiz</span></button>}
+                {!isAI && <button className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">more_horiz</span></button>}
             </div>
             
             <div className="px-4 pb-3">
@@ -554,7 +669,7 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate }: any) => {
                             <span className="material-symbols-outlined text-[20px]">{isLiked ? 'favorite' : 'favorite_border'}</span>
                             <span className="text-xs font-bold">{post.likes?.length || 0}</span>
                         </button>
-                        {!post.isAIPost && (
+                        {!isAI && (
                             <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors">
                                 <span className="material-symbols-outlined text-[20px]">chat_bubble_outline</span>
                                 <span className="text-xs font-medium">{post.comments?.length || 0}</span>
@@ -564,11 +679,11 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate }: any) => {
                             <span className="material-symbols-outlined text-[20px]">{isSaved ? 'bookmark' : 'bookmark_border'}</span>
                         </button>
                     </div>
-                    <button className="text-slate-500 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[20px]">share</span></button>
+                    <button onClick={handleShare} className="text-slate-500 hover:text-primary transition-colors"><span className="material-symbols-outlined text-[20px]">share</span></button>
                 </div>
             </div>
 
-            {(!post.isAIPost && showComments) && (
+            {(!isAI && showComments) && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
                     <div className="space-y-4 mb-4 max-h-60 overflow-y-auto pr-2">
                         {post.comments?.map((c: any, i: number) => (
@@ -599,52 +714,87 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate }: any) => {
     );
 };
 
-const RightLeaderboardPreview = ({ data, setActiveView }: any) => (
-    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
-            <h3 className="text-slate-900 dark:text-white font-bold text-sm">Leaderboard</h3>
-            <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded">Global</span>
-        </div>
-        <div className="p-2 space-y-1">
-            {data.slice(0, 3).map((user: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                    <span className="text-xs font-black text-slate-400 w-4 text-center">{i + 1}</span>
-                    <img src={getAvatar(user.name, user.picture)} className="size-8 rounded-full border border-slate-100 object-cover" />
-                    <div className="flex-1 overflow-hidden">
-                        <p className="text-xs font-bold dark:text-white truncate">{user.name}</p>
-                        <p className="text-[10px] text-slate-500">{user.totalExercises} Exs</p>
-                    </div>
-                    {i === 0 && <span className="material-symbols-outlined text-amber-400 text-[18px]">workspace_premium</span>}
-                </div>
-            ))}
-            {data.length === 0 && <p className="text-xs text-slate-500 text-center py-4">Chưa có dữ liệu xếp hạng</p>}
-        </div>
-        <button onClick={() => setActiveView('leaderboard')} className="w-full py-3 text-primary text-[11px] font-bold border-t border-slate-50 dark:border-slate-800 hover:bg-slate-50 transition-colors uppercase">Full Ranking</button>
-    </div>
-);
+const RightLeaderboardPreview = ({ data, setActiveView }: any) => {
+    const [type, setType] = useState<'workout' | 'contribution' | 'challenge'>('workout');
+    const list = data[type] || [];
+    
+    return (
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-slate-900 dark:text-white font-bold text-sm">Monthly Rank</h3>
+            </div>
+            <div className="flex bg-slate-50 dark:bg-slate-800/50 p-1 m-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                <button onClick={()=>setType('workout')} className={`flex-1 py-1 rounded text-[10px] font-bold transition-all ${type === 'workout' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500'}`}>Workouts</button>
+                <button onClick={()=>setType('contribution')} className={`flex-1 py-1 rounded text-[10px] font-bold transition-all ${type === 'contribution' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500'}`}>Posts</button>
+                <button onClick={()=>setType('challenge')} className={`flex-1 py-1 rounded text-[10px] font-bold transition-all ${type === 'challenge' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500'}`}>Challenges</button>
+            </div>
 
-const LeaderboardView = ({ data }: any) => (
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-        <h2 className="text-xl font-bold mb-6 dark:text-white flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">emoji_events</span> Ranking
-        </h2>
-        <div className="space-y-3">
-            {data.length > 0 ? data.map((item: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-primary/20 transition-all">
-                    <div className="flex items-center gap-4">
-                        <span className={`text-lg font-black w-6 ${index < 3 ? 'text-primary' : 'text-slate-300'}`}>{index + 1}</span>
-                        <img src={getAvatar(item.name, item.picture)} className="size-10 rounded-full border-2 border-white object-cover" alt="User" />
-                        <p className="font-bold text-sm dark:text-white">{item.name}</p>
+            <div className="p-2 space-y-1">
+                {list.slice(0, 3).map((user: any, i: number) => (
+                    <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors">
+                        <span className="text-xs font-black text-slate-400 w-4 text-center">{i + 1}</span>
+                        <img src={getAvatar(user.name, user.picture)} className="size-8 rounded-full border border-slate-100 object-cover" />
+                        <div className="flex-1 overflow-hidden">
+                            <p className="text-xs font-bold dark:text-white truncate">{user.name}</p>
+                            <p className="text-[10px] text-slate-500">{user.score} {type === 'workout' ? 'Exs' : type === 'contribution' ? 'Posts' : 'Joined'}</p>
+                        </div>
+                        {i === 0 && <span className="material-symbols-outlined text-amber-400 text-[18px]">workspace_premium</span>}
                     </div>
-                    <div className="text-right">
-                        <p className="text-primary font-black leading-none">{item.totalExercises}</p>
-                        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-tighter">Exercises</p>
-                    </div>
-                </div>
-            )) : <p className="text-center text-slate-500 py-10 font-medium">No active users found.</p>}
+                ))}
+                {list.length === 0 && <p className="text-xs text-slate-500 text-center py-4">Chưa có dữ liệu</p>}
+            </div>
+            <button onClick={() => setActiveView('leaderboard')} className="w-full py-3 text-primary text-[11px] font-bold border-t border-slate-50 dark:border-slate-800 hover:bg-slate-50 transition-colors uppercase">Full Ranking</button>
         </div>
-    </div>
-);
+    );
+};
+
+const LeaderboardView = ({ data }: any) => {
+    const [type, setType] = useState<'workout' | 'contribution' | 'challenge'>('workout');
+    const list = data[type] || [];
+    
+    return (
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+            <h2 className="text-xl font-bold mb-2 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">emoji_events</span> Monthly Ranking
+            </h2>
+            <p className="text-xs text-slate-500 mb-6 italic">Điểm số sẽ tự động thiết lập lại (reset) vào ngày mùng 1 hàng tháng.</p>
+            
+            <div className="flex border-b border-slate-200 dark:border-slate-800 gap-8 mb-6 overflow-x-auto hide-scrollbar">
+                <button onClick={() => setType('workout')}
+                    className={`pb-3 text-sm font-bold uppercase tracking-tighter whitespace-nowrap transition-colors ${
+                        type === 'workout' ? 'border-b-2 border-primary text-slate-900 dark:text-white' : 'text-slate-500 hover:text-primary'
+                    }`}>Chăm chỉ (Workouts)
+                </button>
+                <button onClick={() => setType('contribution')}
+                    className={`pb-3 text-sm font-bold uppercase tracking-tighter whitespace-nowrap transition-colors ${
+                        type === 'contribution' ? 'border-b-2 border-primary text-slate-900 dark:text-white' : 'text-slate-500 hover:text-primary'
+                    }`}>Đóng góp (Posts)
+                </button>
+                <button onClick={() => setType('challenge')}
+                    className={`pb-3 text-sm font-bold uppercase tracking-tighter whitespace-nowrap transition-colors ${
+                        type === 'challenge' ? 'border-b-2 border-primary text-slate-900 dark:text-white' : 'text-slate-500 hover:text-primary'
+                    }`}>Thử thách (Challenges)
+                </button>
+            </div>
+
+            <div className="space-y-3">
+                {list.length > 0 ? list.map((item: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-primary/20 transition-all">
+                        <div className="flex items-center gap-4">
+                            <span className={`text-lg font-black w-6 ${index < 3 ? 'text-primary' : 'text-slate-300'}`}>{index + 1}</span>
+                            <img src={getAvatar(item.name, item.picture)} className="size-10 rounded-full border-2 border-white object-cover" alt="User" />
+                            <p className="font-bold text-sm dark:text-white">{item.name}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-primary font-black leading-none">{item.score}</p>
+                            <p className="text-[9px] text-slate-400 uppercase font-bold tracking-tighter">{type === 'workout' ? 'Exercises' : type === 'contribution' ? 'Posts' : 'Joined'}</p>
+                        </div>
+                    </div>
+                )) : <p className="text-center text-slate-500 py-10 font-medium">Chưa có ai hoạt động trong tháng này.</p>}
+            </div>
+        </div>
+    );
+};
 
 const TrendingTags = () => (
     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
@@ -653,23 +803,6 @@ const TrendingTags = () => (
             {['#Workout', '#Healthmate', '#Running', '#Yoga', '#Gym'].map(tag => (
                 <span key={tag} className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-bold text-slate-500 hover:text-primary transition-colors cursor-pointer">{tag}</span>
             ))}
-        </div>
-    </div>
-);
-
-const MyChallenges = () => (
-    <div className="bg-slate-900 p-8 rounded-3xl text-white relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 size-32 bg-primary/20 blur-3xl rounded-full -mr-10 -mt-10"></div>
-        <div className="relative z-10">
-            <p className="text-primary font-black text-xs uppercase mb-2 tracking-[0.2em]">Active Challenge</p>
-            <h3 className="text-3xl font-black italic mb-6">50KM MARCH RUN</h3>
-            <div className="w-full bg-white/10 h-3 rounded-full mb-3">
-                <div className="bg-primary h-full w-2/3 rounded-full shadow-[0_0_15px_rgba(18,236,91,0.4)]" />
-            </div>
-            <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase">
-                <p>32.5 / 50 KM completed</p>
-                <p className="text-primary">65%</p>
-            </div>
         </div>
     </div>
 );
