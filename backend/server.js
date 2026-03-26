@@ -26,23 +26,14 @@ const subscriptionRoutes = require("./routes/subscriptionRoutes");
 // Kết nối database
 connectDB();
 
-// 1. KHAI BÁO CÁC DOMAIN ĐƯỢC PHÉP TRUY CẬP
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-  "https://healthmate-wdp.vercel.app" // <-- Domain Vercel của bạn
-];
-
 const app = express();
 const server = http.createServer(app);
 
-// 2. CẤU HÌNH CORS CHO SOCKET.IO
+// 1. CẤU HÌNH CORS CHO SOCKET.IO (Mở cho tất cả origin)
 const io = new Server(server, { 
   cors: { 
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true // BẮT BUỘC PHẢI CÓ
+    origin: "*", // Không bị giới hạn domain nữa
+    methods: ["GET", "POST", "PUT", "DELETE"]
   } 
 });
 
@@ -51,11 +42,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// 3. CẤU HÌNH CORS CHO EXPRESS API
+// 2. CẤU HÌNH CORS CHO EXPRESS API (Mở cho tất cả origin)
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true, // BẮT BUỘC PHẢI CÓ
+    origin: "*", // Bất kỳ domain frontend nào cũng gọi được API
+    methods: ["GET", "POST", "PUT", "DELETE"]
   })
 );
 
@@ -88,7 +79,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server & Socket đang chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Server & Socket đang chạy tại cổng ${PORT}`);
 });
 
 // Lắng nghe kết nối socket
