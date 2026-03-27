@@ -10,8 +10,9 @@ const recalculateTotalCalories = (items) => {
   return items.reduce((total, item) => total + (item.calories || 0), 0);
 };
 
-// 🔴 HÀM KIỂM TRA NGÀY QUÁ KHỨ
+// Hàm kiểm tra ngày quá khứ để khóa chức năng
 const checkIsPastDate = (dateStr) => {
+    if (!dateStr) return false;
     const today = new Date();
     const tzOffset = today.getTimezoneOffset() * 60000;
     const todayStr = new Date(today.getTime() - tzOffset).toISOString().split('T')[0];
@@ -32,7 +33,7 @@ const resolveUserId = (req) => {
 
 const getMealPlanByDate = async (req, res) => {
   try {
-    const { date } = req.params;
+    const date = req.params.date || req.query.date;
     const userId = resolveUserId(req);
     let mealPlan = await MealPlan.findOne({ user_id: userId, date });
     if (!mealPlan) mealPlan = { user_id: userId, date, items: [], total_calories: 0 };
@@ -44,9 +45,10 @@ const getMealPlanByDate = async (req, res) => {
 
 const addFoodToMealPlan = async (req, res) => {
   try {
-    const { date, food_id, quantity, slot } = req.body;
-    
-    // 🔴 CHẶN TÁC ĐỘNG VÀO QUÁ KHỨ
+    // Tương thích cả params và body
+    const date = req.params.date || req.body.date;
+    const { food_id, quantity, slot } = req.body;
+
     if (checkIsPastDate(date)) return res.status(400).json({ message: "Không thể thêm món ăn vào ngày trong quá khứ." });
 
     const userId = resolveUserId(req);
@@ -67,11 +69,41 @@ const addFoodToMealPlan = async (req, res) => {
   }
 };
 
+// 🔴 ĐÃ BỔ SUNG LẠI HÀM UPDATE NÀY ĐỂ FIX CRASH LỖI ROUTE.PUT 
+const updateMealItem = async (req, res) => {
+  try {
+    const date = req.params.date || req.body.date;
+    const item_id = req.params.id || req.params.itemId || req.body.item_id;
+    const { quantity } = req.body;
+
+    if (checkIsPastDate(date)) return res.status(400).json({ message: "Không thể sửa món ăn trong quá khứ." });
+    if (!quantity || quantity <= 0) return res.status(400).json({ message: "Số lượng không hợp lệ." });
+
+    const userId = resolveUserId(req);
+    let mealPlan = await MealPlan.findOne({ user_id: userId, date });
+    if (!mealPlan) return res.status(404).json({ message: "Không tìm thấy thực đơn" });
+
+    const itemIndex = mealPlan.items.findIndex(i => i._id.toString() === item_id);
+    if (itemIndex === -1) return res.status(404).json({ message: "Không tìm thấy món ăn" });
+
+    // Cập nhật số lượng và tính lại Calo
+    const calPerGram = mealPlan.items[itemIndex].calories / mealPlan.items[itemIndex].quantity;
+    mealPlan.items[itemIndex].quantity = quantity;
+    mealPlan.items[itemIndex].calories = Math.round(calPerGram * quantity);
+
+    mealPlan.total_calories = recalculateTotalCalories(mealPlan.items);
+    await mealPlan.save();
+    res.json(mealPlan);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: "Lỗi khi cập nhật món ăn", error: error.message });
+  }
+};
+
 const removeFoodFromMealPlan = async (req, res) => {
   try {
-    const { date, item_id } = req.body;
+    const date = req.params.date || req.body.date;
+    const item_id = req.params.id || req.params.itemId || req.body.item_id;
 
-    // 🔴 CHẶN TÁC ĐỘNG VÀO QUÁ KHỨ
     if (checkIsPastDate(date)) return res.status(400).json({ message: "Không thể xóa món ăn trong quá khứ." });
 
     const userId = resolveUserId(req);
@@ -95,21 +127,17 @@ const checkIsPro = (user) => {
 const generateAIPlan = async (req, res) => {
     try {
         const { date } = req.body;
-        
-        // 🔴 CHẶN TÁC ĐỘNG VÀO QUÁ KHỨ
         if (checkIsPastDate(date)) return res.status(400).json({ message: "Không thể nhờ AI thiết kế cho quá khứ." });
 
         const user = await User.findById(req.user.id);
-        if (!checkIsPro(user)) return res.status(403).json({ message: "Tính năng này chỉ dành cho gói Pro. Vui lòng nâng cấp." });
+        if (!checkIsPro(user)) return res.status(403).json({ message: "Tính năng này chỉ dành cho gói Pro." });
 
         const foods = await Food.find().limit(50);
         if (foods.length === 0) return res.status(400).json({ message: "Thư viện món ăn rỗng." });
 
-        const prompt = `
-        Tạo thực đơn 1 ngày (khoảng 2000 kcal). Chọn món ăn TỪ DANH SÁCH SAU (bắt buộc dùng _id và tên chính xác):
+        const prompt = `Tạo thực đơn 1 ngày (khoảng 2000 kcal). Chọn món ăn TỪ DANH SÁCH SAU (bắt buộc dùng _id và tên chính xác):
         ${JSON.stringify(foods.map(f => ({_id: f._id, name: f.name, cal: f.calories})))}
-        Trả về ĐÚNG định dạng JSON array: [{"_id":"...","name":"...","calories":...,"category":"...","quantity":100}].
-        `;
+        Trả về ĐÚNG định dạng JSON array: [{"_id":"...","name":"...","calories":...,"category":"...","quantity":100}].`;
 
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const resultAI = await model.generateContent(prompt);
@@ -119,26 +147,35 @@ const generateAIPlan = async (req, res) => {
         const suggestions = JSON.parse(text);
         res.json({ message: "AI đã tạo xong", suggestions });
     } catch (error) {
-        res.status(500).json({ message: "Lỗi tạo AI menu", error: error.message }); 
+        res.status(500).json({ message: "Lỗi tạo AI menu", error: error.message });
     }
 };
 
 const analyzeCaloriesLimit = async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!checkIsPro(user)) return res.json({ feedback: "" }); 
+        if (!checkIsPro(user)) return res.json({ feedback: "" });
 
         const { totalCalories, targetCalories, goalType, currentWeight } = req.body;
         const diff = totalCalories - targetCalories;
-        if (diff < 0) return res.json({ feedback: "" }); 
+        if (diff < 0) return res.json({ feedback: "" });
 
-        const prompt = `Bạn là HLV cá nhân. Hôm nay học viên đã nạp ${totalCalories} kcal, VƯỢT ${targetCalories} kcal (Dư ${diff} kcal). Khuyên 1 câu ngắn gọn tiếng Việt.`;
+        const prompt = `Bạn là HLV cá nhân. Học viên mục tiêu: ${goalType}. Nặng: ${currentWeight}kg. Đã nạp ${totalCalories} kcal, VƯỢT MỨC ${targetCalories} kcal (Dư ${diff} kcal). Khuyên ngắn gọn 1 câu tiếng Việt.`;
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const resultAI = await model.generateContent(prompt);
         res.json({ feedback: resultAI.response.text() });
     } catch (error) { res.status(500).json({ message: "Lỗi AI", error: error.message }); }
 };
 
+// Xuất khẩu các function (Bao gồm cả các Alias để chống lỗi tên hàm)
 module.exports = {
-  getMealPlanByDate, addFoodToMealPlan, removeFoodFromMealPlan, generateAIPlan, analyzeCaloriesLimit
+  getMealPlanByDate,
+  addFoodToMealPlan,
+  removeFoodFromMealPlan,
+  generateAIPlan,
+  analyzeCaloriesLimit,
+  updateMealItem, 
+  updateFoodQuantity: updateMealItem, // Xuất nhiều alias phòng trường hợp route gọi tên khác
+  updateItemQuantity: updateMealItem,
+  updateQuantity: updateMealItem
 };
