@@ -24,10 +24,22 @@ const PostManagement = () => {
   useEffect(() => { fetchPosts(); }, []);
 
   const handleDelete = async (id: string) => {
-    if(window.confirm('Xóa vĩnh viễn bài viết này?')) {
-        // Gọi API xóa thực tế ở đây
-        setPosts(prev => prev.filter(p => p._id !== id));
-        toast.success("Đã xóa bài viết.");
+    if(window.confirm('Xóa vĩnh viễn bài viết này khỏi cộng đồng?')) {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/admin/posts/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setPosts(prev => prev.filter(p => p._id !== id));
+                toast.success("Đã xóa bài viết.");
+            } else {
+                toast.error("Lỗi khi xóa bài viết.");
+            }
+        } catch (error) {
+            toast.error("Lỗi kết nối.");
+        }
     }
   };
 

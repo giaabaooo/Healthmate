@@ -10,6 +10,9 @@ const {
   getSystemLogs,
   createBackup,
   systemRecovery,
+  deletePost,
+  deleteGroup,
+  deleteChallenge,
   getSystemPerformance
 } = require('../controllers/adminController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
@@ -23,6 +26,10 @@ router.get('/dashboard', getDashboardStats);
 
 // Chart data
 router.get('/chart-data', getChartData);
+
+router.delete('/posts/:id', protect, deletePost);
+router.delete('/groups/:id', protect, deleteGroup);
+router.delete('/challenges/:id', protect, deleteChallenge);
 
 // User management CRUD
 router.get('/users', getUsers);

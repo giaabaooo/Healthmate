@@ -201,10 +201,7 @@ const AdminDashboardPage = () => {
                                             <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">{post.content}</p>
                                             
                                             {/* Admin Actions */}
-                                            <div className="flex gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50">
-                                                <button className="text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">delete</span> Xóa bài</button>
-                                                <button className="text-[11px] font-bold text-amber-500 hover:text-amber-700 transition-colors flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">warning</span> Cảnh cáo</button>
-                                            </div>
+                                            
                                         </div>
                                     </div>
                                 ))

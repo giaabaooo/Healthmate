@@ -6,7 +6,6 @@ const Group = require('../models/Group');
 const { protect } = require('../middleware/authMiddleware');
 const cron = require('node-cron');
 
-// --- CẤU HÌNH CLOUDINARY & MULTER ---
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
@@ -21,19 +20,15 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'skillmatch_videos', 
-    // FIX LỖI Ở ĐÂY: Sửa allowedFormats thành allowed_formats
     allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'mp4', 'webm', 'mov'],
     resource_type: 'auto' 
   }
 });
-
 const upload = multer({ storage });
 
-// --- KHỞI TẠO MODEL CHALLENGE (Hỗ trợ isPrivate) ---
 let Challenge;
-try {
-  Challenge = mongoose.model('Challenge');
-} catch (error) {
+try { Challenge = mongoose.model('Challenge'); } 
+catch (error) {
   const challengeSchema = new mongoose.Schema({
     title: { type: String, required: true },
     target: { type: Number, required: true },
@@ -46,7 +41,6 @@ try {
   Challenge = mongoose.model('Challenge', challengeSchema);
 }
 
-// --- AI AUTO POST ---
 cron.schedule('0 8,20 * * *', async () => {
   try {
     const aiUser = await User.findOne({ 'profile.full_name': 'HealthMate AI Coach' }); 
@@ -65,7 +59,6 @@ cron.schedule('0 8,20 * * *', async () => {
   } catch (err) { console.error("AI Post Error:", err); }
 });
 
-// 1. Lấy Feed 
 router.get('/posts', async (req, res) => {
   try {
     const { groupId } = req.query;
@@ -78,7 +71,6 @@ router.get('/posts', async (req, res) => {
       .populate('comments.user', 'profile.full_name profile.picture')
       .sort({ createdAt: -1 });
 
-    // Tạo AI lần đầu nếu chưa có
     if (!groupId) {
         const hasAIPost = posts.some(p => p.isAIPost || p.tag === 'AI Coach');
         if (!hasAIPost) {
@@ -106,55 +98,44 @@ router.get('/posts', async (req, res) => {
   } catch (err) { res.status(500).json(err); }
 });
 
-// 2. Lấy Leaderboard (RESET THEO THÁNG)
-router.get('/leaderboard', async (req, res) => {
-  try {
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+// API CẬP NHẬT BÀI VIẾT
+router.put('/posts/:id', protect, async (req, res) => {
+    try {
+        const { content } = req.body;
+        if (!content || content.trim() === '') return res.status(400).json({ message: "Nội dung bài viết không được để trống." });
 
-    const users = await User.find({}, 'profile.full_name profile.picture daily_routine');
-    
-    const workoutRank = users.map(user => {
-        const monthlyRoutines = (user.daily_routine || []).filter(r => new Date(r.date) >= startOfMonth);
-        return {
-            _id: user._id,
-            name: user.profile?.full_name || 'Unknown',
-            picture: user.profile?.picture,
-            score: monthlyRoutines.reduce((acc, curr) => acc + (curr.exercises?.length || 0), 0)
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ message: "Không tìm thấy bài viết." });
+
+        if (post.user.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: "Bạn không có quyền sửa bài viết này." });
         }
-    }).filter(user => user.score > 0 && user.name !== 'HealthMate AI Coach').sort((a, b) => b.score - a.score).slice(0, 10);
 
-    const postCounts = await Post.aggregate([
-        { $match: { isAIPost: { $ne: true }, createdAt: { $gte: startOfMonth } } },
-        { $group: { _id: '$user', count: { $sum: 1 } } }
-    ]);
+        post.content = content;
+        await post.save();
 
-    const contributionRank = postCounts.map(pc => {
-        const u = users.find(user => user._id.toString() === pc._id?.toString());
-        if(!u) return null;
-        return { _id: u._id, name: u.profile?.full_name, picture: u.profile?.picture, score: pc.count };
-    }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 10);
-
-    const monthlyChallenges = await Challenge.find({ createdAt: { $gte: startOfMonth } });
-    const challengeCounts = {};
-    monthlyChallenges.forEach(c => {
-        c.participants.forEach(pId => {
-            challengeCounts[pId.toString()] = (challengeCounts[pId.toString()] || 0) + 1;
-        });
-    });
-
-    const challengeRank = Object.entries(challengeCounts).map(([userId, count]) => {
-        const u = users.find(user => user._id.toString() === userId);
-        if(!u) return null;
-        return { _id: u._id, name: u.profile?.full_name, picture: u.profile?.picture, score: count };
-    }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 10);
-
-    res.json({ workout: workoutRank, contribution: contributionRank, challenge: challengeRank });
-  } catch (err) { res.status(500).json(err); }
+        const updatedPost = await Post.findById(req.params.id).populate('user comments.user', 'profile.full_name profile.picture');
+        if (global.io) global.io.emit('post_updated', updatedPost);
+        res.json(updatedPost);
+    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 3. Post Actions
+// API XÓA BÀI VIẾT
+router.delete('/posts/:id', protect, async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({ message: "Không tìm thấy bài viết." });
+
+        if (post.user.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: "Bạn không có quyền xóa bài viết này." });
+        }
+
+        await Post.findByIdAndDelete(req.params.id);
+        if (global.io) global.io.emit('post_deleted', req.params.id);
+        res.json({ message: "Đã xóa bài viết thành công." });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 router.put('/posts/:id/like', protect, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -171,6 +152,8 @@ router.put('/posts/:id/like', protect, async (req, res) => {
 
 router.post('/posts/:id/comment', protect, async (req, res) => {
   try {
+    if (!req.body.text || req.body.text.trim() === '') return res.status(400).json({ message: "Bình luận không được để trống." });
+    
     const post = await Post.findById(req.params.id);
     post.comments.push({ user: req.user.id, text: req.body.text, createdAt: new Date() });
     await post.save();
@@ -183,6 +166,10 @@ router.post('/posts/:id/comment', protect, async (req, res) => {
 
 router.post('/posts', protect, upload.single('media'), async (req, res) => {
   try {
+    if (!req.file && (!req.body.content || req.body.content.trim() === '')) {
+        return res.status(400).json({ message: "Bài viết phải có hình ảnh/video hoặc nội dung văn bản." });
+    }
+
     const newPost = new Post({
       content: req.body.content || '',
       user: req.user.id,
@@ -216,80 +203,88 @@ router.put('/posts/:id/save', protect, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 4. Groups
-router.get('/groups', async (req, res) => {
+router.get('/leaderboard', async (req, res) => {
   try {
-    const groups = await Group.find().populate('admin members', 'profile.full_name profile.picture');
-    res.json(groups);
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+    const users = await User.find({}, 'profile.full_name profile.picture daily_routine');
+    const workoutRank = users.map(user => {
+        const monthlyRoutines = (user.daily_routine || []).filter(r => new Date(r.date) >= startOfMonth);
+        return { _id: user._id, name: user.profile?.full_name || 'Unknown', picture: user.profile?.picture, score: monthlyRoutines.reduce((acc, curr) => acc + (curr.exercises?.length || 0), 0) }
+    }).filter(user => user.score > 0 && user.name !== 'HealthMate AI Coach').sort((a, b) => b.score - a.score).slice(0, 10);
+    const postCounts = await Post.aggregate([ { $match: { isAIPost: { $ne: true }, createdAt: { $gte: startOfMonth } } }, { $group: { _id: '$user', count: { $sum: 1 } } } ]);
+    const contributionRank = postCounts.map(pc => {
+        const u = users.find(user => user._id.toString() === pc._id?.toString());
+        if(!u) return null;
+        return { _id: u._id, name: u.profile?.full_name, picture: u.profile?.picture, score: pc.count };
+    }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 10);
+    const monthlyChallenges = await Challenge.find({ createdAt: { $gte: startOfMonth } });
+    const challengeCounts = {};
+    monthlyChallenges.forEach(c => { c.participants.forEach(pId => { challengeCounts[pId.toString()] = (challengeCounts[pId.toString()] || 0) + 1; }); });
+    const challengeRank = Object.entries(challengeCounts).map(([userId, count]) => {
+        const u = users.find(user => user._id.toString() === userId);
+        if(!u) return null;
+        return { _id: u._id, name: u.profile?.full_name, picture: u.profile?.picture, score: count };
+    }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 10);
+    res.json({ workout: workoutRank, contribution: contributionRank, challenge: challengeRank });
   } catch (err) { res.status(500).json(err); }
 });
 
+router.get('/groups', async (req, res) => {
+  try { res.json(await Group.find().populate('admin members', 'profile.full_name profile.picture')); } 
+  catch (err) { res.status(500).json(err); }
+});
+
 router.get('/groups/:id', async (req, res) => {
-  try {
-    const group = await Group.findById(req.params.id).populate('admin members', 'profile.full_name profile.picture');
-    res.json(group);
-  } catch (err) { res.status(500).json(err); }
+  try { res.json(await Group.findById(req.params.id).populate('admin members', 'profile.full_name profile.picture')); } 
+  catch (err) { res.status(500).json(err); }
 });
 
 router.post('/groups', protect, async (req, res) => {
   try {
-    const newGroup = await Group.create({ name: req.body.name, description: req.body.description, admin: req.user.id, members: [req.user.id] });
-    res.status(201).json(newGroup);
+      if(!req.body.name || req.body.name.trim().length < 3) return res.status(400).json({message: "Tên nhóm phải từ 3 ký tự trở lên."});
+      res.status(201).json(await Group.create({ name: req.body.name, description: req.body.description, admin: req.user.id, members: [req.user.id] }));
   } catch (err) { res.status(500).json(err); }
 });
 
 router.put('/groups/:id/join', protect, async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
-    const userId = req.user.id;
-    if (group.members.includes(userId)) group.members = group.members.filter(id => id.toString() !== userId);
-    else group.members.push(userId);
-    await group.save();
-    res.json(group);
+    if (group.members.includes(req.user.id)) group.members = group.members.filter(id => id.toString() !== req.user.id);
+    else group.members.push(req.user.id);
+    await group.save(); res.json(group);
   } catch (err) { res.status(500).json(err); }
 });
 
-// 5. Challenges (Hỗ trợ isPrivate)
 router.get('/challenges', protect, async (req, res) => {
   try {
-    // Chỉ trả về các challenge Public HOẶC các challenge Private mà user này đang tham gia
-    const challenges = await Challenge.find({
-        $or: [
-            { isPrivate: false },
-            { isPrivate: { $exists: false } },
-            { participants: req.user.id }
-        ]
-    }).populate('creator participants', 'profile.full_name profile.picture').sort({ createdAt: -1 });
+    const challenges = await Challenge.find({ $or: [{ isPrivate: false }, { isPrivate: { $exists: false } }, { participants: req.user.id }] })
+      .populate('creator participants', 'profile.full_name profile.picture').sort({ createdAt: -1 });
     res.json(challenges);
   } catch (err) { res.status(500).json(err); }
 });
 
 router.post('/challenges', protect, async (req, res) => {
   try {
-    const isPrivate = req.body.isPrivate || false;
+    if (!req.body.title || req.body.title.trim().length < 5) return res.status(400).json({ message: "Tên thử thách phải từ 5 ký tự trở lên." });
+    if (req.body.target === undefined || req.body.target === null || Number(req.body.target) <= 0) return res.status(400).json({ message: "Mục tiêu phải là số lớn hơn 0." });
+    if (!['KM', 'Lần', 'Giờ', 'Ngày'].includes(req.body.metric)) return res.status(400).json({ message: "Đơn vị đo lường không hợp lệ." });
 
+    const isPrivate = req.body.isPrivate || false;
     const newChallenge = await Challenge.create({
-        title: req.body.title,
-        target: req.body.target,
-        metric: req.body.metric,
-        creator: req.user.id,
-        participants: [req.user.id],
-        isPrivate: isPrivate
+        title: req.body.title, target: Number(req.body.target), metric: req.body.metric,
+        creator: req.user.id, participants: [req.user.id], isPrivate: isPrivate
     });
 
-    // CHỈ ĐĂNG BÀI LÊN FEED NẾU THỬ THÁCH KHÔNG PHẢI LÀ PRIVATE
     if (!isPrivate) {
         const newPost = new Post({
             content: `🔥 Tôi vừa tạo thử thách cộng đồng mới: **${req.body.title}** (Mục tiêu: ${req.body.target} ${req.body.metric}).\n\nHãy vào mục **My Challenges** để tham gia cùng tôi ngay nhé!`,
-            user: req.user.id,
-            tag: 'Challenge',
-            createdAt: new Date()
+            user: req.user.id, tag: 'Challenge', createdAt: new Date()
         });
         const savedPost = await newPost.save();
         const populatedPost = await Post.findById(savedPost._id).populate('user', 'profile.full_name profile.picture');
         if (global.io) global.io.emit('new_post', populatedPost);
     }
-
     res.status(201).json(newChallenge);
   } catch (err) { res.status(500).json(err); }
 });
@@ -297,10 +292,7 @@ router.post('/challenges', protect, async (req, res) => {
 router.put('/challenges/:id/join', protect, async (req, res) => {
   try {
     const challenge = await Challenge.findById(req.params.id);
-    if (!challenge.participants.includes(req.user.id)) {
-        challenge.participants.push(req.user.id);
-        await challenge.save();
-    }
+    if (!challenge.participants.includes(req.user.id)) { challenge.participants.push(req.user.id); await challenge.save(); }
     res.json(challenge);
   } catch (err) { res.status(500).json(err); }
 });

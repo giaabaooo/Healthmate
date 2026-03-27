@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { getWorkouts, createWorkout } from "../../services/workoutService";
 import type { Workout } from "../../services/workoutService";
 import { getCategories } from "../../services/categoryService";
 import type { Category } from "../../services/categoryService";
-import { useNavigate } from "react-router-dom";
-import "../../styles/admin-dashboard.css";
+import AdminLayout from "../../components/AdminLayout";
+import toast, { Toaster } from "react-hot-toast";
 
 const AdminWorkoutsPage = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -13,7 +13,10 @@ const AdminWorkoutsPage = () => {
   const [level, setLevel] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [loading, setLoading] = useState(false);
+  
   const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [newWorkout, setNewWorkout] = useState<{
     title: string;
     cover_image: string;
@@ -34,92 +37,43 @@ const AdminWorkoutsPage = () => {
     level: "beginner",
     calories_burned: 0,
     description: "",
-    exercises: [] as Array<{
-      title: string;
-      video_url: string;
-      duration_sec: number;
-      order: number;
-    }>,
+    exercises: [],
   });
-  const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const data = await getWorkouts(categoryId, level, search);
-    setWorkouts(data);
-    setLoading(false);
-  }, [categoryId, level, search]);
-
-  const loadCategories = async () => {
-    const data = await getCategories();
-    setCategories(data);
-  };
+    try {
+      const [workoutsData, categoriesData] = await Promise.all([
+        getWorkouts({ search, level, categoryId }),
+        getCategories(),
+      ]);
+      
+      // FIX LỖI "LENGTH" Ở ĐÂY: Đảm bảo luôn luôn là Mảng (Array)
+      const parsedWorkouts = Array.isArray(workoutsData) ? workoutsData : (workoutsData?.data || []);
+      const parsedCategories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.data || []);
+      
+      setWorkouts(parsedWorkouts);
+      setCategories(parsedCategories);
+    } catch (error) {
+      toast.error("Không thể tải dữ liệu.");
+      setWorkouts([]); // Fallback an toàn
+      setCategories([]); // Fallback an toàn
+    } finally {
+      setLoading(false);
+    }
+  }, [search, level, categoryId]);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      await fetchData();
-    };
-    fetchInitialData();
-  }, [level, categoryId, search, fetchData]);
-
-  useEffect(() => {
-    const loadInitialCategories = async () => {
-      await loadCategories();
-    };
-    loadInitialCategories();
-  }, []);
-
-  const clearFilters = () => {
-    setLevel("");
-    setCategoryId("");
-    setSearch("");
-  };
-
-  const getLevelBadgeStyle = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "bg-green-500 text-white";
-      case "intermediate":
-        return "bg-yellow-500 text-white";
-      case "advanced":
-        return "bg-red-500 text-white";
-      default:
-        return "bg-slate-500 text-white";
-    } 
-  };
-
-  const addExercise = () => {
-    setNewWorkout({
-      ...newWorkout,
-      exercises: [
-        ...newWorkout.exercises,
-        {
-          title: "",
-          video_url: "",
-          duration_sec: 0,
-          order: newWorkout.exercises.length + 1,
-        },
-      ],
-    });
-  };
-
-  const removeExercise = (index: number) => {
-    const updated = [...newWorkout.exercises];
-    updated.splice(index, 1);
-
-    // cập nhật lại order
-    const reordered = updated.map((ex, i) => ({
-      ...ex,
-      order: i + 1,
-    }));
-
-    setNewWorkout({
-      ...newWorkout,
-      exercises: reordered,
-    });
-  };
+    fetchData();
+  }, [fetchData]);
 
   const handleCreateWorkout = async () => {
+    if (!newWorkout.title || !newWorkout.category_id || !newWorkout.cover_image) {
+        toast.error("Vui lòng điền đầy đủ Tên, Danh mục và Hình ảnh.");
+        return;
+    }
+    
+    setIsSubmitting(true);
     try {
       await createWorkout(newWorkout);
       setShowModal(false);
@@ -130,449 +84,259 @@ const AdminWorkoutsPage = () => {
         level: "beginner",
         calories_burned: 0,
         description: "",
-         exercises: [
-      {
-        title: "",
-        video_url: "",
-        duration_sec: 0,
-        order: 1,
-      },
-    ],
+        exercises: [],
       });
-      fetchData(); // reload list
-    } catch (err) {
-      console.error("Create workout failed:", err);
-      alert("Create workout failed");
+      fetchData();
+      toast.success("Tạo bài tập mới thành công!");
+    } catch (error) {
+      toast.error("Lỗi khi tạo bài tập.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if(window.confirm('CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn bài tập này khỏi hệ thống? Hành động này không thể hoàn tác.')) {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/workouts/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setWorkouts(prev => (prev || []).filter(w => w._id !== id));
+                toast.success("Đã xóa bài tập thành công.");
+            } else {
+                toast.error("Lỗi khi xóa bài tập.");
+            }
+        } catch (error) {
+            toast.error("Lỗi kết nối đến máy chủ.");
+        }
+    }
+  };
+
+  const addExercise = () => {
+    setNewWorkout({
+      ...newWorkout,
+      exercises: [
+        ...(newWorkout.exercises || []),
+        {
+          title: "",
+          video_url: "",
+          duration_sec: 60,
+          order: (newWorkout.exercises || []).length + 1,
+        },
+      ],
+    });
+  };
+
+  const removeExercise = (index: number) => {
+    const updated = [...(newWorkout.exercises || [])];
+    updated.splice(index, 1);
+    // Cập nhật lại thứ tự
+    updated.forEach((ex, i) => { ex.order = i + 1; });
+    setNewWorkout({ ...newWorkout, exercises: updated });
+  };
+
   return (
-    <div className="admin-dashboard dark flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-text-light font-display antialiased selection:bg-primary selection:text-background-dark">
-      {/* Sidebar Navigation */}
-      <aside className="flex w-64 flex-col justify-between border-r border-[#28392e] bg-surface-darker p-4 flex-shrink-0 z-20 overflow-y-auto">
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-3 items-center mb-4">
-            <div className="bg-center bg-no-repeat bg-cover rounded-full h-10 w-10 border-2 border-primary/20" 
-                 style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDi_ORhEtYDtre8G6YrAKTVxAV6-jnyFq6dRJxWxU8jfJRohQlcHzuS7gxoSzox9O2zJOZYV9J7gP3pjjAj3dXYZy7nZULA6ugWSNwdVCRCi80g0t_PLt0zu8TW08ADGQhcuSFJgAtl1j9CRfZabbO0bm50sVSBML8cagvhtInZU3Km_rIL5AswM-pMt1Ial3BqjEbqHPI2TAw6Fc9vy52WoZSbjML6wyLQiMRA_vhszcd-m-hCBXUVONsUNCJGz1o0nSlXJPmWCes")' }}>
-            </div>
-            <div className="flex flex-col">
-              <h1 className="text-white text-base font-bold leading-normal">HealthMate Admin</h1>
-              <p className="text-text-dim text-xs font-normal leading-normal">System Manager</p>
-            </div>
-          </div>
-          <nav className="flex flex-col gap-2">
-            <button
-              onClick={() => navigate('/admin/dashboard')}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-text-dim hover:bg-[#28392e] hover:text-white"
-            >
-              <span className="material-symbols-outlined">dashboard</span>
-              <p className="text-sm font-medium leading-normal">Dashboard</p>
-            </button>
-            <button
-              onClick={() => navigate('/admin/users')}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-text-dim hover:bg-[#28392e] hover:text-white"
-            >
-              <span className="material-symbols-outlined">group</span>
-              <p className="text-sm font-medium leading-normal">Users</p>
-            </button>
-            <button
-              onClick={() => navigate('/admin/workouts')}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors bg-[#28392e] text-white"
-            >
-              <span className="material-symbols-outlined">fitness_center</span>
-              <p className="text-sm font-medium leading-normal">Workouts</p>
-            </button>
-            <button
-              onClick={() => navigate('/admin/logs')}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-text-dim hover:bg-[#28392e] hover:text-white"
-            >
-              <span className="material-symbols-outlined">description</span>
-              <p className="text-sm font-medium leading-normal">System Logs</p>
-            </button>
-            <button
-              onClick={() => navigate('/admin/settings')}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-text-dim hover:bg-[#28392e] hover:text-white"
-            >
-              <span className="material-symbols-outlined">settings</span>
-              <p className="text-sm font-medium leading-normal">Settings</p>
-            </button>
-          </nav>
-        </div>
-        <div className="mt-auto pt-6 border-t border-[#28392e]">
-          <div className="p-4 bg-gradient-to-br from-primary/10 to-transparent rounded-xl border border-primary/10">
-            <p className="text-xs text-text-dim font-medium uppercase tracking-wider mb-2">System Status</p>
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-              </span>
-              <span className="text-sm text-white font-semibold">All Systems Go</span>
-            </div>
-            <p className="text-xs text-text-dim mt-2">Server uptime: 24d 13h</p>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Header */}
-        <header className="flex items-center justify-between px-8 py-5 border-b border-[#28392e] bg-background-dark shrink-0">
-          <div>
-            <h2 className="text-white text-3xl font-bold tracking-tight">Workout Management</h2>
-            <p className="text-text-dim text-sm mt-1">Manage exercise library and workout programs</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-dark text-background-dark text-sm font-bold transition-colors shadow-[0_0_15px_rgba(19,236,91,0.3)]"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              Create Workout
-            </button>
-            <button 
-              onClick={() => navigate('/admin/dashboard')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#28392e] hover:bg-[#344b3c] text-white text-sm font-medium transition-colors border border-transparent hover:border-primary/30"
-            >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              Back to Dashboard
-            </button>
-          </div>
-        </header>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-8 scroll-smooth">
-          <div className="max-w-7xl mx-auto flex flex-col gap-6">
-
-      {/* FILTER BAR */}
-      <div className="bg-surface-dark p-4 rounded-xl border border-[#28392e] flex flex-wrap items-center gap-4">
-        <span className="font-semibold text-text-dim text-sm">
-          FILTERS:
-        </span>
-
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search workout..."
-          className="px-4 py-2 bg-background-dark border border-[#28392e] rounded-lg text-sm text-white placeholder-text-dim focus:border-primary focus:outline-none"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        {/* Level Filter */}
-        <select
-          className="px-4 py-2 bg-background-dark border border-[#28392e] rounded-lg text-sm text-white focus:border-primary focus:outline-none"
-          value={level}
-          onChange={(e) => setLevel(e.target.value)}
-        >
-          <option value="">Level</option>
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
-        </select>
-
-        {/* Category Filter */}
-        <select
-          className="px-4 py-2 bg-background-dark border border-[#28392e] rounded-lg text-sm text-white focus:border-primary focus:outline-none"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-        >
-          <option value="">Category</option>
-          {categories.map((cat) => (
-            <option key={cat._id} value={cat._id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Clear */}
-        <button
-          onClick={clearFilters}
-          className="ml-auto text-sm text-text-dim hover:text-white transition-colors"
-        >
-          Clear All
-        </button>
-      </div>
-
-      {/* STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-surface-dark border border-[#28392e]">
-          <div className="flex items-center justify-between">
+    <AdminLayout>
+      <Toaster position="top-right" />
+      <div className="max-w-6xl mx-auto w-full pb-10 animate-fade-in">
+        
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
             <div>
-              <p className="text-text-dim text-sm">Total Workouts</p>
-              <p className="text-white text-2xl font-bold">{workouts.length}</p>
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Quản lý Workouts</h1>
+                <p className="text-slate-500 dark:text-slate-400">Thêm, sửa, xóa các bài tập và lộ trình tập luyện.</p>
             </div>
-            <span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">fitness_center</span>
-          </div>
+            <button onClick={() => setShowModal(true)} className="bg-primary text-slate-900 px-5 py-2.5 rounded-xl font-bold shadow-sm hover:brightness-110 transition-all flex items-center gap-2">
+                <span className="material-symbols-outlined text-[20px]">add</span> Thêm Bài Tập
+            </button>
         </div>
-        <div className="p-4 rounded-xl bg-surface-dark border border-[#28392e]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-text-dim text-sm">Categories</p>
-              <p className="text-white text-2xl font-bold">{categories.length}</p>
-            </div>
-            <span className="material-symbols-outlined text-blue-400 bg-blue-400/10 p-2 rounded-lg">category</span>
-          </div>
-        </div>
-        <div className="p-4 rounded-xl bg-surface-dark border border-[#28392e]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-text-dim text-sm">Avg Calories</p>
-              <p className="text-white text-2xl font-bold">
-                {workouts.length > 0 
-                  ? Math.round(workouts.reduce((sum, w) => sum + w.calories_burned, 0) / workouts.length)
-                  : 0}
-              </p>
-            </div>
-            <span className="material-symbols-outlined text-yellow-400 bg-yellow-400/10 p-2 rounded-lg">local_fire_department</span>
-          </div>
-        </div>
-      </div>
 
-      {/* WORKOUT GRID */}
-      {loading ? (
-        <div className="text-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-text-dim mt-4">Loading workouts...</p>
-        </div>
-      ) : workouts.length === 0 ? (
-        <div className="text-center py-20 text-text-dim">
-          <span className="material-symbols-outlined text-4xl mb-4">fitness_center</span>
-          <p>No workouts found</p>
-          <p className="text-sm mt-2">Try adjusting your filters or create a new workout</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {workouts.map((w) => (
-            <div
-              key={w._id}
-              onClick={() => navigate(`/admin/workouts/${w._id}`)}
-              className="bg-surface-dark rounded-xl border border-[#28392e] overflow-hidden cursor-pointer hover:border-primary/30 transition-all duration-300 group"
-            >
-              {/* COVER IMAGE */}
-              <div className="relative h-48 bg-gradient-to-br from-primary/20 to-transparent">
-                <img
-                  src={(w as Workout & { cover_image?: string }).cover_image || "https://via.placeholder.com/400x250"}
-                  alt={w.title}
-                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+        {/* FILTERS */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 mb-6 flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                <input 
+                    type="text" placeholder="Tìm kiếm bài tập..." 
+                    value={search} onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary dark:text-white transition-colors"
                 />
-
-                {/* BADGE */}
-                {w.level && (
-                  <span
-                    className={`absolute top-3 left-3 text-xs font-bold px-3 py-1 rounded-md uppercase ${getLevelBadgeStyle(
-                      w.level
-                    )}`}
-                  >
-                    {w.level}
-                  </span>
-                )}
-
-                {/* ACTIONS */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Handle edit/delete actions
-                    }}
-                    className="p-2 bg-surface-dark/90 rounded-lg border border-[#28392e] hover:bg-primary/20 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">more_vert</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* CONTENT */}
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-white text-lg leading-tight group-hover:text-primary transition-colors">
-                    {w.title}
-                  </h3>
-                </div>
-
-                <p className="text-sm text-text-dim line-clamp-2 mb-3">
-                  {w.description}
-                </p>
-
-                {/* FOOTER TAGS */}
-                <div className="flex gap-2 flex-wrap">
-                  <span className="text-xs bg-[#28392e] text-text-dim px-2 py-1 rounded-full">
-                    🔥 {w.calories_burned} kcal
-                  </span>
-
-                  {w.category_id && (
-                    <span className="text-xs bg-[#28392e] text-text-dim px-2 py-1 rounded-full">
-                      {typeof w.category_id === "object"
-                        ? w.category_id.name
-                        : "Category"}
-                    </span>
-                  )}
-                </div>
-              </div>
             </div>
-          ))}
+            <select value={level} onChange={(e) => setLevel(e.target.value)} className="w-full md:w-48 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary dark:text-white transition-colors">
+                <option value="">Tất cả cấp độ</option>
+                <option value="beginner">Người mới</option>
+                <option value="intermediate">Trung bình</option>
+                <option value="advanced">Nâng cao</option>
+            </select>
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full md:w-48 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary dark:text-white transition-colors">
+                <option value="">Tất cả danh mục</option>
+                {(categories || []).map((cat) => (
+                    <option key={cat._id} value={cat._id}>{cat.name}</option>
+                ))}
+            </select>
         </div>
-      )}
 
-      {/* CREATE WORKOUT MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-surface-dark w-[800px] max-h-[90vh] overflow-y-auto rounded-2xl p-8 border border-[#28392e] max-w-[90vw]">
-            <h2 className="text-white text-2xl font-bold mb-6">Create New Workout</h2>
-
-            <div className="flex flex-col gap-4">
-              <input
-                placeholder="Workout Title"
-                className="px-4 py-3 bg-background-dark border border-[#28392e] rounded-lg text-white placeholder-text-dim focus:border-primary focus:outline-none"
-                value={newWorkout.title}
-                onChange={(e) =>
-                  setNewWorkout({ ...newWorkout, title: e.target.value })
-                }
-              />
-
-              <input
-                placeholder="Cover Image URL"
-                className="px-4 py-3 bg-background-dark border border-[#28392e] rounded-lg text-white placeholder-text-dim focus:border-primary focus:outline-none"
-                value={newWorkout.cover_image}
-                onChange={(e) =>
-                  setNewWorkout({ ...newWorkout, cover_image: e.target.value })
-                }
-              />
-
-              <select
-                className="px-4 py-3 bg-background-dark border border-[#28392e] rounded-lg text-white focus:border-primary focus:outline-none"
-                value={newWorkout.category_id}
-                onChange={(e) =>
-                  setNewWorkout({ ...newWorkout, category_id: e.target.value })
-                }
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                className="px-4 py-3 bg-background-dark border border-[#28392e] rounded-lg text-white focus:border-primary focus:outline-none"
-                value={newWorkout.level}
-                onChange={(e) =>
-                  setNewWorkout({ ...newWorkout, level: e.target.value })
-                }
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-
-              <input
-                type="number"
-                placeholder="Calories Burned"
-                className="px-4 py-3 bg-background-dark border border-[#28392e] rounded-lg text-white placeholder-text-dim focus:border-primary focus:outline-none"
-                value={newWorkout.calories_burned}
-                onChange={(e) =>
-                  setNewWorkout({
-                    ...newWorkout,
-                    calories_burned: Number(e.target.value),
-                  })
-                }
-              />
-
-              <textarea
-                placeholder="Description"
-                rows={4}
-                className="px-4 py-3 bg-background-dark border border-[#28392e] rounded-lg text-white placeholder-text-dim focus:border-primary focus:outline-none resize-none"
-                value={newWorkout.description}
-                onChange={(e) =>
-                  setNewWorkout({ ...newWorkout, description: e.target.value })
-                }
-              />
-
-              {/* Exercises */}
-              <div>
-                <h3 className="text-white font-semibold mb-3">Exercises</h3>
-
-                {newWorkout.exercises.map((ex, index) => (
-                  <div key={index} className="bg-background-dark border border-[#28392e] p-4 rounded-lg mb-3">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <p className="text-sm font-semibold text-white">Exercise #{index + 1}</p>
-                      <button
-                        type="button"
-                        onClick={() => removeExercise(index)}
-                        className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      <input
-                        placeholder="Exercise Title"
-                        className="px-3 py-2 bg-surface-dark border border-[#28392e] rounded text-sm text-white placeholder-text-dim focus:border-primary focus:outline-none"
-                        value={ex.title}
-                        onChange={(e) => {
-                          const updated = [...newWorkout.exercises];
-                          updated[index].title = e.target.value;
-                          setNewWorkout({ ...newWorkout, exercises: updated });
-                        }}
-                      />
-
-                      <input
-                        placeholder="Video URL"
-                        className="px-3 py-2 bg-surface-dark border border-[#28392e] rounded text-sm text-white placeholder-text-dim focus:border-primary focus:outline-none"
-                        value={ex.video_url}
-                        onChange={(e) => {
-                          const updated = [...newWorkout.exercises];
-                          updated[index].video_url = e.target.value;
-                          setNewWorkout({ ...newWorkout, exercises: updated });
-                        }}
-                      />
-
-                      <input
-                        type="number"
-                        placeholder="Duration (seconds)"
-                        className="px-3 py-2 bg-surface-dark border border-[#28392e] rounded text-sm text-white placeholder-text-dim focus:border-primary focus:outline-none"
-                        value={ex.duration_sec}
-                        onChange={(e) => {
-                          const updated = [...newWorkout.exercises];
-                          updated[index].duration_sec = Number(e.target.value);
-                          setNewWorkout({ ...newWorkout, exercises: updated });
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  onClick={addExercise}
-                  className="w-full py-2 bg-[#28392e] hover:bg-[#344b3c] text-white rounded-lg transition-colors border border-[#28392e] hover:border-primary/30"
-                >
-                  + Add Exercise
-                </button>
-              </div>
-
-              <div className="flex justify-end gap-4 mt-6">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-6 py-2 rounded-lg border border-[#28392e] text-text-dim hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleCreateWorkout}
-                  className="px-6 py-2 bg-primary hover:bg-primary-dark text-background-dark rounded-lg font-bold transition-colors shadow-[0_0_15px_rgba(19,236,91,0.3)]"
-                >
-                  Create Workout
-                </button>
-              </div>
+        {/* TABLE */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Bài tập</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Danh mục</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cấp độ</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Calo/Thời gian</th>
+                            <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {loading ? (
+                            <tr><td colSpan={5} className="p-8 text-center text-slate-500"><span className="material-symbols-outlined animate-spin text-3xl">progress_activity</span></td></tr>
+                        ) : (!workouts || workouts.length === 0) ? (
+                            <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-medium">Không tìm thấy bài tập nào.</td></tr>
+                        ) : (
+                            workouts.map((w: any) => (
+                                <tr key={w._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <img src={w.cover_image || 'https://placehold.co/100x100?text=No+Image'} alt={w.title} className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700" />
+                                            <div>
+                                                <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{w.title}</h3>
+                                                <p className="text-[11px] text-slate-500 line-clamp-1 max-w-[200px] mt-0.5">{w.description}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md">
+                                            {w.category_id?.name || 'N/A'}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider ${w.level === 'advanced' ? 'bg-rose-100 text-rose-600' : w.level === 'intermediate' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                            {w.level}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-xs font-bold text-orange-500 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">local_fire_department</span> {w.calories_burned} kcal</span>
+                                            <span className="text-xs font-medium text-slate-500 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">timer</span> {w.exercises?.length || 0} bài</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        <button onClick={() => handleDelete(w._id)} className="p-1.5 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Xóa">
+                                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
-          </div>
         </div>
-      )}
-          </div>
-        </div>
-      </main>
-    </div>
+
+        {/* CREATE MODAL */}
+        {showModal && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl my-8 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+                    
+                    <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900 sticky top-0 z-10">
+                        <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary">fitness_center</span> Thêm Workout Mới
+                        </h2>
+                        <button onClick={() => setShowModal(false)} className="text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors"><span className="material-symbols-outlined">close</span></button>
+                    </div>
+                    
+                    <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar max-h-[70vh]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Tên bài tập</label>
+                                <input type="text" value={newWorkout.title} onChange={(e) => setNewWorkout({ ...newWorkout, title: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary dark:text-white" placeholder="VD: Full Body HIIT" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Link ảnh bìa</label>
+                                <input type="text" value={newWorkout.cover_image} onChange={(e) => setNewWorkout({ ...newWorkout, cover_image: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary dark:text-white" placeholder="URL hình ảnh" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Danh mục</label>
+                                <select value={newWorkout.category_id} onChange={(e) => setNewWorkout({ ...newWorkout, category_id: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary dark:text-white">
+                                    <option value="">Chọn danh mục</option>
+                                    {(categories || []).map((cat) => (
+                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Cấp độ</label>
+                                <select value={newWorkout.level} onChange={(e) => setNewWorkout({ ...newWorkout, level: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary dark:text-white">
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Calo Tiêu thụ (Kcal)</label>
+                                <input type="number" value={newWorkout.calories_burned} onChange={(e) => setNewWorkout({ ...newWorkout, calories_burned: Number(e.target.value) })} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary dark:text-white" />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Mô tả chi tiết</label>
+                                <textarea value={newWorkout.description} onChange={(e) => setNewWorkout({ ...newWorkout, description: e.target.value })} rows={2} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm outline-none focus:border-primary dark:text-white resize-none" placeholder="Mô tả bài tập..." />
+                            </div>
+                        </div>
+
+                        {/* EXERCISES LIST */}
+                        <div className="border-t border-slate-100 dark:border-slate-800 pt-5 mt-2">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-sm dark:text-white">Danh sách Động tác ({(newWorkout.exercises || []).length})</h3>
+                                <button onClick={addExercise} className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded transition-colors">+ Thêm động tác</button>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {(newWorkout.exercises || []).map((ex, index) => (
+                                    <div key={index} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4 rounded-xl relative">
+                                        <button onClick={() => removeExercise(index)} className="absolute top-2 right-2 text-slate-400 hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-[18px]">close</span></button>
+                                        <p className="text-[10px] font-black text-slate-400 mb-2 uppercase">Động tác {index + 1}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <input type="text" placeholder="Tên động tác (VD: Push ups)" value={ex.title} onChange={(e) => {
+                                                const updated = [...(newWorkout.exercises || [])];
+                                                updated[index].title = e.target.value;
+                                                setNewWorkout({ ...newWorkout, exercises: updated });
+                                            }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-primary dark:text-white" />
+                                            <input type="text" placeholder="Link Video (YouTube/MP4)" value={ex.video_url} onChange={(e) => {
+                                                const updated = [...(newWorkout.exercises || [])];
+                                                updated[index].video_url = e.target.value;
+                                                setNewWorkout({ ...newWorkout, exercises: updated });
+                                            }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-3 py-2 text-sm outline-none focus:border-primary dark:text-white" />
+                                            <div className="md:col-span-2 flex items-center gap-3">
+                                                <label className="text-xs text-slate-500 font-bold whitespace-nowrap">Thời gian (giây):</label>
+                                                <input type="number" value={ex.duration_sec} onChange={(e) => {
+                                                    const updated = [...(newWorkout.exercises || [])];
+                                                    updated[index].duration_sec = Number(e.target.value);
+                                                    setNewWorkout({ ...newWorkout, exercises: updated });
+                                                }} className="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-sm outline-none focus:border-primary dark:text-white text-center" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900 mt-auto">
+                        <button onClick={() => setShowModal(false)} className="px-5 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors">Hủy</button>
+                        <button onClick={handleCreateWorkout} disabled={isSubmitting} className="px-6 py-2.5 bg-primary text-slate-900 text-sm font-bold rounded-xl hover:brightness-110 shadow-sm transition-all flex items-center gap-2">
+                            {isSubmitting ? <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> : null}
+                            Lưu bài tập
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+      </div>
+    </AdminLayout>
   );
 };
 

@@ -79,10 +79,23 @@ const UserManagement: React.FC = () => {
     fetchUsers();
   };
 
-  const handleDelete = async (id: string) => {
-    if(window.confirm('Bạn có chắc chắn muốn khóa/xóa tài khoản này?')) {
-        toast.success("Đã xử lý tài khoản.");
-        // Call API delete/ban
+  const handleDeleteUser = async (id: string) => {
+    if(window.confirm('Khóa/Xóa vĩnh viễn người dùng này?')) {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/admin/users/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setUsers(prev => prev.filter(u => u._id !== id));
+                toast.success("Đã xóa người dùng.");
+            } else {
+                toast.error("Lỗi khi xóa người dùng.");
+            }
+        } catch (error) {
+            toast.error("Lỗi kết nối.");
+        }
     }
   };
 
