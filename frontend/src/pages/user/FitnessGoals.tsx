@@ -158,7 +158,7 @@ const FitnessGoal = () => {
         setIsEditingGoal(false);
 
         const token = localStorage.getItem("token");
-        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/goals/micro/${goalData._id}`, {
+        const res = await fetch(`http://localhost:8000/api/goals/micro/${goalData._id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         if(res.ok) {
@@ -188,7 +188,7 @@ const FitnessGoal = () => {
           const prev = logs[logs.length - 2].weight;
           try {
               const token = localStorage.getItem("token");
-              const res = await fetch(`https://healthmate-y9vt.onrender.com/api/goals/analyze-progress`, {
+              const res = await fetch(`http://localhost:8000/api/goals/analyze-progress`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                   body: JSON.stringify({ oldWeight: prev, currentWeight: latest })
@@ -234,7 +234,7 @@ const FitnessGoal = () => {
       setLoadingAI(true);
       toast.loading("AI đang phân tích hồ sơ tạo lộ trình cho bạn...", { id: 'ai' });
       try {
-          const res = await fetch(`https://healthmate-y9vt.onrender.com/api/goals/generate-roadmap`, {
+          const res = await fetch(`http://localhost:8000/api/goals/generate-roadmap`, {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
               body: JSON.stringify(formData)
@@ -265,7 +265,7 @@ const FitnessGoal = () => {
   const handleFetchHistory = async () => {
     try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/goals/history`, {
+        const res = await fetch(`http://localhost:8000/api/goals/history`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -291,7 +291,7 @@ const FitnessGoal = () => {
     setMicroGoals(prev => prev.map(g => g._id === id ? { ...g, done: !currentStatus } : g));
     try {
         const token = localStorage.getItem("token");
-        await fetch(`https://healthmate-y9vt.onrender.com/api/goals/micro/${id}`, {
+        await fetch(`http://localhost:8000/api/goals/micro/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ done: !currentStatus }) 
@@ -313,7 +313,7 @@ const FitnessGoal = () => {
 
     try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/goals/micro/${id}`, {
+        const res = await fetch(`http://localhost:8000/api/goals/micro/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ label: editTaskLabel, done: currentTask?.done }) 
@@ -343,14 +343,14 @@ const FitnessGoal = () => {
       const token = localStorage.getItem("token");
       try {
           // 1. Cập nhật biểu đồ Goal (Tuần)
-          const res = await fetch(`https://healthmate-y9vt.onrender.com/api/goals/checkin/${goal._id}`, {
+          const res = await fetch(`http://localhost:8000/api/goals/checkin/${goal._id}`, {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
               body: JSON.stringify({ week: checkinModal.week, weight: w, feeling: checkinData.feeling })
           });
 
           // 2. GỌI API ĐỒNG BỘ CÂN NẶNG LÊN DATABASE PROFILE
-          const profileRes = await fetch('https://healthmate-y9vt.onrender.com/api/users/profile', {
+          const profileRes = await fetch('http://localhost:8000/api/users/profile', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
               body: JSON.stringify({ profile: { weight_kg: w } })

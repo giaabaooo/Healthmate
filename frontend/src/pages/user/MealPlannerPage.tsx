@@ -14,21 +14,38 @@ interface MealItem {
 }
 
 interface Food {
-  _id: string;
+  _id?: string;
+  id?: string;
+  food_id?: string;
   name: string;
   category: string;
   calories: number;
 }
 
+// 🔴 BỘ CÔNG CỤ XỬ LÝ NGÀY THÁNG CHUẨN LOCAL (Chống nhảy ngày)
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function getLocalDateString(dateObj: Date): string {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const dateNum = String(dateObj.getDate()).padStart(2, "0");
+  return `${year}-${month}-${dateNum}`;
+}
+
+const getTodayStr = () => getLocalDateString(new Date());
+
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
+  const date = parseLocalDate(dateStr);
   return date.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function offsetDate(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = parseLocalDate(dateStr);
   d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
+  return getLocalDateString(d);
 }
 
 const MEAL_SLOTS = [
@@ -50,11 +67,14 @@ function groupBySlot(items: MealItem[]): Record<MealSlot, MealItem[]> {
 
 const MealPlannerPage = () => {
   const navigate = useNavigate();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayStr();
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [items, setItems] = useState<MealItem[]>([]);
   const [totalCalories, setTotalCalories] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // 🔴 KIỂM TRA NGÀY TRONG QUÁ KHỨ ĐỂ VIEW-ONLY
+  const isPastDate = selectedDate < todayStr;
 
   // KIỂM TRA QUYỀN PRO
   const [isProValid, setIsProValid] = useState(false);
@@ -99,7 +119,7 @@ const MealPlannerPage = () => {
     const autoCalculateTarget = async () => {
         let goalType = 'maintain';
         try {
-            const res = await fetch('https://healthmate-y9vt.onrender.com/api/goals/my-goal', { headers: getAuthHeaders() });
+            const res = await fetch('http://localhost:8000/api/goals/my-goal', { headers: getAuthHeaders() });
             if(res.ok) {
                 const goalData = await res.json();
                 if(goalData?.goal_type) goalType = goalData.goal_type;
@@ -130,17 +150,17 @@ const MealPlannerPage = () => {
     autoCalculateTarget();
   }, []);
 
-  useEffect(() => { fetchMealPlan(); fetchAiRecs(); }, [selectedDate, isProValid]); // Chạy lại khi có kết quả verify Pro
+  useEffect(() => { fetchMealPlan(); fetchAiRecs(); }, [selectedDate, isProValid]); 
 
   useEffect(() => {
       const analyzeLimit = async () => {
-          if (!isProValid) return; // Free plan không gọi AI cảnh báo
+          if (!isProValid) return; 
           
           if (totalCalories >= calorieGoal && calorieGoal > 0 && totalCalories !== prevCal.current) {
               prevCal.current = totalCalories;
               setIsAnalyzingLimit(true);
               try {
-                  const res = await fetch('https://healthmate-y9vt.onrender.com/api/meal-plans/ai/analyze-calories', {
+                  const res = await fetch('http://localhost:8000/api/meal-plans/ai/analyze-calories', {
                       method: 'POST',
                       headers: getAuthHeaders(),
                       body: JSON.stringify({ totalCalories, targetCalories: calorieGoal, goalType: userGoalType, currentWeight: userCurrentWeight })
@@ -162,7 +182,7 @@ const MealPlannerPage = () => {
   const fetchMealPlan = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}`, { headers: getAuthHeaders() });
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}`, { headers: getAuthHeaders() });
       const data = await res.json();
       setItems(data.items || []);
       setTotalCalories(data.total_calories || 0);
@@ -171,17 +191,21 @@ const MealPlannerPage = () => {
 
   const fetchFoods = async () => {
     try {
-      const res = await fetch('https://healthmate-y9vt.onrender.com/api/foods');
+      const res = await fetch('http://localhost:8000/api/foods');
       const data = await res.json();
       setFoods(data);
       const init: Record<string, number> = {};
-      data.forEach((f: Food) => { init[f._id] = 100; });
+      data.forEach((f: Food) => { init[f._id!] = 100; });
       setQuantities(init);
     } catch (err) { console.error(err); }
   };
 
   const fetchAiRecs = async (forceGenerate = false) => {
-    if (!isProValid) return; // Free plan không cho lấy gợi ý AI
+    if (!isProValid) return; 
+    
+    if (isPastDate && forceGenerate) {
+        return toast.error("Không thể tạo thực đơn cho ngày quá khứ!");
+    }
 
     const cacheKey = `hm_ai_meal_rec_${todayStr}`;
     const cachedData = localStorage.getItem(cacheKey);
@@ -194,7 +218,7 @@ const MealPlannerPage = () => {
     try {
       setLoadingAI(true);
       if (forceGenerate) toast.loading("Đầu bếp AI đang lên thực đơn...", { id: 'ai' });
-      const res = await fetch('https://healthmate-y9vt.onrender.com/api/meal-plans/ai/recommend', { headers: getAuthHeaders() });
+      const res = await fetch('http://localhost:8000/api/meal-plans/ai/recommend', { headers: getAuthHeaders() });
       const data = await res.json();
       setAiRecs(data || {});
       localStorage.setItem(cacheKey, JSON.stringify(data));
@@ -207,22 +231,31 @@ const MealPlannerPage = () => {
   };
 
   const openFoodModal = (slot: MealSlot) => {
+    if (isPastDate) return;
     setTargetSlot(slot);
     fetchFoods();
     setShowFoodModal(true);
   };
 
+  // 🔴 FIX LỖI THÊM MÓN ĂN AI DO SAI ID
   const addFoodToMealPlan = async (item: any, forceSlot?: MealSlot) => {
+    if (isPastDate) return toast.error("Không thể thêm vào ngày quá khứ");
+
+    const foodId = item.food_id || item._id || item.id;
+    if (!foodId) {
+        return toast.error("Dữ liệu món ăn bị lỗi, không tìm thấy ID");
+    }
+
     try {
       const payload = {
-          food_id: item.food_id || item._id || "AI_CUSTOM", 
+          food_id: foodId, 
           name: item.name,
           quantity: item.quantity || 100, 
           calories: item.calories,
           slot: forceSlot || targetSlot
       };
 
-      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items`, {
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(payload), 
@@ -238,9 +271,10 @@ const MealPlannerPage = () => {
   };
 
   const updateQuantity = async (itemId: string) => {
+    if (isPastDate) return;
     if (editQuantity <= 0 || editQuantity > 5000) { toast.error('Số lượng không hợp lệ'); return; }
     try {
-      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${itemId}`, {
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items/${itemId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ quantity: editQuantity }),
@@ -250,9 +284,10 @@ const MealPlannerPage = () => {
   };
 
   const handleRemoveConfirm = async () => {
+    if (isPastDate) return;
     try {
       const res = await fetch(
-        `https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}`,
+        `http://localhost:8000/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}`,
         { method: 'DELETE', headers: getAuthHeaders() },
       );
       if (res.ok) { toast.success('Đã xóa món ăn'); fetchMealPlan(); }
@@ -283,16 +318,15 @@ const MealPlannerPage = () => {
             <p className="text-slate-500 dark:text-slate-400 mt-1 text-lg">Theo dõi dinh dưỡng hàng ngày</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {/* NÚT AI COACH: Nổi bật vàng cam nếu Free, bình thường nếu Pro */}
             <button 
               onClick={() => isProValid ? fetchAiRecs(true) : navigate('/subscription')} 
-              disabled={loadingAI || (isProValid && hasAiLoadedToday)}
+              disabled={loadingAI || (isProValid && hasAiLoadedToday) || isPastDate}
               className={`flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm
                 ${!isProValid 
                     ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 shadow-amber-500/20 hover:scale-105' 
                     : hasAiLoadedToday 
                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' 
-                        : 'bg-primary/20 text-primary hover:bg-primary hover:text-slate-900'
+                        : isPastDate ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary/20 text-primary hover:bg-primary hover:text-slate-900'
                 }`}
             >
                <span className={`material-symbols-outlined text-lg ${loadingAI ? 'animate-spin' : ''}`}>
@@ -324,18 +358,17 @@ const MealPlannerPage = () => {
           <button onClick={() => setSelectedDate(d => offsetDate(d, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
             <span className="material-symbols-outlined text-slate-500">chevron_right</span>
           </button>
-          <button onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])} className="px-4 py-1.5 text-xs font-bold bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer ml-2">
+          <button onClick={() => setSelectedDate(todayStr)} className="px-4 py-1.5 text-xs font-bold bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer ml-2">
             Hôm nay
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* CỘT TRÁI: BỮA ĂN VÀ GỢI Ý AI */}
           <div className="lg:col-span-2 space-y-6">
             {MEAL_SLOTS.map(slot => {
               const slotItems = grouped[slot.key];
               const slotCals = slotItems.reduce((s, i) => s + i.calories, 0);
-              const recs = isProValid ? (aiRecs[slot.key] || []) : []; // Chặn AI nếu ko phải Pro
+              const recs = isProValid ? (aiRecs[slot.key] || []) : []; 
 
               return (
                 <div key={slot.key} className={`rounded-2xl border overflow-hidden shadow-sm ${slot.color}`}>
@@ -349,9 +382,12 @@ const MealPlannerPage = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       {slotCals > 0 && <span className={`text-xs px-2.5 py-1 rounded-full font-bold shadow-sm ${slot.badge}`}>{slotCals} kcal</span>}
-                      <button onClick={() => openFoodModal(slot.key)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:scale-105 hover:text-primary transition cursor-pointer text-slate-600 dark:text-slate-300">
-                        <span className="material-symbols-outlined text-[18px]">add</span>
-                      </button>
+                      
+                      {!isPastDate && (
+                          <button onClick={() => openFoodModal(slot.key)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:scale-105 hover:text-primary transition cursor-pointer text-slate-600 dark:text-slate-300">
+                            <span className="material-symbols-outlined text-[18px]">add</span>
+                          </button>
+                      )}
                     </div>
                   </div>
 
@@ -373,9 +409,9 @@ const MealPlannerPage = () => {
                                 <button onClick={() => setEditingItem(null)} className="text-xs px-2 py-1 bg-slate-200 text-slate-600 font-bold rounded hover:bg-slate-300 transition">Hủy</button>
                               </div>
                             ) : (
-                              <button onClick={() => { setEditingItem(item._id); setEditQuantity(item.quantity); }} className="flex items-center gap-1 mt-1 text-xs font-medium text-slate-500 hover:text-primary transition group/qty">
+                              <button disabled={isPastDate} onClick={() => { if(!isPastDate) { setEditingItem(item._id); setEditQuantity(item.quantity); } }} className="flex items-center gap-1 mt-1 text-xs font-medium text-slate-500 hover:text-primary transition group/qty">
                                 <span>{item.quantity} {item.food_id === "AI_CUSTOM" ? "khẩu phần" : "g"}</span>
-                                <span className="material-symbols-outlined text-[14px] opacity-0 group-hover/qty:opacity-100 transition">edit</span>
+                                {!isPastDate && <span className="material-symbols-outlined text-[14px] opacity-0 group-hover/qty:opacity-100 transition">edit</span>}
                               </button>
                             )}
                           </div>
@@ -383,16 +419,17 @@ const MealPlannerPage = () => {
                             <span className="font-black text-base text-primary">{item.calories}</span>
                             <span className="text-xs font-bold text-slate-400 ml-1 uppercase">kcal</span>
                           </div>
-                          <button onClick={() => setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name })} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100">
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
+                          {!isPastDate && (
+                              <button onClick={() => setDeleteModal({ isOpen: true, itemId: item._id, itemName: item.name })} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition opacity-0 group-hover:opacity-100">
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                              </button>
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* CHỈ HIỂN THỊ AI RECOMMENDATION NẾU LÀ PRO VÀ CÓ DATA */}
-                  {(isProValid && recs.length > 0) && (
+                  {(!isPastDate && isProValid && recs.length > 0) && (
                     <div className="p-4 bg-white/30 dark:bg-slate-900/30 border-t border-white/50 dark:border-slate-800">
                       <p className="text-xs font-black text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[16px]">auto_awesome</span> Gợi ý từ Đầu Bếp AI
@@ -417,7 +454,6 @@ const MealPlannerPage = () => {
             })}
           </div>
 
-          {/* CỘT PHẢI: STATS & GOALS */}
           <div className="space-y-6">
             
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
@@ -459,7 +495,6 @@ const MealPlannerPage = () => {
               </div>
             </div>
 
-            {/* Khối Cảnh báo AI (Hiển thị khi Vượt Mức và là user PRO) */}
             {isProValid && aiLimitWarning && (
                 <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-3xl p-6 animate-fade-in relative overflow-hidden shadow-sm">
                     <div className="absolute right-0 top-0 opacity-10">
@@ -498,7 +533,6 @@ const MealPlannerPage = () => {
         </div>
       </div>
 
-      {/* Modal Chọn Món Thủ Công */}
       {showFoodModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
@@ -522,9 +556,9 @@ const MealPlannerPage = () => {
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{food.calories} kcal/100g {food.category && `• ${food.category}`}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <input type="number" value={quantities[food._id] ?? 100} onChange={e => setQuantities(q => ({ ...q, [food._id]: parseInt(e.target.value) || 0 }))} className="w-16 px-2 py-1.5 text-sm font-bold text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary" />
+                    <input type="number" value={quantities[food._id!] ?? 100} onChange={e => setQuantities(q => ({ ...q, [food._id!]: parseInt(e.target.value) || 0 }))} className="w-16 px-2 py-1.5 text-sm font-bold text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-primary" />
                     <span className="text-[10px] font-bold text-slate-400">g</span>
-                    <button onClick={() => addFoodToMealPlan({ _id: food._id, name: food.name, quantity: quantities[food._id] ?? 100, calories: Math.round((food.calories * (quantities[food._id] ?? 100)) / 100) }, targetSlot)} className="ml-2 px-4 py-2 bg-primary text-slate-900 text-xs font-bold rounded-xl hover:brightness-110 shadow-sm transition-all">Thêm</button>
+                    <button onClick={() => addFoodToMealPlan({ _id: food._id, name: food.name, quantity: quantities[food._id!] ?? 100, calories: Math.round((food.calories * (quantities[food._id!] ?? 100)) / 100) }, targetSlot)} className="ml-2 px-4 py-2 bg-primary text-slate-900 text-xs font-bold rounded-xl hover:brightness-110 shadow-sm transition-all">Thêm</button>
                   </div>
                 </div>
               ))}

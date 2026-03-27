@@ -97,7 +97,7 @@ const AdminMealPlannerPage = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('https://healthmate-y9vt.onrender.com/api/users', { headers: getAuthHeaders() });
+      const res = await fetch('http://localhost:8000/api/users', { headers: getAuthHeaders() });
       const data = await res.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) { console.error('Lỗi tải users:', err); }
@@ -107,7 +107,7 @@ const AdminMealPlannerPage = () => {
     try {
       setLoading(true);
       const q = targetUserId ? `?target_user_id=${targetUserId}` : '';
-      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}${q}`, { headers: getAuthHeaders() });
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}${q}`, { headers: getAuthHeaders() });
       const data = await res.json();
       setItems(data.items || []);
       setTotalCalories(data.total_calories || 0);
@@ -121,7 +121,7 @@ const AdminMealPlannerPage = () => {
     await Promise.all(week.map(async (date) => {
       try {
         const q = targetUserId ? `?target_user_id=${targetUserId}` : '';
-        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${date}${q}`, { headers: getAuthHeaders() });
+        const res = await fetch(`http://localhost:8000/api/meal-plans/${date}${q}`, { headers: getAuthHeaders() });
         const data = await res.json();
         results[date] = data.total_calories || 0;
       } catch { results[date] = 0; }
@@ -131,7 +131,7 @@ const AdminMealPlannerPage = () => {
 
   const fetchFoods = async () => {
     try {
-      const res = await fetch('https://healthmate-y9vt.onrender.com/api/foods');
+      const res = await fetch('http://localhost:8000/api/foods');
       const data = await res.json();
       setFoods(data);
       const init: Record<string, number> = {};
@@ -152,7 +152,7 @@ const AdminMealPlannerPage = () => {
     try {
       const body: Record<string, unknown> = { food_id: foodId, quantity };
       if (targetUserId) body.target_user_id = targetUserId;
-      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items`, {
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(body),
@@ -173,7 +173,7 @@ const AdminMealPlannerPage = () => {
     try {
       const body: Record<string, unknown> = { quantity: editQuantity };
       if (targetUserId) body.target_user_id = targetUserId;
-      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${itemId}`, {
+      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items/${itemId}`, {
         method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(body),
       });
       if (res.ok) { toast.success('Đã cập nhật'); fetchMealPlan(); setEditingItem(null); }
@@ -184,7 +184,7 @@ const AdminMealPlannerPage = () => {
     try {
       const q = targetUserId ? `?target_user_id=${targetUserId}` : '';
       const res = await fetch(
-        `https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}${q}`,
+        `http://localhost:8000/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}${q}`,
         { method: 'DELETE', headers: getAuthHeaders() },
       );
       if (res.ok) { toast.success('Đã xóa món ăn'); fetchMealPlan(); }

@@ -52,7 +52,7 @@ const createAdmin = async () => {
 
     console.log('🎫 JWT Token:', token);
     console.log('\n🔗 Use this token to test admin APIs:');
-    console.log('curl -H "Authorization: Bearer ' + token + '" https://healthmate-y9vt.onrender.com/api/admin/dashboard');
+    console.log('curl -H "Authorization: Bearer ' + token + '" http://localhost:8000/api/admin/dashboard');
 
     process.exit(0);
   } catch (error) {

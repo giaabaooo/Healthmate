@@ -18,7 +18,7 @@ npm run dev
 
 ### Login để lấy token
 ```http
-POST https://healthmate-y9vt.onrender.com/api/users/login
+POST http://localhost:8000/api/users/login
 Content-Type: application/json
 
 {
@@ -35,7 +35,7 @@ Content-Type: application/json
 
 ### 3.1 Lưu lịch sử bài tập
 ```http
-POST https://healthmate-y9vt.onrender.com/api/tracker/workouts
+POST http://localhost:8000/api/tracker/workouts
 Authorization: Bearer YOUR_TOKEN_HERE
 Content-Type: application/json
 
@@ -49,13 +49,13 @@ Content-Type: application/json
 
 ### 3.2 Lấy lịch sử bài tập
 ```http
-GET https://healthmate-y9vt.onrender.com/api/tracker/workouts?period=week&limit=10
+GET http://localhost:8000/api/tracker/workouts?period=week&limit=10
 Authorization: Bearer YOUR_TOKEN_HERE
 ```
 
 ### 3.3 Cập nhật chỉ số cơ thể
 ```http
-POST https://healthmate-y9vt.onrender.com/api/tracker/body-progress
+POST http://localhost:8000/api/tracker/body-progress
 Authorization: Bearer YOUR_TOKEN_HERE
 Content-Type: application/json
 
@@ -68,13 +68,13 @@ Content-Type: application/json
 
 ### 3.4 Lấy dữ liệu tiến trình cơ thể
 ```http
-GET https://healthmate-y9vt.onrender.com/api/tracker/body-progress?period=month
+GET http://localhost:8000/api/tracker/body-progress?period=month
 Authorization: Bearer YOUR_TOKEN_HERE
 ```
 
 ### 3.5 Lấy thống kê dashboard
 ```http
-GET https://healthmate-y9vt.onrender.com/api/tracker/dashboard-stats
+GET http://localhost:8000/api/tracker/dashboard-stats
 Authorization: Bearer YOUR_TOKEN_HERE
 ```
 
@@ -84,14 +84,14 @@ Authorization: Bearer YOUR_TOKEN_HERE
 
 ### Test login
 ```bash
-curl -X POST https://healthmate-y9vt.onrender.com/api/users/login \
+curl -X POST http://localhost:8000/api/users/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
 ```
 
 ### Test lưu workout log
 ```bash
-curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/workouts \
+curl -X POST http://localhost:8000/api/tracker/workouts \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -104,7 +104,7 @@ curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/workouts \
 
 ### Test cập nhật cân nặng
 ```bash
-curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/body-progress \
+curl -X POST http://localhost:8000/api/tracker/body-progress \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

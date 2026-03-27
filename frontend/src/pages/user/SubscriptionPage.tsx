@@ -14,12 +14,11 @@ const SubscriptionPage = () => {
     setUser(userString ? JSON.parse(userString) : null);
   };
 
-  // ĐỒNG BỘ GÓI CƯỚC TỪ BACKEND ĐỂ CHỐNG LỖI HIỂN THỊ
   const syncUserFromServer = async () => {
       try {
           const token = localStorage.getItem('token');
           if (!token) return;
-          const res = await fetch('https://healthmate-y9vt.onrender.com/api/users/me', {
+          const res = await fetch('http://localhost:8000/api/users/me', {
               headers: { Authorization: `Bearer ${token}` }
           });
           if (res.ok) {
@@ -65,7 +64,7 @@ const SubscriptionPage = () => {
   const handleSuccessPayment = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('https://healthmate-y9vt.onrender.com/api/subscriptions/upgrade', {
+      const res = await fetch('http://localhost:8000/api/subscriptions/upgrade', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -87,7 +86,7 @@ const SubscriptionPage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('https://healthmate-y9vt.onrender.com/api/subscriptions/create-payment-link', {
+      const res = await fetch('http://localhost:8000/api/subscriptions/create-payment-link', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -116,7 +115,6 @@ const SubscriptionPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           
-          {/* GÓI FREE */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative">
             <div className="mb-6">
               <h2 className="text-2xl font-black dark:text-white mb-2">Basic</h2>
@@ -138,7 +136,6 @@ const SubscriptionPage = () => {
             </button>
           </div>
 
-          {/* GÓI PRO */}
           <div className="bg-slate-900 rounded-3xl p-8 border border-primary relative overflow-hidden shadow-2xl shadow-primary/20 transform md:-translate-y-4">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
             <div className="absolute top-4 right-4 bg-primary text-slate-900 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Khuyên dùng</div>

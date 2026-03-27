@@ -67,7 +67,7 @@ const AiCoachPage = () => {
       try {
         const token = localStorage.getItem('token');
 
-        const response = await fetch('https://healthmate-y9vt.onrender.com/api/users/metrics', {
+        const response = await fetch('http://localhost:8000/api/users/metrics', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -99,7 +99,7 @@ const AiCoachPage = () => {
       const userString = localStorage.getItem('user');
       const user = userString ? JSON.parse(userString) : null;
 
-      const response = await fetch('https://healthmate-y9vt.onrender.com/api/chat/ask', {
+      const response = await fetch('http://localhost:8000/api/chat/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

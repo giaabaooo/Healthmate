@@ -14,7 +14,9 @@ exports.createPaymentLink = async (req, res) => {
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
 
     const orderCode = Number(String(Date.now()).slice(-6));
-    const domain = 'https://healthmate-wdp.vercel.app'; // Cố định domain Vercel chuẩn xác
+    
+    // GẮN CỨNG LINK LOCAL CHO FRONTEND ĐỂ TEST Ở MÁY
+    const domain = 'http://localhost:5173';
 
     const requestData = {
       orderCode: orderCode,
@@ -35,7 +37,6 @@ exports.upgradeToPro = async (req, res) => {
   try {
     const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // + 30 ngày
     
-    // ÉP DATABASE LƯU TRỮ (strict: false) ĐỂ CHỐNG LỖI MẤT DỮ LIỆU
     const updatedUser = await User.findByIdAndUpdate(
         req.user.id,
         { $set: { "subscription.plan": "pro", "subscription.endDate": endDate } },

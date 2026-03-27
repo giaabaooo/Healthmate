@@ -126,13 +126,20 @@ const getEmbedUrl = (url: string) => {
     return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
 };
 
-// Hàm định dạng ngày tháng khắc phục lỗi Invalid Date và lệch múi giờ
+// 🔴 BỘ HÀM PARSE NGÀY THÁNG ĐẢM BẢO KHÔNG BỊ NHẢY LỆCH MÚI GIỜ
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 const getLocalDateString = (dateObj: Date) => {
   const year = dateObj.getFullYear();
   const month = String(dateObj.getMonth() + 1).padStart(2, "0");
   const dateNum = String(dateObj.getDate()).padStart(2, "0");
   return `${year}-${month}-${dateNum}`;
 };
+
+const getTodayStr = () => getLocalDateString(new Date());
 
 const WorkoutsUserPage = () => {
   const navigate = useNavigate();
@@ -159,10 +166,8 @@ const WorkoutsUserPage = () => {
   const [dailyProgressPercent, setDailyProgressPercent] = useState(0);
   const [showCongrats, setShowCongrats] = useState(false);
 
-  // States cho việc Add vào Routine
   const [addStartTime, setAddStartTime] = useState("08:00");
   const [addEndTime, setAddEndTime] = useState("08:30");
-  // STATE MỚI: Lựa chọn kiểu lặp lại lịch tập
   const [recurrence, setRecurrence] = useState<'none' | 'daily_week' | '246_week' | '357_week'>('none');
 
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
@@ -171,13 +176,15 @@ const WorkoutsUserPage = () => {
   const [exerciseTimer, setExerciseTimer] = useState(0);
   const [finishingWorkout, setFinishingWorkout] = useState(false);
 
-  const todayStrLocal = getLocalDateString(new Date());
+  const todayStrLocal = getTodayStr();
   const [selectedDate, setSelectedDate] = useState(todayStrLocal);
   const [exercisesByDate, setExercisesByDate] = useState<Record<string, TodaysExercise[]>>({});
   const [eventsByDate, setEventsByDate] = useState<Record<string, { title: string; time: string; image?: string }[]>>({});
   const todaysExercises = exercisesByDate[selectedDate] || [];
 
-  // ... (Giữ nguyên các hàm load dữ liệu, tính toán BMI, Goal) ...
+  // 🔴 KIỂM TRA NGÀY TRONG QUÁ KHỨ ĐỂ VIEW-ONLY
+  const isPastDate = selectedDate < todayStrLocal;
+
   useEffect(() => {
     if (library.length === 0) return;
     const userStr = localStorage.getItem('user');
@@ -371,7 +378,7 @@ const WorkoutsUserPage = () => {
       setPreviewLoading(true);
       setPreviewError(null);
       try {
-        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/workouts/${previewWorkoutId}`, { signal: controller.signal });
+        const res = await fetch(`http://localhost:8000/api/workouts/${previewWorkoutId}`, { signal: controller.signal });
         const data = await res.json();
         if (!res.ok) {
           setPreviewWorkout(null);
@@ -400,32 +407,35 @@ const WorkoutsUserPage = () => {
     return s1 < e2 && e1 > s2;
   };
 
-  // HÀM MỚI: Tự động tính toán mảng ngày tương lai dựa trên luật lặp lại
   const generateTargetDates = (startDateStr: string, type: string) => {
     const dates = [];
-    const start = new Date(startDateStr);
+    const start = parseLocalDate(startDateStr);
     
     if (type === 'none') return [startDateStr];
 
     for (let i = 0; i < 7; i++) {
        const d = new Date(start);
-       d.setDate(d.getDate() + i);
-       const dayOfWeek = d.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+       d.setDate(start.getDate() + i);
+       const dayOfWeek = d.getDay(); 
        const dateStr = getLocalDateString(d);
 
        if (type === 'daily_week') {
            dates.push(dateStr);
        } else if (type === '246_week') {
-           if ([1, 3, 5].includes(dayOfWeek)) dates.push(dateStr); // Thứ 2, 4, 6
+           if ([1, 3, 5].includes(dayOfWeek)) dates.push(dateStr); 
        } else if (type === '357_week') {
-           if ([2, 4, 6].includes(dayOfWeek)) dates.push(dateStr); // Thứ 3, 5, 7
+           if ([2, 4, 6].includes(dayOfWeek)) dates.push(dateStr); 
        }
     }
     return dates;
   };
 
-  // CẬP NHẬT HÀM: Thêm vào lịch (Hỗ trợ nhiều ngày)
   const addToRoutine = async (workout: Workout) => {
+    if (isPastDate) {
+        alert("Không thể lên lịch tập cho một ngày trong quá khứ!");
+        return;
+    }
+
     if (addStartTime >= addEndTime) {
       alert("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
       return;
@@ -435,7 +445,6 @@ const WorkoutsUserPage = () => {
     let successCount = 0;
     let overlapCount = 0;
 
-    // Clone state hiện tại để thay đổi an toàn
     const newExercisesByDate = { ...exercisesByDate };
     const newEventsByDate = { ...eventsByDate };
     const promises = [];
@@ -443,14 +452,13 @@ const WorkoutsUserPage = () => {
     for (const targetDate of targetDates) {
         const existingExs = newExercisesByDate[targetDate] || [];
 
-        // Kiểm tra xem giờ này ngày đó có trống không
         const hasOverlap = existingExs.some(ex =>
           isTimeOverlapping(addStartTime, addEndTime, ex.startTime, ex.endTime)
         );
 
         if (hasOverlap) {
           overlapCount++;
-          continue; // Bỏ qua ngày này nếu trùng lịch
+          continue; 
         }
 
         let newExercisesFromWorkout = [];
@@ -490,7 +498,6 @@ const WorkoutsUserPage = () => {
         }));
         newEventsByDate[targetDate] = newEvents;
 
-        // Đẩy request cập nhật backend vào mảng Promise chờ
         promises.push(updateDailyRoutine({ date: targetDate, exercises: mergedExercises }));
         successCount++;
     }
@@ -500,15 +507,12 @@ const WorkoutsUserPage = () => {
       return;
     }
 
-    // Cập nhật State Frontend ngay lập tức
     setExercisesByDate(newExercisesByDate);
     setEventsByDate(newEventsByDate);
 
     try {
-      // Đợi Backend lưu xong toàn bộ các ngày
       await Promise.all(promises);
 
-      // Thông báo Notification hệ thống
       const newNoti = {
         id: `reminder_${Date.now()}`,
         title: 'Workout Reminder',
@@ -535,6 +539,10 @@ const WorkoutsUserPage = () => {
   };
 
   const startWorkoutSession = () => {
+    if (isPastDate) {
+        alert("Đã qua ngày tập, không thể bắt đầu.");
+        return;
+    }
     if (todaysExercises.length === 0) {
       alert("Không có bài tập nào. Hãy thêm từ danh sách.");
       return;
@@ -557,7 +565,7 @@ const WorkoutsUserPage = () => {
   const finishWorkoutSession = async () => {
     setFinishingWorkout(true);
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getTodayStr();
 
       const logPromises = todaysExercises.map(exercise => {
         if (exercise.workout_id && !exercise.workout_id.startsWith('yt-')) {
@@ -604,12 +612,14 @@ const WorkoutsUserPage = () => {
   };
 
   const removeFromRoutine = async (index: number) => {
+    if (isPastDate) return;
     const newExercises = todaysExercises.filter((_, i) => i !== index);
     setExercisesByDate(prev => ({ ...prev, [selectedDate]: newExercises }));
     await updateDailyRoutine({ date: selectedDate, exercises: newExercises });
   };
 
   const moveUp = async (index: number) => {
+    if (isPastDate) return;
     if (index > 0) {
       const newExercises = [...todaysExercises];
       [newExercises[index - 1], newExercises[index]] = [newExercises[index], newExercises[index - 1]];
@@ -619,6 +629,7 @@ const WorkoutsUserPage = () => {
   };
 
   const moveDown = async (index: number) => {
+    if (isPastDate) return;
     if (index < todaysExercises.length - 1) {
       const newExercises = [...todaysExercises];
       [newExercises[index], newExercises[index + 1]] = [newExercises[index + 1], newExercises[index]];
@@ -650,20 +661,21 @@ const WorkoutsUserPage = () => {
     }));
   }, [aiRecommendations]);
 
+  // 🔴 SỬA LỖI TÍNH TOÁN THANH LƯỚT NGÀY: Nó sẽ tự động định tâm dựa vào selectedDate
   const scheduleDays = useMemo(() => {
-    const todayObj = new Date()
-    const days = []
+    const selectedObj = parseLocalDate(selectedDate);
+    const days = [];
     for (let i = -3; i <= 3; i++) {
-      const d = new Date()
-      d.setDate(todayObj.getDate() + i)
+      const d = new Date(selectedObj);
+      d.setDate(selectedObj.getDate() + i);
       days.push({
         fullDateStr: getLocalDateString(d), 
         label: d.toLocaleDateString("en-US", { weekday: "narrow" }).toUpperCase(),
         date: d.getDate()
-      })
+      });
     }
-    return days
-  }, [])
+    return days;
+  }, [selectedDate]);
 
   return (
     <Layout>
@@ -703,13 +715,22 @@ const WorkoutsUserPage = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={startWorkoutSession}
-              className="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-slate-900 text-sm font-bold leading-normal transition-all hover:scale-[1.02] shadow-lg shadow-primary/20"
-            >
-              <span className="material-symbols-outlined text-xl">play_circle</span>
-              <span className="truncate">Start Workout</span>
-            </button>
+            
+            {/* 🔴 CHỈ CHO BẤM START NẾU KO PHẢI QUÁ KHỨ */}
+            {isPastDate ? (
+                <div className="flex min-w-[140px] items-center justify-center gap-2 rounded-lg h-12 px-6 bg-slate-200 dark:bg-slate-800 text-slate-500 text-sm font-bold cursor-not-allowed">
+                    <span className="material-symbols-outlined text-xl">lock_clock</span>
+                    <span className="truncate">Đã qua ngày</span>
+                </div>
+            ) : (
+                <button
+                  onClick={startWorkoutSession}
+                  className="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-primary text-slate-900 text-sm font-bold leading-normal transition-all hover:scale-[1.02] shadow-lg shadow-primary/20"
+                >
+                  <span className="material-symbols-outlined text-xl">play_circle</span>
+                  <span className="truncate">Start Workout</span>
+                </button>
+            )}
           </div>
 
           {/* Today's Routine */}
@@ -719,12 +740,14 @@ const WorkoutsUserPage = () => {
                 <span className="material-symbols-outlined text-primary">calendar_today</span>
                 Routine cho {selectedDate === todayStrLocal ? "Hôm nay" : new Date(selectedDate).toLocaleDateString()}
               </h3>
-              <button
-                className="text-primary text-sm font-bold hover:underline flex items-center gap-1"
-                onClick={() => document.getElementById('workout-selection')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                <span className="material-symbols-outlined text-base">add</span> Add Exercise
-              </button>
+              {!isPastDate && (
+                  <button
+                    className="text-primary text-sm font-bold hover:underline flex items-center gap-1"
+                    onClick={() => document.getElementById('workout-selection')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    <span className="material-symbols-outlined text-base">add</span> Add Exercise
+                  </button>
+              )}
             </div>
             <div className="flex flex-col gap-3">
               {todaysExercises.length === 0 ? (
@@ -743,17 +766,21 @@ const WorkoutsUserPage = () => {
                       <h4 className="font-bold text-slate-900 dark:text-slate-100">{ex.name}</h4>
                       <p className="text-sm text-slate-500">{ex.duration} min • 🔥 {ex.calories} kcal</p>
                     </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => moveUp(index)} className="p-1 text-slate-400 hover:text-primary">
-                        <span className="material-symbols-outlined">arrow_upward</span>
-                      </button>
-                      <button onClick={() => moveDown(index)} className="p-1 text-slate-400 hover:text-primary">
-                        <span className="material-symbols-outlined">arrow_downward</span>
-                      </button>
-                      <button onClick={() => removeFromRoutine(index)} className="p-1 text-slate-400 hover:text-red-500">
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
-                    </div>
+                    
+                    {/* 🔴 CHỈ CHO XOÁ/SỬA KHI KO PHẢI QUÁ KHỨ */}
+                    {!isPastDate && (
+                        <div className="flex gap-1">
+                          <button onClick={() => moveUp(index)} className="p-1 text-slate-400 hover:text-primary">
+                            <span className="material-symbols-outlined">arrow_upward</span>
+                          </button>
+                          <button onClick={() => moveDown(index)} className="p-1 text-slate-400 hover:text-primary">
+                            <span className="material-symbols-outlined">arrow_downward</span>
+                          </button>
+                          <button onClick={() => removeFromRoutine(index)} className="p-1 text-slate-400 hover:text-red-500">
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
+                        </div>
+                    )}
                   </div>
                 ))
               )}
@@ -1021,50 +1048,56 @@ const WorkoutsUserPage = () => {
               )}
 
               {/* KHU VỰC CHỌN GIỜ & LẶP LẠI (RECURRENCE) */}
-              <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    
-                    <div className="flex flex-col gap-3 w-full md:w-auto">
-                        <div className="flex items-center gap-3">
-                            <label className="text-sm font-medium whitespace-nowrap min-w-[60px]">Hẹn giờ:</label>
-                            <input
-                                type="time"
-                                value={addStartTime}
-                                onChange={(e) => setAddStartTime(e.target.value)}
-                                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800"
-                            />
-                            <span>-</span>
-                            <input
-                                type="time"
-                                value={addEndTime}
-                                onChange={(e) => setAddEndTime(e.target.value)}
-                                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800"
-                            />
-                        </div>
+              {isPastDate ? (
+                 <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-center text-slate-500 font-bold">
+                     Không thể lên lịch cho ngày quá khứ
+                 </div>
+              ) : (
+                  <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         
-                        <div className="flex items-center gap-3">
-                            <label className="text-sm font-medium whitespace-nowrap min-w-[60px]">Lặp lại:</label>
-                            <select
-                                value={recurrence}
-                                onChange={(e) => setRecurrence(e.target.value as any)}
-                                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800 w-full"
-                            >
-                                <option value="none">Chỉ ngày đang chọn</option>
-                                <option value="daily_week">Hàng ngày (Trong 7 ngày tới)</option>
-                                <option value="246_week">Thứ 2-4-6 (Trong 7 ngày tới)</option>
-                                <option value="357_week">Thứ 3-5-7 (Trong 7 ngày tới)</option>
-                            </select>
+                        <div className="flex flex-col gap-3 w-full md:w-auto">
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm font-medium whitespace-nowrap min-w-[60px]">Hẹn giờ:</label>
+                                <input
+                                    type="time"
+                                    value={addStartTime}
+                                    onChange={(e) => setAddStartTime(e.target.value)}
+                                    className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800"
+                                />
+                                <span>-</span>
+                                <input
+                                    type="time"
+                                    value={addEndTime}
+                                    onChange={(e) => setAddEndTime(e.target.value)}
+                                    className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800"
+                                />
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm font-medium whitespace-nowrap min-w-[60px]">Lặp lại:</label>
+                                <select
+                                    value={recurrence}
+                                    onChange={(e) => setRecurrence(e.target.value as any)}
+                                    className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800 w-full"
+                                >
+                                    <option value="none">Chỉ ngày đang chọn</option>
+                                    <option value="daily_week">Hàng ngày (Trong 7 ngày tới)</option>
+                                    <option value="246_week">Thứ 2-4-6 (Trong 7 ngày tới)</option>
+                                    <option value="357_week">Thứ 3-5-7 (Trong 7 ngày tới)</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <button
-                        onClick={() => previewWorkout && addToRoutine(previewWorkout)}
-                        className="w-full md:w-auto h-11 px-6 bg-primary text-slate-900 text-sm font-bold rounded-lg hover:brightness-105 shadow-sm transition-all flex items-center justify-center gap-2 shrink-0"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">calendar_add_on</span> Thêm vào Lịch
-                    </button>
-                </div>
-              </div>
+                        <button
+                            onClick={() => previewWorkout && addToRoutine(previewWorkout)}
+                            className="w-full md:w-auto h-11 px-6 bg-primary text-slate-900 text-sm font-bold rounded-lg hover:brightness-105 shadow-sm transition-all flex items-center justify-center gap-2 shrink-0"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">calendar_add_on</span> Thêm vào Lịch
+                        </button>
+                    </div>
+                  </div>
+              )}
 
             </div>
           </div>

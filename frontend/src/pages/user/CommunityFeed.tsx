@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { io } from "socket.io-client";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from 'react-hot-toast';
+import { API_URL } from "../../config"; // CHUẨN HOÁ BIẾN MÔI TRƯỜNG TỰ ĐỘNG
 
-const socket = io("https://healthmate-y9vt.onrender.com");
+const socket = io(API_URL);
 
 const getAvatar = (name: string, picture?: string) => {
     if (picture && picture.trim() !== '') return picture;
@@ -26,47 +27,55 @@ const CommunityFeed = () => {
     
     const [activeTab, setActiveTab] = useState('all');
     const [posts, setPosts] = useState<any[]>([]);
-    
-    // --- STATE TOÀN CỤC CHO THỬ THÁCH ---
     const [challenges, setChallenges] = useState<any[]>([]);
-    
     const [leaderboard, setLeaderboard] = useState<{workout: any[], contribution: any[], challenge: any[]}>({ workout: [], contribution: [], challenge: [] });
     
     const [content, setContent] = useState("");
     const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [locationInfo, setLocationInfo] = useState<string>("");
+    const [selectedHashtag, setSelectedHashtag] = useState<string | null>(null);
 
     const navigate = useNavigate();
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     const token = localStorage.getItem("token");
 
-    // Fetch Challenges Global
     const fetchChallenges = () => {
-        fetch("https://healthmate-y9vt.onrender.com/api/community/challenges", {
+        fetch(`${API_URL}/api/community/challenges`, {
             headers: token ? { "Authorization": `Bearer ${token}` } : {}
         })
         .then(res => res.json()).then(data => setChallenges(data)).catch(console.error);
     };
 
-    useEffect(() => {
-        let url = "https://healthmate-y9vt.onrender.com/api/community/posts";
+    const fetchPostsData = () => {
+        let url = `${API_URL}/api/community/posts`;
         if (activeView === 'group_detail' && currentGroupId) {
             url += `?groupId=${currentGroupId}`;
-            fetch(`https://healthmate-y9vt.onrender.com/api/community/groups/${currentGroupId}`).then(res => res.json()).then(data => setCurrentGroupData(data));
+        }
+        fetch(url).then(res => res.json()).then(data => setPosts(Array.isArray(data) ? data : [])).catch(console.error);
+    };
+
+    useEffect(() => {
+        if (activeView === 'group_detail' && currentGroupId) {
+            fetch(`${API_URL}/api/community/groups/${currentGroupId}`).then(res => res.json()).then(data => setCurrentGroupData(data));
         } else {
             setCurrentGroupData(null);
         }
 
-        fetch(url).then(res => res.json()).then(data => setPosts(Array.isArray(data) ? data : [])).catch(console.error);
-        fetch("https://healthmate-y9vt.onrender.com/api/community/leaderboard").then(res => res.json()).then(data => setLeaderboard(data)).catch(console.error);
-        
+        fetchPostsData();
+        fetch(`${API_URL}/api/community/leaderboard`).then(res => res.json()).then(data => setLeaderboard(data)).catch(console.error);
         fetchChallenges();
     }, [activeView, currentGroupId]);
 
     useEffect(() => {
         socket.on('new_post', (newPost) => {
             const isGroupMatch = activeView === 'group_detail' ? newPost.groupId === currentGroupId : !newPost.groupId;
-            if (isGroupMatch) setPosts(prev => [newPost, ...prev]);
+            if (isGroupMatch) {
+                // 🔴 THUẬT TOÁN CHỐNG TRÙNG LẶP NẾU SOCKET GỬI CHẬM
+                setPosts(prev => {
+                    if (prev.some(p => p._id === newPost._id)) return prev;
+                    return [newPost, ...prev];
+                });
+            }
         });
         socket.on('post_updated', (updatedPost) => {
             setPosts(prev => prev.map(p => p._id === updatedPost._id ? updatedPost : p));
@@ -88,13 +97,20 @@ const CommunityFeed = () => {
         if (locationInfo) formData.append("location", locationInfo);
         if (mediaFile) formData.append("media", mediaFile);
 
-        const response = await fetch("https://healthmate-y9vt.onrender.com/api/community/posts", {
+        const response = await fetch(`${API_URL}/api/community/posts`, {
             method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData
         });
 
         if (response.ok) {
+            const newPostData = await response.json(); // Lấy luôn bài vừa đăng
             setContent(""); setMediaFile(null); setLocationInfo("");
             toast.success("Đã đăng bài thành công!");
+            
+            // 🔴 CẬP NHẬT LÊN FEED TỨC THÌ (REALTIME BẰNG STATE)
+            setPosts(prev => {
+                if (prev.some(p => p._id === newPostData._id)) return prev;
+                return [newPostData, ...prev];
+            });
         } else {
             const err = await response.json(); toast.error(err.message || "Lỗi khi đăng bài.");
         }
@@ -103,7 +119,23 @@ const CommunityFeed = () => {
     const handleUpdatePost = (updatedPost: any) => setPosts(prev => prev.map(p => p._id === updatedPost._id ? updatedPost : p));
     const handleDeletePostLocal = (id: string) => setPosts(prev => prev.filter(p => p._id !== id));
 
+    const trendingTags = useMemo(() => {
+        const tagCounts: Record<string, number> = {};
+        posts.forEach(post => {
+            if (!post.content) return;
+            const matches = post.content.match(/(#[\p{L}\p{N}_]+)/gu);
+            if (matches) {
+                matches.forEach((tag: string) => {
+                    const t = tag.toLowerCase();
+                    tagCounts[t] = (tagCounts[t] || 0) + 1;
+                });
+            }
+        });
+        return Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(entry => entry[0]);
+    }, [posts]);
+
     const filteredPosts = posts.filter(post => {
+        if (selectedHashtag) return post.content?.toLowerCase().includes(selectedHashtag.toLowerCase());
         if (activeTab === 'all') return true;
         if (activeTab === 'ai') return post.isAIPost || post.tag === 'AI Coach';
         if (activeTab === 'saved') return post.savedBy?.includes(currentUser._id);
@@ -116,18 +148,17 @@ const CommunityFeed = () => {
             <Toaster position="top-right"/>
             <main className="flex-grow max-w-[1280px] mx-auto px-6 py-8 w-full">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
-                    {/* LEFT SIDEBAR */}
                     <div className="hidden lg:block lg:col-span-3 sticky top-24">
                         <div className="flex flex-col gap-6">
                             <LeftSidebar activeView={activeView} setActiveView={(view: string) => {
-                                setActiveView(view); if(view !== 'group_detail') setCurrentGroupId(null);
+                                setActiveView(view); 
+                                setSelectedHashtag(null);
+                                if(view !== 'group_detail') setCurrentGroupId(null);
                             }} user={currentUser} />
                             <CommunityGroupsPreview setActiveView={setActiveView} setCurrentGroupId={setCurrentGroupId} />
                         </div>
                     </div>
 
-                    {/* MAIN FEED AREA */}
                     <div className="lg:col-span-6 flex flex-col gap-6">
                         {(activeView === 'feed' || activeView === 'group_detail') && (
                             <>
@@ -141,11 +172,9 @@ const CommunityFeed = () => {
                                     </div>
                                 )}
 
-                                {token && (
-                                    <ShareUpdateSection content={content} setContent={setContent} mediaFile={mediaFile} setMediaFile={setMediaFile} locationInfo={locationInfo} setLocationInfo={setLocationInfo} handlePost={handlePost} user={currentUser} />
-                                )}
+                                {token && <ShareUpdateSection content={content} setContent={setContent} mediaFile={mediaFile} setMediaFile={setMediaFile} locationInfo={locationInfo} setLocationInfo={setLocationInfo} handlePost={handlePost} user={currentUser} />}
                                 
-                                {activeView === 'feed' && (
+                                {activeView === 'feed' && !selectedHashtag && (
                                     <div className="flex border-b border-slate-200 dark:border-slate-800 gap-8">
                                         {[ { id: 'all', label: 'All Posts' }, { id: 'ai', label: 'AI Coach' }, { id: 'saved', label: 'Saved' } ].map(tab => (
                                             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`pb-3 text-sm font-bold uppercase tracking-tighter transition-colors ${activeTab === tab.id ? 'border-b-2 border-primary text-slate-900 dark:text-white' : 'text-slate-500 hover:text-primary'}`}>{tab.label}</button>
@@ -153,35 +182,37 @@ const CommunityFeed = () => {
                                     </div>
                                 )}
 
+                                {selectedHashtag && (
+                                    <div className="flex items-center justify-between bg-primary/10 border border-primary/20 p-4 rounded-xl">
+                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            Đang hiển thị bài viết cho: <span className="text-primary text-base">{selectedHashtag}</span>
+                                        </p>
+                                        <button onClick={() => setSelectedHashtag(null)} className="text-xs font-black bg-white dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white px-3 py-1.5 rounded-lg shadow-sm transition-colors">
+                                            Hủy bộ lọc ✕
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="space-y-6">
                                     {filteredPosts.length > 0 ? (
                                         filteredPosts.map(post => (
-                                            <PostCard 
-                                                key={post._id} 
-                                                post={post} 
-                                                currentUserId={currentUser._id} 
-                                                token={token} 
-                                                navigate={navigate} 
-                                                onUpdate={handleUpdatePost} 
-                                                onDelete={handleDeletePostLocal}
-                                                challenges={challenges}
-                                                fetchChallenges={fetchChallenges}
-                                            />
+                                            <PostCard key={post._id} post={post} currentUserId={currentUser._id} token={token} navigate={navigate} onUpdate={handleUpdatePost} onDelete={handleDeletePostLocal} challenges={challenges} fetchChallenges={fetchChallenges} onTagClick={setSelectedHashtag} />
                                         ))
-                                    ) : <p className="text-center text-slate-500 py-10">Chưa có bài viết nào.</p>}
+                                    ) : <p className="text-center text-slate-500 py-10">Không có bài viết nào phù hợp.</p>}
                                 </div>
                             </>
                         )}
                         {activeView === 'leaderboard' && <LeaderboardView data={leaderboard} />}
                         {activeView === 'groups' && <DiscoverGroups user={currentUser} setActiveView={setActiveView} setCurrentGroupId={setCurrentGroupId} />}
-                        {activeView === 'challenges' && <ChallengesView user={currentUser} challenges={challenges} fetchChallenges={fetchChallenges} />}
+                        
+                        {/* 🔴 TRUYỀN HÀM fetchPostsData XUỐNG CHALLENGES ĐỂ CẬP NHẬT TỨC THÌ */}
+                        {activeView === 'challenges' && <ChallengesView user={currentUser} challenges={challenges} fetchChallenges={fetchChallenges} fetchPostsData={fetchPostsData} />}
                     </div>
 
-                    {/* RIGHT SIDEBAR */}
                     <div className="hidden lg:block lg:col-span-3 sticky top-24">
                         <div className="flex flex-col gap-6">
                             <RightLeaderboardPreview data={leaderboard} setActiveView={setActiveView} />
-                            <TrendingTags />
+                            <TrendingTags tags={trendingTags} selectedHashtag={selectedHashtag} onTagClick={setSelectedHashtag} />
                         </div>
                     </div>
                 </div>
@@ -192,27 +223,35 @@ const CommunityFeed = () => {
 };
 
 // ─── CHALLENGES VIEW ───
-const ChallengesView = ({ user, challenges, fetchChallenges }: any) => {
+const ChallengesView = ({ user, challenges, fetchChallenges, fetchPostsData }: any) => {
     const [showCreate, setShowCreate] = useState(false);
     const [formData, setFormData] = useState({ title: '', target: '', metric: 'KM', isPrivate: false });
-    
-    // State Cập nhật ảo cho tốc độ siêu mượt
     const [localJoinedIds, setLocalJoinedIds] = useState<string[]>([]);
     const token = localStorage.getItem("token");
 
     const handleCreate = async () => {
         if (!token) return;
         if (!formData.title || formData.title.trim().length < 5) return toast.error("Tên thử thách phải từ 5 ký tự trở lên.");
-        if (formData.target === '' || Number(formData.target) <= 0) return toast.error("Mục tiêu phải là số lớn hơn 0.");
+        
+        const targetValue = Number(formData.target);
+        if (!targetValue || targetValue <= 0) return toast.error("Mục tiêu phải là số lớn hơn 0.");
 
-        const res = await fetch("https://healthmate-y9vt.onrender.com/api/community/challenges", {
+        const limits: Record<string, number> = { 'KM': 10000, 'Lần': 100000, 'Giờ': 5000, 'Ngày': 365 };
+        const maxAllowed = limits[formData.metric] || 10000;
+
+        if (targetValue > maxAllowed) return toast.error(`Mục tiêu quá phi lý! Tối đa cho ${formData.metric} là ${maxAllowed.toLocaleString('vi-VN')}.`);
+
+        const res = await fetch(`${API_URL}/api/community/challenges`, {
             method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-            body: JSON.stringify({ title: formData.title, target: Number(formData.target), metric: formData.metric, isPrivate: formData.isPrivate })
+            body: JSON.stringify({ title: formData.title, target: targetValue, metric: formData.metric, isPrivate: formData.isPrivate })
         });
         if (res.ok) {
             toast.success(formData.isPrivate ? "Tạo thử thách riêng tư thành công!" : "Tạo thử thách thành công! Đã chia sẻ lên Feed.");
             setShowCreate(false); setFormData({ title: '', target: '', metric: 'KM', isPrivate: false });
+            
+            // 🔴 LÀM MỚI FEED TỨC THÌ ĐỂ HIỆN BÀI CHIA SẺ THỬ THÁCH
             fetchChallenges(); 
+            fetchPostsData();
         } else {
             const err = await res.json(); toast.error(err.message || "Lỗi tạo thử thách.");
         }
@@ -220,14 +259,10 @@ const ChallengesView = ({ user, challenges, fetchChallenges }: any) => {
 
     const handleJoin = async (id: string) => {
         if (!token) return;
-        setLocalJoinedIds(prev => [...prev, id]); // Optimistic UI
-        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/community/challenges/${id}/join`, { method: "PUT", headers: { "Authorization": `Bearer ${token}` } });
-        if (res.ok) { 
-            toast.success("Đã tham gia thử thách!"); 
-            fetchChallenges(); 
-        } else {
-            setLocalJoinedIds(prev => prev.filter(joinedId => joinedId !== id)); // Rollback
-        }
+        setLocalJoinedIds(prev => [...prev, id]); 
+        const res = await fetch(`${API_URL}/api/community/challenges/${id}/join`, { method: "PUT", headers: { "Authorization": `Bearer ${token}` } });
+        if (res.ok) { toast.success("Đã tham gia thử thách!"); fetchChallenges(); } 
+        else { setLocalJoinedIds(prev => prev.filter(joinedId => joinedId !== id)); }
     };
 
     return (
@@ -267,7 +302,6 @@ const ChallengesView = ({ user, challenges, fetchChallenges }: any) => {
                 {challenges.map((c: any) => {
                     const isJoinedDb = c.participants?.some((p:any) => p._id === user._id || p === user._id);
                     const isJoined = isJoinedDb || localJoinedIds.includes(c._id);
-                    
                     return (
                         <div key={c._id} className="bg-slate-900 p-6 rounded-2xl text-white relative overflow-hidden shadow-lg border border-slate-800">
                             <div className="absolute top-0 right-0 size-32 bg-primary/20 blur-3xl rounded-full -mr-10 -mt-10 pointer-events-none"></div>
@@ -298,16 +332,13 @@ const ChallengesView = ({ user, challenges, fetchChallenges }: any) => {
 };
 
 // ─── POST CARD ───
-const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, challenges, fetchChallenges }: any) => {
+const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, challenges, fetchChallenges, onTagClick }: any) => {
     const [showComments, setShowComments] = useState(false);
     const [commentText, setCommentText] = useState("");
-    
     const [showMenu, setShowMenu] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(post.content);
     const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
-    
-    // State Cập nhật ảo cho thẻ Post Thử thách
     const [localJoined, setLocalJoined] = useState(false);
 
     const isOwner = post.user?._id === currentUserId;
@@ -324,7 +355,6 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, ch
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // ĐỒNG BỘ: Nhận diện Challenge Post
     let isChallengePost = false;
     let challengeTitle = "";
     let challengeTarget = "";
@@ -338,7 +368,6 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, ch
             isChallengePost = true;
             challengeTitle = titleMatch[1];
             challengeTarget = targetMatch[1];
-            
             associatedChallenge = challenges.find((c: any) => c.title === challengeTitle);
             if (associatedChallenge) {
                 isJoinedDb = associatedChallenge.participants?.some((p:any) => p._id === currentUserId || p === currentUserId);
@@ -351,26 +380,19 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, ch
     const handleJoinFromPost = async () => {
         if (!associatedChallenge || !token) return;
         try {
-            setLocalJoined(true); // Optimistic Update cho riêng nút ở Bảng tin
-            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/community/challenges/${associatedChallenge._id}/join`, {
+            setLocalJoined(true); 
+            const res = await fetch(`${API_URL}/api/community/challenges/${associatedChallenge._id}/join`, {
                 method: "PUT", headers: { "Authorization": `Bearer ${token}` }
             });
-            if (res.ok) {
-                toast.success("Đã tham gia thử thách!");
-                fetchChallenges(); 
-            } else {
-                setLocalJoined(false); // Rollback
-            }
-        } catch (error) { 
-            setLocalJoined(false); // Rollback
-            toast.error("Lỗi khi tham gia."); 
-        }
+            if (res.ok) { toast.success("Đã tham gia thử thách!"); fetchChallenges(); } 
+            else { setLocalJoined(false); }
+        } catch (error) { setLocalJoined(false); toast.error("Lỗi khi tham gia."); }
     };
 
     const toggleAction = async (action: 'like' | 'save') => {
         if (!token) return navigate("/login");
         try {
-            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/community/posts/${post._id}/${action}`, { method: "PUT", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` } });
+            const res = await fetch(`${API_URL}/api/community/posts/${post._id}/${action}`, { method: "PUT", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` } });
             if (res.ok) { const updated = await res.json(); onUpdate(updated); }
         } catch (error) { console.error(`Lỗi:`, error); }
     };
@@ -379,7 +401,7 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, ch
         if (!token) return navigate("/login");
         if (!commentText.trim()) return;
         try {
-            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/community/posts/${post._id}/comment`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ text: commentText }) });
+            const res = await fetch(`${API_URL}/api/community/posts/${post._id}/comment`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ text: commentText }) });
             if (res.ok) { const updated = await res.json(); onUpdate(updated); setCommentText(""); }
         } catch (error) { console.error("Lỗi comment:", error); }
     };
@@ -388,7 +410,7 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, ch
         if (!editContent.trim()) return toast.error("Nội dung không được để trống.");
         setIsSubmittingEdit(true);
         try {
-            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/community/posts/${post._id}`, {
+            const res = await fetch(`${API_URL}/api/community/posts/${post._id}`, {
                 method: "PUT", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify({ content: editContent })
             });
@@ -403,9 +425,9 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, ch
     };
 
     const handleDelete = async () => {
-        if (window.confirm("Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.")) {
+        if (window.confirm("Xóa bài viết này?")) {
             try {
-                const res = await fetch(`https://healthmate-y9vt.onrender.com/api/community/posts/${post._id}`, {
+                const res = await fetch(`${API_URL}/api/community/posts/${post._id}`, {
                     method: "DELETE", headers: { "Authorization": `Bearer ${token}` }
                 });
                 if (res.ok) { toast.success("Đã xóa bài viết."); onDelete(post._id); } 
@@ -477,7 +499,18 @@ const PostCard = ({ post, currentUserId, token, navigate, onUpdate, onDelete, ch
                         </div>
                     </div>
                 ) : (
-                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-3 whitespace-pre-wrap">{post.content}</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-3 whitespace-pre-wrap">
+                        {post.content?.split(/(#[\p{L}\p{N}_]+)/gu).map((part: string, i: number) => {
+                            if (part.startsWith('#')) {
+                                return (
+                                    <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => onTagClick(part)}>
+                                        {part}
+                                    </span>
+                                );
+                            }
+                            return part;
+                        })}
+                    </p>
                 )}
 
                 {post.mediaUrl && (
@@ -547,7 +580,7 @@ const DiscoverGroups = ({ user, setActiveView, setCurrentGroupId }: any) => {
     const token = localStorage.getItem("token");
 
     const fetchGroups = () => {
-        fetch("https://healthmate-y9vt.onrender.com/api/community/groups")
+        fetch(`${API_URL}/api/community/groups`)
             .then(res => res.json())
             .then(data => setGroups(data))
             .catch(err => console.error(err));
@@ -557,7 +590,7 @@ const DiscoverGroups = ({ user, setActiveView, setCurrentGroupId }: any) => {
 
     const handleCreateGroup = async () => {
         if(!newGroupName.trim() || !token) return;
-        const res = await fetch("https://healthmate-y9vt.onrender.com/api/community/groups", {
+        const res = await fetch(`${API_URL}/api/community/groups`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
             body: JSON.stringify({ name: newGroupName, description: newGroupDesc })
@@ -571,11 +604,24 @@ const DiscoverGroups = ({ user, setActiveView, setCurrentGroupId }: any) => {
 
     const handleJoinGroup = async (groupId: string) => {
         if(!token) return;
-        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/community/groups/${groupId}/join`, {
-            method: "PUT",
-            headers: { "Authorization": `Bearer ${token}` }
+        
+        setGroups(prev => prev.map(g => {
+            if (g._id === groupId) {
+                const isMem = g.members?.some((m:any) => m._id === user._id || m === user._id);
+                let newMembers = [...(g.members || [])];
+                if (isMem) newMembers = newMembers.filter((m:any) => (m._id || m) !== user._id);
+                else newMembers.push({ _id: user._id }); 
+                return { ...g, members: newMembers };
+            }
+            return g;
+        }));
+
+        const res = await fetch(`${API_URL}/api/community/groups/${groupId}/join`, {
+            method: "PUT", headers: { "Authorization": `Bearer ${token}` }
         });
+        
         if(res.ok) fetchGroups();
+        else { toast.error("Lỗi khi tham gia/rời nhóm."); fetchGroups(); }
     };
 
     const handleViewGroup = (groupId: string) => {
@@ -608,7 +654,7 @@ const DiscoverGroups = ({ user, setActiveView, setCurrentGroupId }: any) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {groups.map(group => {
-                    const isMember = group.members?.includes(user._id);
+                    const isMember = group.members?.some((m:any) => m._id === user._id || m === user._id);
                     return (
                         <div key={group._id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-md transition-shadow bg-white dark:bg-slate-900">
                             <div className="h-20 bg-cover bg-center" style={{backgroundImage: `url(${group.coverImage})`}}></div>
@@ -639,7 +685,7 @@ const CommunityGroupsPreview = ({ setActiveView, setCurrentGroupId }: any) => {
     const [previewGroups, setPreviewGroups] = useState<any[]>([]);
 
     useEffect(() => {
-        fetch("https://healthmate-y9vt.onrender.com/api/community/groups")
+        fetch(`${API_URL}/api/community/groups`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) setPreviewGroups(data.slice(0, 3));
@@ -737,7 +783,7 @@ const ShareUpdateSection = ({ content, setContent, mediaFile, setMediaFile, loca
                 <div className="flex-1 flex flex-col relative">
                     <textarea value={content} onChange={(e) => setContent(e.target.value)} 
                         className="w-full min-h-[80px] border-none focus:ring-0 focus:outline-none bg-transparent text-slate-800 dark:text-white placeholder:text-slate-400 resize-none" 
-                        placeholder="Chia sẻ buổi tập hoặc tiến độ của bạn..." />
+                        placeholder="Thêm hashtag (#) để đưa bài viết lên Trending nhé..." />
                     
                     {(mediaFile || locationInfo) && (
                         <div className="flex flex-wrap gap-2 mt-2">
@@ -875,13 +921,23 @@ const LeaderboardView = ({ data }: any) => {
     );
 };
 
-const TrendingTags = () => (
+const TrendingTags = ({ tags, selectedHashtag, onTagClick }: any) => (
     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
         <h3 className="font-bold mb-4 dark:text-white text-[12px] uppercase tracking-widest text-slate-900">Trending Tags</h3>
         <div className="flex flex-wrap gap-2">
-            {['#Workout', '#Healthmate', '#Running', '#Yoga', '#Gym'].map(tag => (
-                <span key={tag} className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg text-[10px] font-bold text-slate-500 hover:text-primary transition-colors cursor-pointer">{tag}</span>
-            ))}
+            {tags && tags.length > 0 ? tags.map((tag: string) => (
+                <button 
+                    key={tag} 
+                    onClick={() => onTagClick(tag === selectedHashtag ? null : tag)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${
+                        tag === selectedHashtag 
+                        ? 'bg-primary text-slate-900 border-primary shadow-sm scale-105' 
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-primary hover:border-primary/30 border-transparent'
+                    }`}
+                >
+                    {tag}
+                </button>
+            )) : <p className="text-xs text-slate-500">Chưa có hashtag nào</p>}
         </div>
     </div>
 );

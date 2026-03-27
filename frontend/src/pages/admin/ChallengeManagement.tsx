@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://healthmate-y9vt.onrender.com');
+
 const ChallengeManagement = () => {
   const [challenges, setChallenges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -10,18 +12,15 @@ const ChallengeManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('https://healthmate-y9vt.onrender.com/api/community/challenges', {
+      const res = await fetch(`${API_URL}/api/community/challenges`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setChallenges(data);
       }
-    } catch (error) {
-      toast.error('Lỗi khi lấy dữ liệu thử thách');
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { toast.error('Lỗi khi lấy dữ liệu thử thách'); } 
+    finally { setLoading(false); }
   };
 
   useEffect(() => { fetchChallenges(); }, []);
@@ -30,7 +29,7 @@ const ChallengeManagement = () => {
     if(window.confirm('Xóa vĩnh viễn thử thách này khỏi hệ thống?')) {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/admin/challenges/${id}`, {
+            const res = await fetch(`${API_URL}/api/admin/challenges/${id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -40,9 +39,7 @@ const ChallengeManagement = () => {
             } else {
                 toast.error("Lỗi khi xóa thử thách.");
             }
-        } catch (error) {
-            toast.error("Lỗi kết nối.");
-        }
+        } catch (error) { toast.error("Lỗi kết nối."); }
     }
   };
 

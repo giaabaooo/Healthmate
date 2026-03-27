@@ -63,7 +63,7 @@ const DashboardPage: React.FC = () => {
         throw new Error('Không tìm thấy token xác thực');
       }
 
-      const statsResponse = await fetch('https://healthmate-y9vt.onrender.com/api/tracker/dashboard-stats', {
+      const statsResponse = await fetch('http://localhost:8000/api/tracker/dashboard-stats', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -86,7 +86,7 @@ const DashboardPage: React.FC = () => {
       }
       setStats(statsData);
 
-      const bodyResponse = await fetch('https://healthmate-y9vt.onrender.com/api/tracker/body-progress?period=month', {
+      const bodyResponse = await fetch('http://localhost:8000/api/tracker/body-progress?period=month', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -98,7 +98,7 @@ const DashboardPage: React.FC = () => {
         setBodyProgress(bodyData);
       }
 
-      const workoutResponse = await fetch('https://healthmate-y9vt.onrender.com/api/tracker/workouts?period=week', {
+      const workoutResponse = await fetch('http://localhost:8000/api/tracker/workouts?period=week', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

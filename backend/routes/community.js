@@ -98,7 +98,6 @@ router.get('/posts', async (req, res) => {
   } catch (err) { res.status(500).json(err); }
 });
 
-// API CẬP NHẬT BÀI VIẾT
 router.put('/posts/:id', protect, async (req, res) => {
     try {
         const { content } = req.body;
@@ -120,7 +119,6 @@ router.put('/posts/:id', protect, async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// API XÓA BÀI VIẾT
 router.delete('/posts/:id', protect, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
@@ -234,19 +232,16 @@ router.get('/groups', async (req, res) => {
   try { res.json(await Group.find().populate('admin members', 'profile.full_name profile.picture')); } 
   catch (err) { res.status(500).json(err); }
 });
-
 router.get('/groups/:id', async (req, res) => {
   try { res.json(await Group.findById(req.params.id).populate('admin members', 'profile.full_name profile.picture')); } 
   catch (err) { res.status(500).json(err); }
 });
-
 router.post('/groups', protect, async (req, res) => {
   try {
       if(!req.body.name || req.body.name.trim().length < 3) return res.status(400).json({message: "Tên nhóm phải từ 3 ký tự trở lên."});
       res.status(201).json(await Group.create({ name: req.body.name, description: req.body.description, admin: req.user.id, members: [req.user.id] }));
   } catch (err) { res.status(500).json(err); }
 });
-
 router.put('/groups/:id/join', protect, async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
@@ -264,21 +259,32 @@ router.get('/challenges', protect, async (req, res) => {
   } catch (err) { res.status(500).json(err); }
 });
 
+// 🔴 ĐÃ THÊM VALIDATE KỸ HƠN CHO MỤC TIÊU (Max Limit)
 router.post('/challenges', protect, async (req, res) => {
   try {
-    if (!req.body.title || req.body.title.trim().length < 5) return res.status(400).json({ message: "Tên thử thách phải từ 5 ký tự trở lên." });
-    if (req.body.target === undefined || req.body.target === null || Number(req.body.target) <= 0) return res.status(400).json({ message: "Mục tiêu phải là số lớn hơn 0." });
-    if (!['KM', 'Lần', 'Giờ', 'Ngày'].includes(req.body.metric)) return res.status(400).json({ message: "Đơn vị đo lường không hợp lệ." });
+    const { title, target, metric, isPrivate } = req.body;
+    
+    if (!title || title.trim().length < 5) return res.status(400).json({ message: "Tên thử thách phải từ 5 ký tự trở lên." });
+    
+    const targetNum = Number(target);
+    if (!targetNum || targetNum <= 0) return res.status(400).json({ message: "Mục tiêu phải là số lớn hơn 0." });
+    
+    // Giới hạn max theo từng đơn vị
+    const limits = { 'KM': 10000, 'Lần': 100000, 'Giờ': 5000, 'Ngày': 365 };
+    if (!limits[metric]) return res.status(400).json({ message: "Đơn vị đo lường không hợp lệ." });
+    
+    if (targetNum > limits[metric]) {
+        return res.status(400).json({ message: `Mục tiêu quá phi lý! Tối đa cho ${metric} là ${limits[metric].toLocaleString('vi-VN')}.` });
+    }
 
-    const isPrivate = req.body.isPrivate || false;
     const newChallenge = await Challenge.create({
-        title: req.body.title, target: Number(req.body.target), metric: req.body.metric,
-        creator: req.user.id, participants: [req.user.id], isPrivate: isPrivate
+        title, target: targetNum, metric,
+        creator: req.user.id, participants: [req.user.id], isPrivate: isPrivate || false
     });
 
     if (!isPrivate) {
         const newPost = new Post({
-            content: `🔥 Tôi vừa tạo thử thách cộng đồng mới: **${req.body.title}** (Mục tiêu: ${req.body.target} ${req.body.metric}).\n\nHãy vào mục **My Challenges** để tham gia cùng tôi ngay nhé!`,
+            content: `🔥 Tôi vừa tạo thử thách cộng đồng mới: **${title}** (Mục tiêu: ${targetNum} ${metric}).\n\nHãy vào mục **My Challenges** để tham gia cùng tôi ngay nhé!`,
             user: req.user.id, tag: 'Challenge', createdAt: new Date()
         });
         const savedPost = await newPost.save();

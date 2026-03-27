@@ -1,7 +1,7 @@
-const API_URL = "https://healthmate-y9vt.onrender.com/api/workouts";
-const USER_WORKOUT_API = "https://healthmate-y9vt.onrender.com/api/user/user-workouts";
-const WORKOUT_LOG_API = "https://healthmate-y9vt.onrender.com/api/workout-logs";
-const USER_API = "https://healthmate-y9vt.onrender.com/api/users";
+const API_URL = "http://localhost:8000/api/workouts";
+const USER_WORKOUT_API = "http://localhost:8000/api/user/user-workouts";
+const WORKOUT_LOG_API = "http://localhost:8000/api/workout-logs";
+const USER_API = "http://localhost:8000/api/users";
 //////////////////////////////////////////////////////////////
 // TYPES
 //////////////////////////////////////////////////////////////
@@ -252,7 +252,7 @@ export const getAIWorkoutRecommend = async (
 ) => {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("https://healthmate-y9vt.onrender.com/api/ai/recommend", {
+  const res = await fetch("http://localhost:8000/api/ai/recommend", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

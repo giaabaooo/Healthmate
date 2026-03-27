@@ -16,11 +16,11 @@
 ### 2. API Endpoints Testing
 
 #### 2.1 Lưu lịch sử bài tập ✅
-**Endpoint:** `POST https://healthmate-y9vt.onrender.com/api/tracker/workouts`
+**Endpoint:** `POST http://localhost:8000/api/tracker/workouts`
 
 **Test với Postman/curl:**
 ```bash
-curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/workouts \
+curl -X POST http://localhost:8000/api/tracker/workouts \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -54,11 +54,11 @@ curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/workouts \
 ```
 
 #### 2.2 Lấy lịch sử bài tập ✅
-**Endpoint:** `GET https://healthmate-y9vt.onrender.com/api/tracker/workouts?period=week&limit=10`
+**Endpoint:** `GET http://localhost:8000/api/tracker/workouts?period=week&limit=10`
 
 **Test:**
 ```bash
-curl -X GET "https://healthmate-y9vt.onrender.com/api/tracker/workouts?period=week&limit=10" \
+curl -X GET "http://localhost:8000/api/tracker/workouts?period=week&limit=10" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -76,11 +76,11 @@ curl -X GET "https://healthmate-y9vt.onrender.com/api/tracker/workouts?period=we
 ```
 
 #### 2.3 Cập nhật cân nặng ✅
-**Endpoint:** `POST https://healthmate-y9vt.onrender.com/api/tracker/body-progress`
+**Endpoint:** `POST http://localhost:8000/api/tracker/body-progress`
 
 **Test:**
 ```bash
-curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/body-progress \
+curl -X POST http://localhost:8000/api/tracker/body-progress \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -91,7 +91,7 @@ curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/body-progress \
 ```
 
 #### 2.4 Lấy dữ liệu tiến trình cơ thể ✅
-**Endpoint:** `GET https://healthmate-y9vt.onrender.com/api/tracker/body-progress?period=month`
+**Endpoint:** `GET http://localhost:8000/api/tracker/body-progress?period=month`
 
 **Expected Response:**
 ```json
@@ -116,7 +116,7 @@ curl -X POST https://healthmate-y9vt.onrender.com/api/tracker/body-progress \
 ```
 
 #### 2.5 Dashboard Statistics ✅
-**Endpoint:** `GET https://healthmate-y9vt.onrender.com/api/tracker/dashboard-stats`
+**Endpoint:** `GET http://localhost:8000/api/tracker/dashboard-stats`
 
 **Expected Response:**
 ```json
@@ -237,7 +237,7 @@ const createTestData = async () => {
     const date = new Date();
     date.setDate(date.getDate() - (4 - i) * 7);
     
-    await fetch('https://healthmate-y9vt.onrender.com/api/tracker/body-progress', {
+    await fetch('http://localhost:8000/api/tracker/body-progress', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -263,7 +263,7 @@ const createTestData = async () => {
     const date = new Date();
     date.setDate(date.getDate() - i);
     
-    await fetch('https://healthmate-y9vt.onrender.com/api/tracker/workouts', {
+    await fetch('http://localhost:8000/api/tracker/workouts', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -314,7 +314,7 @@ createTestData();
 localStorage.getItem('token') // Verify token exists
 
 // Test API directly
-fetch('https://healthmate-y9vt.onrender.com/api/tracker/dashboard-stats', {
+fetch('http://localhost:8000/api/tracker/dashboard-stats', {
   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
 }).then(r => r.json()).then(console.log)
 
@@ -323,7 +323,7 @@ fetch('https://healthmate-y9vt.onrender.com/api/tracker/dashboard-stats', {
 ```
 
 ### Network Tab
-- Check API requests to `https://healthmate-y9vt.onrender.com/api/tracker/*`
+- Check API requests to `http://localhost:8000/api/tracker/*`
 - Verify status codes (200 OK)
 - Check response payloads
 - Verify Authorization headers

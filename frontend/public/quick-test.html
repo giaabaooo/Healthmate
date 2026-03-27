@@ -49,7 +49,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://healthmate-y9vt.onrender.com/api';
+        const API_BASE = 'http://localhost:8000/api';
 
         function showResult(id, message, isError = false) {
             document.getElementById(id).innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
