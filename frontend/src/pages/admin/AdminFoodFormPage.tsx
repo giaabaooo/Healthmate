@@ -45,7 +45,7 @@ const AdminFoodFormPage = () => {
       formDataToSend.append('carbs', formData.carbs || '0');
       formDataToSend.append('fat', formData.fat || '0');
 
-      const response = await fetch('http://localhost:8000/api/foods', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/foods', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})

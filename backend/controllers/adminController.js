@@ -465,6 +465,31 @@ const getSystemPerformance = async (req, res) => {
   }
 };
 
+
+
+const deletePost = async (req, res) => {
+  try {
+    const Post = mongoose.model('Post');
+    await Post.findByIdAndDelete(req.params.id);
+    res.json({ message: "Đã xóa bài viết thành công" });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const deleteGroup = async (req, res) => {
+  try {
+    const Group = mongoose.model('Group');
+    await Group.findByIdAndDelete(req.params.id);
+    res.json({ message: "Đã giải tán nhóm thành công" });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const deleteChallenge = async (req, res) => {
+  try {
+    const Challenge = mongoose.model('Challenge');
+    await Challenge.findByIdAndDelete(req.params.id);
+    res.json({ message: "Đã xóa thử thách thành công" });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
 module.exports = {
   getDashboardStats,
   getUsers,
@@ -475,5 +500,9 @@ module.exports = {
   getSystemLogs,
   createBackup,
   systemRecovery,
+  
+  deletePost,
+  deleteGroup,
+  deleteChallenge,
   getSystemPerformance
 };

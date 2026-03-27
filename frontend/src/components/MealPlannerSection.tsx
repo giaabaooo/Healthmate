@@ -104,7 +104,7 @@ const MealPlannerSection: React.FC<MealPlannerSectionProps> = ({ onBack }) => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/users', { headers: authHeaders() });
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/users', { headers: authHeaders() });
       const data = await res.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -114,7 +114,7 @@ const MealPlannerSection: React.FC<MealPlannerSectionProps> = ({ onBack }) => {
     try {
       setLoading(true);
       const q = targetUserId ? `?target_user_id=${targetUserId}` : '';
-      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}${q}`, { headers: authHeaders() });
+      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}${q}`, { headers: authHeaders() });
       const data = await res.json();
       setItems(data.items || []);
       setTotalCalories(data.total_calories || 0);
@@ -128,7 +128,7 @@ const MealPlannerSection: React.FC<MealPlannerSectionProps> = ({ onBack }) => {
     await Promise.all(week.map(async (date) => {
       try {
         const q = targetUserId ? `?target_user_id=${targetUserId}` : '';
-        const res = await fetch(`http://localhost:8000/api/meal-plans/${date}${q}`, { headers: authHeaders() });
+        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${date}${q}`, { headers: authHeaders() });
         const data = await res.json();
         results[date] = data.total_calories || 0;
       } catch { results[date] = 0; }
@@ -138,7 +138,7 @@ const MealPlannerSection: React.FC<MealPlannerSectionProps> = ({ onBack }) => {
 
   const fetchFoods = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/foods');
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/foods');
       const data = await res.json();
       setFoods(data);
       const init: Record<string, number> = {};
@@ -161,7 +161,7 @@ const MealPlannerSection: React.FC<MealPlannerSectionProps> = ({ onBack }) => {
     try {
       const body: Record<string, unknown> = { food_id: foodId, quantity };
       if (targetUserId) body.target_user_id = targetUserId;
-      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
+      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items`, {
         method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
       });
       if (res.ok) { toast.success('Added to meal plan'); fetchMealPlan(); setShowFoodModal(false); }
@@ -174,7 +174,7 @@ const MealPlannerSection: React.FC<MealPlannerSectionProps> = ({ onBack }) => {
     try {
       const body: Record<string, unknown> = { quantity: editQuantity };
       if (targetUserId) body.target_user_id = targetUserId;
-      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items/${itemId}`, {
+      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${itemId}`, {
         method: 'PUT', headers: authHeaders(), body: JSON.stringify(body),
       });
       if (res.ok) { toast.success('Updated'); fetchMealPlan(); setEditingItem(null); }
@@ -186,7 +186,7 @@ const MealPlannerSection: React.FC<MealPlannerSectionProps> = ({ onBack }) => {
     try {
       const q = targetUserId ? `?target_user_id=${targetUserId}` : '';
       const res = await fetch(
-        `http://localhost:8000/api/meal-plans/${selectedDate}/items/${deleteTarget.id}${q}`,
+        `https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${deleteTarget.id}${q}`,
         { method: 'DELETE', headers: authHeaders() },
       );
       if (res.ok) { toast.success('Removed'); fetchMealPlan(); }

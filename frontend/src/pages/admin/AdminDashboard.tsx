@@ -64,12 +64,12 @@ const AdminDashboardPage = () => {
 
         // GỌI ĐỒNG THỜI CÁC API ĐỂ LẤY DỮ LIỆU THỐNG KÊ THẬT
         const [usersRes, postsRes, groupsRes, challengesRes, foodsRes] = await Promise.all([
-          fetch('http://localhost:8000/api/users', { headers }),
-          fetch('http://localhost:8000/api/community/posts', { headers }),
-          fetch('http://localhost:8000/api/community/groups', { headers }),
-          fetch('http://localhost:8000/api/community/challenges', { headers }),
+          fetch('https://healthmate-y9vt.onrender.com/api/users', { headers }),
+          fetch('https://healthmate-y9vt.onrender.com/api/community/posts', { headers }),
+          fetch('https://healthmate-y9vt.onrender.com/api/community/groups', { headers }),
+          fetch('https://healthmate-y9vt.onrender.com/api/community/challenges', { headers }),
           // Đặt fallback cho Foods nếu API chưa hoàn thiện
-          fetch('http://localhost:8000/api/foods', { headers }).catch(() => ({ ok: false, json: () => [] }))
+          fetch('https://healthmate-y9vt.onrender.com/api/foods', { headers }).catch(() => ({ ok: false, json: () => [] }))
         ]);
 
         const usersData = usersRes.ok ? await usersRes.json() : [];
@@ -201,10 +201,7 @@ const AdminDashboardPage = () => {
                                             <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">{post.content}</p>
                                             
                                             {/* Admin Actions */}
-                                            <div className="flex gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50">
-                                                <button className="text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">delete</span> Xóa bài</button>
-                                                <button className="text-[11px] font-bold text-amber-500 hover:text-amber-700 transition-colors flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">warning</span> Cảnh cáo</button>
-                                            </div>
+                                            
                                         </div>
                                     </div>
                                 ))

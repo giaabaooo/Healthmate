@@ -149,6 +149,35 @@ const WorkoutsUserPage = () => {
   const [aiRecommendations, setAiRecommendations] = useState<Workout[]>([]);
   const [goal, setGoal] = useState<any>(null);
 
+  const [previewWorkoutId, setPreviewWorkoutId] = useState<string | null>(null);
+  const [previewWorkout, setPreviewWorkout] = useState<Workout | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const [dailyCaloTarget, setDailyCaloTarget] = useState(0);
+  const [dailyCaloBurned, setDailyCaloBurned] = useState(0);
+  const [dailyProgressPercent, setDailyProgressPercent] = useState(0);
+  const [showCongrats, setShowCongrats] = useState(false);
+
+  // States cho việc Add vào Routine
+  const [addStartTime, setAddStartTime] = useState("08:00");
+  const [addEndTime, setAddEndTime] = useState("08:30");
+  // STATE MỚI: Lựa chọn kiểu lặp lại lịch tập
+  const [recurrence, setRecurrence] = useState<'none' | 'daily_week' | '246_week' | '357_week'>('none');
+
+  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
+  const [exerciseTimer, setExerciseTimer] = useState(0);
+  const [finishingWorkout, setFinishingWorkout] = useState(false);
+
+  const todayStrLocal = getLocalDateString(new Date());
+  const [selectedDate, setSelectedDate] = useState(todayStrLocal);
+  const [exercisesByDate, setExercisesByDate] = useState<Record<string, TodaysExercise[]>>({});
+  const [eventsByDate, setEventsByDate] = useState<Record<string, { title: string; time: string; image?: string }[]>>({});
+  const todaysExercises = exercisesByDate[selectedDate] || [];
+
+  // ... (Giữ nguyên các hàm load dữ liệu, tính toán BMI, Goal) ...
   useEffect(() => {
     if (library.length === 0) return;
     const userStr = localStorage.getItem('user');
@@ -191,31 +220,6 @@ const WorkoutsUserPage = () => {
     
     loadAI();
   }, [goal, library, logs]);
-
-  const [previewWorkoutId, setPreviewWorkoutId] = useState<string | null>(null);
-  const [previewWorkout, setPreviewWorkout] = useState<Workout | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-
-  const [dailyCaloTarget, setDailyCaloTarget] = useState(0);
-  const [dailyCaloBurned, setDailyCaloBurned] = useState(0);
-  const [dailyProgressPercent, setDailyProgressPercent] = useState(0);
-  const [showCongrats, setShowCongrats] = useState(false);
-
-  const [addStartTime, setAddStartTime] = useState("08:00");
-  const [addEndTime, setAddEndTime] = useState("08:30");
-
-  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
-  const [exerciseTimer, setExerciseTimer] = useState(0);
-  const [finishingWorkout, setFinishingWorkout] = useState(false);
-
-  const todayStrLocal = getLocalDateString(new Date());
-  const [selectedDate, setSelectedDate] = useState(todayStrLocal);
-  const [exercisesByDate, setExercisesByDate] = useState<Record<string, TodaysExercise[]>>({});
-  const [eventsByDate, setEventsByDate] = useState<Record<string, { title: string; time: string; image?: string }[]>>({});
-  const todaysExercises = exercisesByDate[selectedDate] || [];
 
   const calculateBMR = (weight: number, height: number, age: number, gender: string) => {
     if (gender === 'male') return 10 * weight + 6.25 * height - 5 * age + 5;
@@ -367,7 +371,7 @@ const WorkoutsUserPage = () => {
       setPreviewLoading(true);
       setPreviewError(null);
       try {
-        const res = await fetch(`http://localhost:8000/api/workouts/${previewWorkoutId}`, { signal: controller.signal });
+        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/workouts/${previewWorkoutId}`, { signal: controller.signal });
         const data = await res.json();
         if (!res.ok) {
           setPreviewWorkout(null);
@@ -396,79 +400,137 @@ const WorkoutsUserPage = () => {
     return s1 < e2 && e1 > s2;
   };
 
+  // HÀM MỚI: Tự động tính toán mảng ngày tương lai dựa trên luật lặp lại
+  const generateTargetDates = (startDateStr: string, type: string) => {
+    const dates = [];
+    const start = new Date(startDateStr);
+    
+    if (type === 'none') return [startDateStr];
+
+    for (let i = 0; i < 7; i++) {
+       const d = new Date(start);
+       d.setDate(d.getDate() + i);
+       const dayOfWeek = d.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+       const dateStr = getLocalDateString(d);
+
+       if (type === 'daily_week') {
+           dates.push(dateStr);
+       } else if (type === '246_week') {
+           if ([1, 3, 5].includes(dayOfWeek)) dates.push(dateStr); // Thứ 2, 4, 6
+       } else if (type === '357_week') {
+           if ([2, 4, 6].includes(dayOfWeek)) dates.push(dateStr); // Thứ 3, 5, 7
+       }
+    }
+    return dates;
+  };
+
+  // CẬP NHẬT HÀM: Thêm vào lịch (Hỗ trợ nhiều ngày)
   const addToRoutine = async (workout: Workout) => {
     if (addStartTime >= addEndTime) {
       alert("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
       return;
     }
 
-    const hasOverlap = todaysExercises.some(ex =>
-      isTimeOverlapping(addStartTime, addEndTime, ex.startTime, ex.endTime)
-    );
+    const targetDates = generateTargetDates(selectedDate, recurrence);
+    let successCount = 0;
+    let overlapCount = 0;
 
-    if (hasOverlap) {
-      alert("Thời gian tập trùng với bài tập khác. Vui lòng chọn khoảng thời gian trống.");
+    // Clone state hiện tại để thay đổi an toàn
+    const newExercisesByDate = { ...exercisesByDate };
+    const newEventsByDate = { ...eventsByDate };
+    const promises = [];
+
+    for (const targetDate of targetDates) {
+        const existingExs = newExercisesByDate[targetDate] || [];
+
+        // Kiểm tra xem giờ này ngày đó có trống không
+        const hasOverlap = existingExs.some(ex =>
+          isTimeOverlapping(addStartTime, addEndTime, ex.startTime, ex.endTime)
+        );
+
+        if (hasOverlap) {
+          overlapCount++;
+          continue; // Bỏ qua ngày này nếu trùng lịch
+        }
+
+        let newExercisesFromWorkout = [];
+        if (workout.exercises && workout.exercises.length > 0) {
+          newExercisesFromWorkout = workout.exercises.map((ex: any, i: number) => ({
+            id: `${workout._id}-${targetDate}-${Date.now()}-${i}`,
+            workout_id: workout._id,
+            name: ex.title || workout.title || workout.name || "Workout",
+            startTime: addStartTime,
+            endTime: addEndTime,
+            image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
+            duration: Math.round((ex.duration_sec || 60) / 60),
+            calories: Math.round((workout.calories_burned || workout.estimatedCalories || 0) / workout.exercises!.length),
+            video_url: ex.video_url
+          }));
+        } else {
+          newExercisesFromWorkout = [{
+            id: `${workout._id}-${targetDate}-${Date.now()}`,
+            workout_id: workout._id,
+            name: workout.title || workout.name || "Workout",
+            startTime: addStartTime,
+            endTime: addEndTime,
+            image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
+            duration: workout.duration || 30,
+            calories: workout.calories_burned || workout.estimatedCalories || 0,
+            video_url: workout.video_url
+          }];
+        }
+
+        const mergedExercises = [...existingExs, ...newExercisesFromWorkout];
+        newExercisesByDate[targetDate] = mergedExercises;
+
+        const newEvents = mergedExercises.map(ex => ({
+          title: ex.name,
+          time: `${ex.startTime} - ${ex.endTime}`,
+          image: ex.image
+        }));
+        newEventsByDate[targetDate] = newEvents;
+
+        // Đẩy request cập nhật backend vào mảng Promise chờ
+        promises.push(updateDailyRoutine({ date: targetDate, exercises: mergedExercises }));
+        successCount++;
+    }
+
+    if (successCount === 0) {
+      alert("Không thể thêm lịch. Các khung giờ trong ngày bạn chọn đều đã có bài tập!");
       return;
     }
 
-    let newExercisesFromWorkout = [];
-    if (workout.exercises && workout.exercises.length > 0) {
-      newExercisesFromWorkout = workout.exercises.map((ex: any, i: number) => ({
-        id: `${workout._id}-${Date.now()}-${i}`,
-        workout_id: workout._id,
-        name: ex.title || workout.title || workout.name || "Workout",
-        startTime: addStartTime,
-        endTime: addEndTime,
-        image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
-        duration: Math.round((ex.duration_sec || 60) / 60),
-        calories: Math.round((workout.calories_burned || workout.estimatedCalories || 0) / workout.exercises!.length),
-        video_url: ex.video_url
-      }));
-    } else {
-      newExercisesFromWorkout = [{
-        id: `${workout._id}-${Date.now()}`,
-        workout_id: workout._id,
-        name: workout.title || workout.name || "Workout",
-        startTime: addStartTime,
-        endTime: addEndTime,
-        image: workout.cover_image || "https://placehold.co/100x100/png?text=Workout",
-        duration: workout.duration || 30,
-        calories: workout.calories_burned || workout.estimatedCalories || 0,
-        video_url: workout.video_url
-      }];
-    }
-
-    const newExercises = [...(exercisesByDate[selectedDate] || []), ...newExercisesFromWorkout];
-    setExercisesByDate(prev => ({ ...prev, [selectedDate]: newExercises }));
-
-    const newEvents = newExercises.map(ex => ({
-      title: ex.name,
-      time: `${ex.startTime} - ${ex.endTime}`,
-      image: ex.image
-    }));
-    setEventsByDate(prev => ({ ...prev, [selectedDate]: newEvents }));
-
-    setPreviewWorkoutId(null);
-    alert("Đã thêm bài tập vào lịch trình của bạn!");
-
-    const newNoti = {
-      id: `reminder_${Date.now()}`,
-      title: 'Workout Reminder',
-      message: `Đã xếp lịch: ${workout.title || workout.name} vào lúc ${addStartTime} ngày ${selectedDate}.`,
-      timeLabel: 'Mới',
-      unread: true,
-      href: '/workouts',
-      icon: 'alarm',
-      color: 'bg-primary/20 text-primary'
-    };
-    const existingNotis = JSON.parse(localStorage.getItem('hm_notifications') || '[]');
-    localStorage.setItem('hm_notifications', JSON.stringify([newNoti, ...existingNotis]));
-    window.dispatchEvent(new Event('notifications-updated')); 
+    // Cập nhật State Frontend ngay lập tức
+    setExercisesByDate(newExercisesByDate);
+    setEventsByDate(newEventsByDate);
 
     try {
-      await updateDailyRoutine({ date: selectedDate, exercises: newExercises });
+      // Đợi Backend lưu xong toàn bộ các ngày
+      await Promise.all(promises);
+
+      // Thông báo Notification hệ thống
+      const newNoti = {
+        id: `reminder_${Date.now()}`,
+        title: 'Workout Reminder',
+        message: `Đã xếp lịch: ${workout.title || workout.name} vào ${successCount} ngày tới lúc ${addStartTime}.`,
+        timeLabel: 'Mới',
+        unread: true,
+        href: '/workouts',
+        icon: 'alarm',
+        color: 'bg-primary/20 text-primary'
+      };
+      const existingNotis = JSON.parse(localStorage.getItem('hm_notifications') || '[]');
+      localStorage.setItem('hm_notifications', JSON.stringify([newNoti, ...existingNotis]));
+      window.dispatchEvent(new Event('notifications-updated')); 
+
+      setPreviewWorkoutId(null);
+      
+      let msg = `Đã thêm bài tập thành công vào ${successCount} ngày!`;
+      if (overlapCount > 0) msg += ` (Hệ thống đã tự động bỏ qua ${overlapCount} ngày do bạn bị trùng giờ)`;
+      alert(msg);
+
     } catch (error) {
-      alert("Có lỗi khi lưu lên server.");
+      alert("Có lỗi khi lưu lịch lên server.");
     }
   };
 
@@ -588,7 +650,6 @@ const WorkoutsUserPage = () => {
     }));
   }, [aiRecommendations]);
 
-  // CẬP NHẬT CHÍNH XÁC KIỂU DỮ LIỆU (Tránh lỗi Invalid Date bên SchedulePlanner)
   const scheduleDays = useMemo(() => {
     const todayObj = new Date()
     const days = []
@@ -892,8 +953,8 @@ const WorkoutsUserPage = () => {
         {/* Detail Modal */}
         {previewWorkoutId && (
           <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4">
-            <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl">
-              <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800">
+            <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col">
+              <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">fitness_center</span>
                   <h3 className="text-lg font-bold">Thông tin bài tập</h3>
@@ -908,15 +969,15 @@ const WorkoutsUserPage = () => {
               </div>
 
               {previewLoading ? (
-                <div className="p-6 text-sm text-slate-500">Đang tải chi tiết...</div>
+                <div className="p-6 text-sm text-slate-500 flex-1">Đang tải chi tiết...</div>
               ) : previewError ? (
-                <div className="p-6">
+                <div className="p-6 flex-1">
                   <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {previewError}
                   </div>
                 </div>
               ) : previewWorkout ? (
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 flex-1 overflow-y-auto">
                   {(previewWorkout.cover_image || (previewWorkout as any).image) && !(previewWorkout as any).isYoutube && (
                     <img
                       src={previewWorkout.cover_image || (previewWorkout as any).image}
@@ -956,33 +1017,55 @@ const WorkoutsUserPage = () => {
                   </div>
                 </div>
               ) : (
-                <div className="p-6 text-sm text-slate-500">Không có dữ liệu.</div>
+                <div className="p-6 text-sm text-slate-500 flex-1">Không có dữ liệu.</div>
               )}
 
-              <div className="p-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 flex-wrap bg-slate-50 dark:bg-slate-900">
-                <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium">Hẹn giờ:</label>
-                  <input
-                    type="time"
-                    value={addStartTime}
-                    onChange={(e) => setAddStartTime(e.target.value)}
-                    className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary"
-                  />
-                  <span>-</span>
-                  <input
-                    type="time"
-                    value={addEndTime}
-                    onChange={(e) => setAddEndTime(e.target.value)}
-                    className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary"
-                  />
-                  <button
-                    onClick={() => previewWorkout && addToRoutine(previewWorkout)}
-                    className="h-9 px-4 ml-2 bg-primary text-slate-900 text-sm font-bold rounded-lg hover:brightness-105 shadow-sm"
-                  >
-                    Thêm vào Lịch & Đặt Nhắc Nhở
-                  </button>
+              {/* KHU VỰC CHỌN GIỜ & LẶP LẠI (RECURRENCE) */}
+              <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    
+                    <div className="flex flex-col gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-3">
+                            <label className="text-sm font-medium whitespace-nowrap min-w-[60px]">Hẹn giờ:</label>
+                            <input
+                                type="time"
+                                value={addStartTime}
+                                onChange={(e) => setAddStartTime(e.target.value)}
+                                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800"
+                            />
+                            <span>-</span>
+                            <input
+                                type="time"
+                                value={addEndTime}
+                                onChange={(e) => setAddEndTime(e.target.value)}
+                                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800"
+                            />
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                            <label className="text-sm font-medium whitespace-nowrap min-w-[60px]">Lặp lại:</label>
+                            <select
+                                value={recurrence}
+                                onChange={(e) => setRecurrence(e.target.value as any)}
+                                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm outline-none focus:border-primary bg-white dark:bg-slate-800 w-full"
+                            >
+                                <option value="none">Chỉ ngày đang chọn</option>
+                                <option value="daily_week">Hàng ngày (Trong 7 ngày tới)</option>
+                                <option value="246_week">Thứ 2-4-6 (Trong 7 ngày tới)</option>
+                                <option value="357_week">Thứ 3-5-7 (Trong 7 ngày tới)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => previewWorkout && addToRoutine(previewWorkout)}
+                        className="w-full md:w-auto h-11 px-6 bg-primary text-slate-900 text-sm font-bold rounded-lg hover:brightness-105 shadow-sm transition-all flex items-center justify-center gap-2 shrink-0"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">calendar_add_on</span> Thêm vào Lịch
+                    </button>
                 </div>
               </div>
+
             </div>
           </div>
         )}

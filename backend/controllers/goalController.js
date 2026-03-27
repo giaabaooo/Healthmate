@@ -197,3 +197,12 @@ KHÔNG dùng markdown hay định dạng phức tạp. Trả về text thuần t
     res.status(500).json({ message: "Lỗi AI phân tích", error: error.message });
   }
 };
+exports.getGoalHistory = async (req, res) => {
+  try {
+    // Lọc ra các goal của user có trạng thái là "archived", sắp xếp mới nhất lên đầu
+    const historyGoals = await Goal.find({ user_id: req.user.id, status: "archived" }).sort({ createdAt: -1 });
+    res.json(historyGoals);
+  } catch (error) { 
+    res.status(500).json({ message: "Lỗi lấy lịch sử", error: error.message }); 
+  }
+};

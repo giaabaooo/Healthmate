@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000/api/progress";
+const API_URL = "https://healthmate-y9vt.onrender.com/api/progress";
 
 export const getTodayProgress = async () => {
   const token = localStorage.getItem("token");

@@ -10,7 +10,7 @@ const ChallengeManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8000/api/community/challenges', {
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/community/challenges', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -27,9 +27,22 @@ const ChallengeManagement = () => {
   useEffect(() => { fetchChallenges(); }, []);
 
   const handleDelete = async (id: string) => {
-    if(window.confirm('Xóa thử thách này khỏi hệ thống?')) {
-        setChallenges(prev => prev.filter(c => c._id !== id));
-        toast.success("Đã xóa thử thách.");
+    if(window.confirm('Xóa vĩnh viễn thử thách này khỏi hệ thống?')) {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/admin/challenges/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setChallenges(prev => prev.filter(c => c._id !== id));
+                toast.success("Đã xóa thử thách thành công.");
+            } else {
+                toast.error("Lỗi khi xóa thử thách.");
+            }
+        } catch (error) {
+            toast.error("Lỗi kết nối.");
+        }
     }
   };
 

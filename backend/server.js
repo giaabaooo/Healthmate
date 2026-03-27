@@ -22,30 +22,47 @@ const microGoalRoutes = require("./routes/microGoalRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const communityRoutes = require("./routes/community");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
+
 // Kết nối database
 connectDB();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+
+// 1. KHAI BÁO CÁC DOMAIN FRONTEND ĐƯỢC PHÉP TRUY CẬP
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "https://healthmate-wdp.vercel.app" // Domain Vercel chuẩn của bạn
+];
+
+// CẤU HÌNH CORS LINH HOẠT
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Tạm thời cho phép tất cả đi qua để tránh lỗi sảng khi test
+      callback(null, true);
+    }
+  },
+  credentials: true, // Cực kỳ quan trọng để Google Login và Token hoạt động
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+};
+
+// 2. ÁP DỤNG CORS CHO SOCKET.IO
+const io = new Server(server, { 
+  cors: corsOptions
+});
+
 app.use((req, res, next) => {
-  req.io = io; // Gán io vào request
+  req.io = io; 
   next();
 });
 
-// Middleware
-// Gộp cấu hình CORS lại thành 1 lần duy nhất
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-    ],
-    credentials: true,
-  }),
-);
-
+// 3. ÁP DỤNG CORS CHO EXPRESS API
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Serve uploaded static files
@@ -61,7 +78,7 @@ app.use("/api/foods", foodRoutes);
 app.use("/api/meal-plans", mealPlanRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/workout-logs", workoutLogRoutes);
-app.use("/api/user/user-workouts", userWorkoutRoutes); // user
+app.use("/api/user/user-workouts", userWorkoutRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/micro-goals", microGoalRoutes);
 app.use("/api/ai", aiRoutes);
@@ -75,7 +92,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server & Socket đang chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Server & Socket đang chạy tại cổng ${PORT}`);
 });
 
 // Lắng nghe kết nối socket

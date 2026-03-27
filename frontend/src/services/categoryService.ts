@@ -5,7 +5,7 @@ export interface Category {
 }
 
 export const getCategories = async (): Promise<Category[]> => {
-  const res = await fetch("http://localhost:8000/api/workout-categories");
+  const res = await fetch("https://healthmate-y9vt.onrender.com/api/workout-categories");
 
   if (!res.ok) {
     throw new Error("Failed to fetch categories");

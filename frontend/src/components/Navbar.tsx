@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
 // Kết nối Socket để nhận thông báo realtime
-const socket = io("http://localhost:8000");
+const socket = io("https://healthmate-y9vt.onrender.com");
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -244,7 +244,7 @@ const Navbar = () => {
       <div className="flex flex-1 justify-end gap-6 items-center">
         <nav className="flex items-center gap-8">
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/workouts">Workouts</Link>
-          <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/schedule">Schedule</Link>
+          
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/meal-planner">Meal Plan</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium" to="/community-feed">Community</Link>
           <Link className="text-slate-600 hover:text-primary text-sm font-medium flex items-center gap-1" to="/aicoach">

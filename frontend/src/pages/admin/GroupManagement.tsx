@@ -9,7 +9,7 @@ const GroupManagement = () => {
   const fetchGroups = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/community/groups');
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/community/groups');
       if (res.ok) {
         const data = await res.json();
         setGroups(data);
@@ -25,8 +25,21 @@ const GroupManagement = () => {
 
   const handleDelete = async (id: string) => {
     if(window.confirm('Bạn có chắc chắn muốn giải tán nhóm này? Mọi bài viết trong nhóm sẽ bị xóa.')) {
-        setGroups(prev => prev.filter(g => g._id !== id));
-        toast.success("Đã xóa nhóm thành công.");
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`https://healthmate-y9vt.onrender.com/api/admin/groups/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setGroups(prev => prev.filter(g => g._id !== id));
+                toast.success("Đã giải tán nhóm thành công.");
+            } else {
+                toast.error("Lỗi khi xóa nhóm.");
+            }
+        } catch (error) {
+            toast.error("Lỗi kết nối.");
+        }
     }
   };
 

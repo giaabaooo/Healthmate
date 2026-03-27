@@ -95,15 +95,16 @@ const loginUser = async (req, res) => {
     const token = generateToken(user._id);
 
     res.json({
-      message: "Đăng nhập thành công!",
-      token,
-      user: {
-        _id: user._id,
-        email: user.email,
-        role: user.role,
-        profile: user.profile,
-      },
-    });
+  message: "Đăng nhập thành công",
+  token: generateToken(user._id),
+  user: {
+    _id: user._id,
+    email: user.email,
+    role: user.role,
+    profile: user.profile,
+    subscription: user.subscription || { plan: 'free', endDate: null } // <--- BẠN PHẢI THÊM DÒNG NÀY
+  }
+});
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
@@ -192,13 +193,29 @@ const updateProfile = async (req, res) => {
     const { profile } = req.body;
 
     if (!profile) {
-      return res
-        .status(400)
-        .json({ message: "Thiếu dữ liệu profile để cập nhật." });
+      return res.status(400).json({ message: "Thiếu dữ liệu profile để cập nhật." });
     }
 
-    const user = await User.findById(req.user.id);
+    // --- BỔ SUNG VALIDATE Ở BACKEND ---
+    if (profile.height_cm) {
+        if (Number(profile.height_cm) < 50 || Number(profile.height_cm) > 250) {
+            return res.status(400).json({ message: "Chiều cao không hợp lệ (Giới hạn: 50 - 250 cm)." });
+        }
+    }
+    if (profile.weight_kg) {
+        if (Number(profile.weight_kg) < 20 || Number(profile.weight_kg) > 300) {
+            return res.status(400).json({ message: "Cân nặng không hợp lệ (Giới hạn: 20 - 300 kg)." });
+        }
+    }
+    if (profile.gender && !['male', 'female', 'other'].includes(profile.gender)) {
+        return res.status(400).json({ message: "Giới tính không hợp lệ." });
+    }
+    if (profile.full_name && profile.full_name.trim().length === 0) {
+        return res.status(400).json({ message: "Họ tên không được để trống." });
+    }
+    // ----------------------------------
 
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng." });
     }

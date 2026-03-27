@@ -99,7 +99,7 @@ const MealPlannerPage = () => {
     const autoCalculateTarget = async () => {
         let goalType = 'maintain';
         try {
-            const res = await fetch('http://localhost:8000/api/goals/my-goal', { headers: getAuthHeaders() });
+            const res = await fetch('https://healthmate-y9vt.onrender.com/api/goals/my-goal', { headers: getAuthHeaders() });
             if(res.ok) {
                 const goalData = await res.json();
                 if(goalData?.goal_type) goalType = goalData.goal_type;
@@ -140,7 +140,7 @@ const MealPlannerPage = () => {
               prevCal.current = totalCalories;
               setIsAnalyzingLimit(true);
               try {
-                  const res = await fetch('http://localhost:8000/api/meal-plans/ai/analyze-calories', {
+                  const res = await fetch('https://healthmate-y9vt.onrender.com/api/meal-plans/ai/analyze-calories', {
                       method: 'POST',
                       headers: getAuthHeaders(),
                       body: JSON.stringify({ totalCalories, targetCalories: calorieGoal, goalType: userGoalType, currentWeight: userCurrentWeight })
@@ -162,7 +162,7 @@ const MealPlannerPage = () => {
   const fetchMealPlan = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}`, { headers: getAuthHeaders() });
+      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}`, { headers: getAuthHeaders() });
       const data = await res.json();
       setItems(data.items || []);
       setTotalCalories(data.total_calories || 0);
@@ -171,7 +171,7 @@ const MealPlannerPage = () => {
 
   const fetchFoods = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/foods');
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/foods');
       const data = await res.json();
       setFoods(data);
       const init: Record<string, number> = {};
@@ -194,7 +194,7 @@ const MealPlannerPage = () => {
     try {
       setLoadingAI(true);
       if (forceGenerate) toast.loading("Đầu bếp AI đang lên thực đơn...", { id: 'ai' });
-      const res = await fetch('http://localhost:8000/api/meal-plans/ai/recommend', { headers: getAuthHeaders() });
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/meal-plans/ai/recommend', { headers: getAuthHeaders() });
       const data = await res.json();
       setAiRecs(data || {});
       localStorage.setItem(cacheKey, JSON.stringify(data));
@@ -222,7 +222,7 @@ const MealPlannerPage = () => {
           slot: forceSlot || targetSlot
       };
 
-      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items`, {
+      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(payload), 
@@ -240,7 +240,7 @@ const MealPlannerPage = () => {
   const updateQuantity = async (itemId: string) => {
     if (editQuantity <= 0 || editQuantity > 5000) { toast.error('Số lượng không hợp lệ'); return; }
     try {
-      const res = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}/items/${itemId}`, {
+      const res = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${itemId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ quantity: editQuantity }),
@@ -252,7 +252,7 @@ const MealPlannerPage = () => {
   const handleRemoveConfirm = async () => {
     try {
       const res = await fetch(
-        `http://localhost:8000/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}`,
+        `https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}/items/${deleteModal.itemId}`,
         { method: 'DELETE', headers: getAuthHeaders() },
       );
       if (res.ok) { toast.success('Đã xóa món ăn'); fetchMealPlan(); }
