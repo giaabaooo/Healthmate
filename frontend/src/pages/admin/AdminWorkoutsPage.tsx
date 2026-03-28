@@ -6,7 +6,7 @@ import type { Category } from "../../services/categoryService";
 import AdminLayout from "../../components/AdminLayout";
 import toast, { Toaster } from "react-hot-toast";
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://healthmate-y9vt.onrender.com');
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'https://healthmate-y9vt.onrender.com' : 'https://healthmate-y9vt.onrender.com');
 
 const AdminWorkoutsPage = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);

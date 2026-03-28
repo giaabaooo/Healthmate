@@ -45,7 +45,7 @@ const WorkoutManagerPage: React.FC = () => {
   const fetchWorkouts = useCallback(async () => {
     try {
       const savedToken = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/workouts', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/workouts', {
         headers: {
           'Authorization': `Bearer ${savedToken}`
         }
@@ -63,7 +63,7 @@ const WorkoutManagerPage: React.FC = () => {
   const fetchWorkoutLogs = useCallback(async () => {
     try {
       const savedToken = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/tracker/workouts?period=week', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/tracker/workouts?period=week', {
         headers: {
           'Authorization': `Bearer ${savedToken}`
         }
@@ -99,7 +99,7 @@ const WorkoutManagerPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/workouts', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/workouts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -144,7 +144,7 @@ const WorkoutManagerPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/tracker/workouts', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/tracker/workouts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -184,7 +184,7 @@ const WorkoutManagerPage: React.FC = () => {
     if (!confirm('Bạn có chắc muốn xóa workout này?')) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/tracker/workouts/${logId}`, {
+      const response = await fetch(`https://healthmate-y9vt.onrender.com/api/tracker/workouts/${logId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

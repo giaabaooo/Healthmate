@@ -61,7 +61,7 @@ const ProfilePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:8000/api/users/me', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/users/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -200,7 +200,7 @@ const ProfilePage = () => {
       }
 
       try {
-          const res = await fetch('http://localhost:8000/api/users/profile', {
+          const res = await fetch('https://healthmate-y9vt.onrender.com/api/users/profile', {
               method: 'PUT',
               headers: { 
                   'Content-Type': 'application/json',

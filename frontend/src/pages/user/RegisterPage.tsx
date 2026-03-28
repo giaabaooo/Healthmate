@@ -28,7 +28,7 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/users/register', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, profile: { full_name: fullName } })

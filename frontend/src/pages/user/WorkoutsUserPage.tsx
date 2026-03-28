@@ -378,7 +378,7 @@ const WorkoutsUserPage = () => {
       setPreviewLoading(true);
       setPreviewError(null);
       try {
-        const res = await fetch(`http://localhost:8000/api/workouts/${previewWorkoutId}`, { signal: controller.signal });
+        const res = await fetch(`https://healthmate-y9vt.onrender.com/api/workouts/${previewWorkoutId}`, { signal: controller.signal });
         const data = await res.json();
         if (!res.ok) {
           setPreviewWorkout(null);

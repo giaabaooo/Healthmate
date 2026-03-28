@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import toast, { Toaster } from 'react-hot-toast';
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://healthmate-y9vt.onrender.com');
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'https://healthmate-y9vt.onrender.com' : 'https://healthmate-y9vt.onrender.com');
 
 const ChallengeManagement = () => {
   const [challenges, setChallenges] = useState<any[]>([]);

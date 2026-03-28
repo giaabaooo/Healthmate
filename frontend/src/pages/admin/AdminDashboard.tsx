@@ -20,7 +20,7 @@ const quickLinks = [
   { title: 'Quản lý Người dùng', desc: 'Xem danh sách, phân quyền hoặc khóa tài khoản', path: '/admin/users', icon: 'manage_accounts', color: 'text-purple-500 bg-purple-100 dark:bg-purple-500/20' },
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://healthmate-y9vt.onrender.com');
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'https://healthmate-y9vt.onrender.com' : 'https://healthmate-y9vt.onrender.com');
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();

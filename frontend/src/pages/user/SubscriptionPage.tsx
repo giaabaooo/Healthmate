@@ -18,7 +18,7 @@ const SubscriptionPage = () => {
       try {
           const token = localStorage.getItem('token');
           if (!token) return;
-          const res = await fetch('http://localhost:8000/api/users/me', {
+          const res = await fetch('https://healthmate-y9vt.onrender.com/api/users/me', {
               headers: { Authorization: `Bearer ${token}` }
           });
           if (res.ok) {
@@ -64,7 +64,7 @@ const SubscriptionPage = () => {
   const handleSuccessPayment = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8000/api/subscriptions/upgrade', {
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/subscriptions/upgrade', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -86,7 +86,7 @@ const SubscriptionPage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8000/api/subscriptions/create-payment-link', {
+      const res = await fetch('https://healthmate-y9vt.onrender.com/api/subscriptions/create-payment-link', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

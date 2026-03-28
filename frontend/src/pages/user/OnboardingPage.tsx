@@ -38,7 +38,7 @@ const OnboardingPage = () => {
       const token = localStorage.getItem('token');
       
       // Gọi đúng API cập nhật profile (Thay vì /api/users/me)
-      const response = await fetch('http://localhost:8000/api/users/profile', {
+      const response = await fetch('https://healthmate-y9vt.onrender.com/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

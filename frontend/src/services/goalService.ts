@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000/api";
+const API_URL = "https://healthmate-y9vt.onrender.com/api";
 
 const getToken = () => {
   return localStorage.getItem("token");

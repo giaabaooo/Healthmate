@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
 // Kết nối Socket để nhận thông báo realtime
-const socket = io("http://localhost:8000");
+const socket = io("https://healthmate-y9vt.onrender.com");
 
 const Navbar = () => {
   const navigate = useNavigate();

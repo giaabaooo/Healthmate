@@ -59,7 +59,7 @@ const OverviewPage = () => {
     const loadDailyData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const mealRes = await fetch(`http://localhost:8000/api/meal-plans/${selectedDate}`, {
+        const mealRes = await fetch(`https://healthmate-y9vt.onrender.com/api/meal-plans/${selectedDate}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (mealRes.ok) {
@@ -69,7 +69,7 @@ const OverviewPage = () => {
             setDailyCaloriesIn(0);
         }
 
-        const logRes = await fetch(`http://localhost:8000/api/workout-logs`, {
+        const logRes = await fetch(`https://healthmate-y9vt.onrender.com/api/workout-logs`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (logRes.ok) {
@@ -138,7 +138,7 @@ const OverviewPage = () => {
         const token = localStorage.getItem('token');
 
         // 1. GỌI API ĐỂ UPDATE PROFILE GLOBAL
-        const profileRes = await fetch('http://localhost:8000/api/users/profile', {
+        const profileRes = await fetch('https://healthmate-y9vt.onrender.com/api/users/profile', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ profile: { weight_kg: weight, height_cm: height } })
@@ -164,7 +164,7 @@ const OverviewPage = () => {
         });
 
         // 3. Phân tích AI
-        const res = await fetch('http://localhost:8000/api/goals/analyze-progress', {
+        const res = await fetch('https://healthmate-y9vt.onrender.com/api/goals/analyze-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ oldWeight, currentWeight: weight })
